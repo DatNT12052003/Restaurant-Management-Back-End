@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "target": "ES6",
+        "module": "commonjs",
+        "rootDir": "./src",
+        "outDir": "./dist",
+        "paths": {
+            "~/*": ["./src/*"]
+        },
+        "esModuleInterop": true,
+        "strict": true
+    },
+    "include": ["src"],
+    "exclude": ["migrations"]
+}
