@@ -10,8 +10,12 @@ export interface IEmployee {
     phone_number: string | null;
     avatar_url: string | null;
     status: EmployeeStatusEnum;
-    account_id: number | null;
+    account_id?: number | null;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
 }
+
+export interface ICreateEmployeePayload extends Partial<
+    Omit<IEmployee, "id" | "created_at" | "updated_at" | "deleted_at">
+> {}

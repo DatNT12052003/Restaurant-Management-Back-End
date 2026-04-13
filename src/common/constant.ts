@@ -1,5 +1,7 @@
 export const PAGINATION = {
     DEFAULT_PAGE: 1,
     DEFAULT_LIMIT: 10,
-    DEFAULT_SKIP: 0,
+    DEFAULT_OFFSET: 0,
 };
+
+export const SALT_ROUNDS = 10;

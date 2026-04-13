@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { createAccount, getAccount, updateAccount, deleteAccount } from "~/controllers";
+import { accountController } from "~/controllers";
+import { validateCreate } from "~/middlewares";
 
 const router = Router();
 
-router.get("/", getAccount);
-router.post("/", createAccount);
-router.put("/:id", updateAccount);
-router.delete("/:id", deleteAccount);
+router.get("/", accountController.getAccounts);
+router.post("/", validateCreate, accountController.createAccount);
+router.put("/:id", accountController.updateAccount);
+router.delete("/:id", accountController.deleteAccount);
 
 export default router;
