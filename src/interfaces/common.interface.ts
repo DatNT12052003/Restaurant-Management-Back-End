@@ -8,7 +8,6 @@ export interface IResponse<T> {
 }
 
 export interface IPagination {
-    offset: number;
     limit: number;
     currentPage: number;
     totalPages: number;
@@ -24,4 +23,12 @@ export interface IGetParams {
     orderType?: OrderTypeEnum;
     currentPage?: number;
     limit?: number;
+}
+
+export interface IGetDataParams extends Required<Omit<IGetParams, "currentPage">> {
+    offset: number;
+}
+export interface IQueryResult {
+    query: string;
+    values: any[];
 }

@@ -1,9 +1,10 @@
-import { ICreateAccount, ICreateAccountPayload, IGetAccounts, IResponse } from "~/interfaces";
+import { ICreateAccount, ICreateAccountPayload, IGetAccounts, IGetDataParams, IResponse } from "~/interfaces";
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "~/common/constant";
 import { accountRepository } from "~/repositories";
 import { HTTP_RESPONSE } from "~/common/http-response";
 import { getAccountsResource } from "~/resources";
+import { off } from "node:cluster";
 
 export const createAccount = async (payload: ICreateAccountPayload): Promise<IResponse<any>> => {
     try {
@@ -30,35 +31,15 @@ export const createAccount = async (payload: ICreateAccountPayload): Promise<IRe
     }
 };
 
-export const getAccounts = async (params: {
-    offset: number;
-    limit: number;
-    currentPage: number;
-    searchText: string;
-    searchField: string;
-    filterField: string;
-    filterValue: string;
-    orderBy: string;
-    orderType: string;
-}): Promise<IResponse<IGetAccounts | null>> => {
+export const getAccounts = async (params: IGetDataParams): Promise<IResponse<IGetAccounts | null>> => {
     try {
-        const result = await accountRepository.getAccounts(
-            params.offset,
-            params.limit,
-            params.searchText,
-            params.searchField,
-            params.filterField,
-            params.filterValue,
-            params.orderBy,
-            params.orderType,
-        );
+        const result = await accountRepository.getAccounts(params);
 
         const data: IGetAccounts = {
             accounts: getAccountsResource(result.rows),
             pagination: {
-                offset: params.offset,
                 limit: params.limit,
-                currentPage: params.currentPage,
+                currentPage: params.offset / params.limit + 1,
                 totalPages: result.totalPages,
                 totalItems: result.totalItems,
             },

@@ -14,3 +14,5 @@ export interface IGuest {
     updated_at: Date;
     deleted_at: Date | null;
 }
+
+export interface ICreateGuestPayload extends Partial<Omit<IGuest, "id" | "created_at" | "updated_at" | "deleted_at">> {}

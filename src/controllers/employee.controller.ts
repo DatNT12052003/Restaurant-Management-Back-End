@@ -41,3 +41,19 @@ export const createEmployee = async (req: Request, res: Response) => {
         serverErrorResponse(res);
     }
 };
+
+export const createEmployeeWithAccount = async (req: Request, res: Response) => {
+    try {
+        const { employee, account } = req.body;
+
+        const response = await employeeService.createEmployeeWithAccount({ employee, account });
+
+        if (!response.success) {
+            return createErrorResponse(res, "Failed to create employee with account.");
+        }
+
+        return createSuccessResponse(res, response.data);
+    } catch (error) {
+        serverErrorResponse(res);
+    }
+};
