@@ -12,16 +12,16 @@ export const createAccount = async (req: Request, res: Response) => {
         const { username, password }: ICreateAccountPayload = req.body;
 
         if (!username || !password) {
-            return badRequestResponse(res, "Username and password are required.");
+            return badRequestResponse(res, req.t("account:USERNAME_PASSWORD_REQUIRED"));
         }
 
         const response: IResponse<any> = await accountService.createAccount({ username, password });
 
         if (!response.success) {
-            return createErrorResponse(res, "Failed to create account.");
+            return createErrorResponse(res, req.t("account:ERROR_CREATING_ACCOUNT"));
         }
 
-        return createSuccessResponse(res, response.data);
+        return createSuccessResponse(res, req.t("account:ACCOUNT_CREATED_SUCCESSFULLY"), response.data);
     } catch (error) {
         serverErrorResponse(res);
     }
@@ -55,10 +55,10 @@ export const getAccounts = async (req: Request, res: Response) => {
         const response: IResponse<any> = await accountService.getAccounts(params);
 
         if (!response.success) {
-            return createErrorResponse(res, "Failed to retrieve accounts.");
+            return createErrorResponse(res, req.t("account:ERROR_GETTING_ACCOUNTS"));
         }
 
-        return getSuccessResponse(res, response.data);
+        return getSuccessResponse(res, req.t("account:GET_ACCOUNTS_SUCCESSFULLY"), response.data);
     } catch (error) {
         serverErrorResponse(res);
     }

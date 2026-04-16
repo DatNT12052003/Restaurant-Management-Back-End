@@ -18,7 +18,7 @@ export const createEmployee = async (req: Request, res: Response) => {
         }: ICreateEmployeePayload = req.body;
 
         if (!full_name) {
-            return badRequestResponse(res, "Full name is required.");
+            return badRequestResponse(res, req.t("employee:FULL_NAME_REQUIRED"));
         }
 
         const response: IResponse<any> = await employeeService.createEmployee({
@@ -33,10 +33,10 @@ export const createEmployee = async (req: Request, res: Response) => {
         });
 
         if (!response.success) {
-            return createErrorResponse(res, "Failed to create employee.");
+            return createErrorResponse(res, req.t("employee:ERROR_CREATING_EMPLOYEE"));
         }
 
-        return createSuccessResponse(res, response.data);
+        return createSuccessResponse(res, req.t("employee:EMPLOYEE_CREATED_SUCCESSFULLY"), response.data);
     } catch (error) {
         serverErrorResponse(res);
     }
@@ -49,10 +49,10 @@ export const createEmployeeWithAccount = async (req: Request, res: Response) => 
         const response = await employeeService.createEmployeeWithAccount({ employee, account });
 
         if (!response.success) {
-            return createErrorResponse(res, "Failed to create employee with account.");
+            return createErrorResponse(res, req.t("employee:ERROR_CREATING_EMPLOYEE_WITH_ACCOUNT"));
         }
 
-        return createSuccessResponse(res, response.data);
+        return createSuccessResponse(res, req.t("employee:EMPLOYEE_WITH_ACCOUNT_CREATED_SUCCESSFULLY"), response.data);
     } catch (error) {
         serverErrorResponse(res);
     }
