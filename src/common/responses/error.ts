@@ -9,7 +9,7 @@ export const serverErrorResponse = (res: Response) => {
     });
 };
 
-export const badRequestResponse = (res: Response, message: string) => {
+export const badRequestResponse = (res: Response, message?: string) => {
     return res.status(HTTP_RESPONSE.BAD_REQUEST.statusCode).json({
         success: false,
         statusCode: HTTP_RESPONSE.BAD_REQUEST.statusCode,
@@ -17,7 +17,7 @@ export const badRequestResponse = (res: Response, message: string) => {
     });
 };
 
-export const createErrorResponse = (res: Response, message: string) => {
+export const createErrorResponse = (res: Response, message?: string) => {
     return res.status(HTTP_RESPONSE.BAD_REQUEST.statusCode).json({
         success: false,
         statusCode: HTTP_RESPONSE.BAD_REQUEST.statusCode,

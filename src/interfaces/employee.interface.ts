@@ -1,4 +1,5 @@
 import { EmployeeStatusEnum, GenderEnum } from "../common/enum";
+import { ICreateAccountPayload } from "./account.interface";
 
 export interface IEmployee {
     id: number;
@@ -19,3 +20,8 @@ export interface IEmployee {
 export interface ICreateEmployeePayload extends Partial<
     Omit<IEmployee, "id" | "created_at" | "updated_at" | "deleted_at">
 > {}
+
+export interface ICreateEmployeeWithAccountPayload {
+    employee: ICreateEmployeePayload;
+    account: ICreateAccountPayload;
+}

@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { HTTP_RESPONSE } from "~/common/http-response";
 
-export const createSuccessResponse = (res: Response, message: string, data: any) => {
+export const createSuccessResponse = (res: Response, message?: string, data?: any) => {
     return res.status(HTTP_RESPONSE.CREATED.statusCode).json({
         success: true,
         statusCode: HTTP_RESPONSE.CREATED.statusCode,
@@ -10,7 +10,7 @@ export const createSuccessResponse = (res: Response, message: string, data: any)
     });
 };
 
-export const getSuccessResponse = (res: Response, message: string, data: any) => {
+export const getSuccessResponse = (res: Response, message?: string, data?: any) => {
     return res.status(HTTP_RESPONSE.SUCCESS.statusCode).json({
         success: true,
         statusCode: HTTP_RESPONSE.SUCCESS.statusCode,

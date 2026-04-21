@@ -1,0 +1,18 @@
+{
+    "account": {
+        "username": {
+            "invalid": "Tên đăng nhập phải có ít nhất 5 ký tự",
+            "required": "Tên đăng nhập là bắt buộc"
+        },
+        "password": {
+            "invalid": "Mật khẩu phải có ít nhất 6 ký tự",
+            "required": "Mật khẩu là bắt buộc"
+        }
+    },
+    "employee": {
+        "full_name": {
+            "invalid": "Họ tên phải có ít nhất 2 từ",
+            "required": "Họ tên là bắt buộc"
+        }
+    }
+}
