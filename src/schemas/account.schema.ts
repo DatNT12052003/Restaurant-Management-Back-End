@@ -6,9 +6,6 @@ export const createAccountSchema = z.object({
             .string()
             .min(1, { message: "validation:account.username.required" })
             .min(5, { message: "validation:account.username.invalid" }),
-        // .refine((val) => /\S+@\S+\.\S+/.test(val), {
-        //     message: "validation:account.username.invalid",
-        // }),
 
         password: z
             .string()

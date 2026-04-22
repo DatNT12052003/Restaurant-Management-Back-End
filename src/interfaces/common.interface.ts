@@ -33,3 +33,15 @@ export interface IQueryResult {
     query: string;
     values: any[];
 }
+
+export interface ISelectQueryParams {
+    searchText?: string;
+    searchField?: string;
+    filterField?: string;
+    filterValue?: any;
+    orderBy?: string;
+    orderType?: OrderTypeEnum;
+    offset: number;
+    limit: number;
+    returning?: string[];
+}

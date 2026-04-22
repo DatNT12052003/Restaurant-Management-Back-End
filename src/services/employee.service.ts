@@ -12,10 +12,15 @@ import { accountRepository, employeeRepository } from "~/repositories";
 import { pool } from "../config/db";
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "~/common/constant";
+import { string } from "zod";
+import { stringToDate } from "~/utils/common";
 
 export const createEmployee = async (payload: ICreateEmployeePayload): Promise<IEmployee | null> => {
     try {
-        const newEmployee: IEmployee = await employeeRepository.createEmployee(payload);
+        const newEmployee: IEmployee = await employeeRepository.createEmployee({
+            ...payload,
+            date_of_birth: stringToDate(payload.date_of_birth),
+        });
 
         return newEmployee;
     } catch (error) {
@@ -41,6 +46,7 @@ export const createEmployeeWithAccount = async (
 
         const newEmployee: IEmployee = await employeeRepository.createEmployee({
             ...payload.employee,
+            date_of_birth: stringToDate(payload.employee.date_of_birth),
             account_id: newAccount.id,
         });
         if (!newEmployee) {

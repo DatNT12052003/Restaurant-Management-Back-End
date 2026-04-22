@@ -11,6 +11,10 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
             notNull: true,
         },
 
+        avatar_url: {
+            type: "text",
+        },
+
         gender: {
             type: "varchar(10)",
         },

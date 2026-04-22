@@ -1,5 +1,6 @@
+import e from "express";
 import { OrderTypeEnum } from "~/common/enum";
-import { IQueryResult } from "~/interfaces";
+import { IQueryResult, ISelectQueryParams } from "~/interfaces";
 
 export const buildInsertQuery = (
     table: string,
@@ -34,21 +35,7 @@ export const buildInsertQuery = (
     return { query, values };
 };
 
-export const buildSelectQuery = (
-    table: string,
-    allowedFields: string[],
-    params: {
-        searchText?: string;
-        searchField?: string;
-        filterField?: string;
-        filterValue?: any;
-        orderBy?: string;
-        orderType?: OrderTypeEnum;
-        offset: number;
-        limit: number;
-        returning?: string[];
-    },
-): IQueryResult => {
+export const buildSelectQuery = (table: string, allowedFields: string[], params: ISelectQueryParams): IQueryResult => {
     const {
         searchText,
         searchField,
@@ -92,6 +79,78 @@ export const buildSelectQuery = (
     `.trim();
 
     values.push(limit, offset);
+
+    return { query, values };
+};
+
+export const buildUpdateQuery = (
+    table: string,
+    id: string | number,
+    payload: Record<string, any>,
+    allowedFields: string[],
+    returning: string[] = ["*"],
+): IQueryResult => {
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let index = 1;
+
+    for (const key of allowedFields) {
+        if (payload[key] !== undefined) {
+            setClauses.push(`${key} = $${index++}`);
+            values.push(payload[key]);
+        }
+    }
+
+    if (setClauses.length === 0) {
+        throw new Error("No valid fields to update");
+    }
+
+    const idPlaceholder = `$${index++}`;
+    values.push(id);
+
+    const query = `
+        UPDATE ${table}
+        SET ${setClauses.join(", ")}
+        WHERE id = ${idPlaceholder}
+        RETURNING ${returning.join(", ")}
+    `.trim();
+
+    return { query, values };
+};
+
+export const buildDeleteQuery = (table: string, id: string | number, returning: string[] = ["*"]): IQueryResult => {
+    if (!id) {
+        throw new Error("ID is required for delete operation");
+    }
+
+    const query = `
+        DELETE FROM ${table}
+        WHERE id = $1
+        RETURNING ${returning.join(", ")}
+    `.trim();
+
+    const values = [id];
+
+    return { query, values };
+};
+
+export const buildSoftDeleteQuery = (
+    table: string,
+    id: string | number,
+    returning: string[] = ["id", "deleted_at"],
+): IQueryResult => {
+    if (!id) {
+        throw new Error("ID is required for soft delete operation");
+    }
+
+    const query = `
+        UPDATE ${table}
+        SET deleted_at = NOW()
+        WHERE id = $1 AND deleted_at IS NULL
+        RETURNING ${returning.join(", ")}
+    `.trim();
+
+    const values = [id];
 
     return { query, values };
 };

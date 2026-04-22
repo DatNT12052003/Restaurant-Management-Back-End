@@ -4,6 +4,7 @@ import { IAccount } from "~/interfaces/index";
 export interface IGuest {
     id: number;
     full_name: string;
+    avatar_url: string | null;
     gender: GenderEnum | null;
     phone_number: string | null;
     email: string | null;

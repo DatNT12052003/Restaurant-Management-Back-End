@@ -18,8 +18,10 @@ export interface IEmployee {
 }
 
 export interface ICreateEmployeePayload extends Partial<
-    Omit<IEmployee, "id" | "created_at" | "updated_at" | "deleted_at">
-> {}
+    Omit<IEmployee, "id" | "date_of_birth" | "created_at" | "updated_at" | "deleted_at">
+> {
+    date_of_birth?: string | null;
+}
 
 export interface ICreateEmployeeWithAccountPayload {
     employee: ICreateEmployeePayload;
