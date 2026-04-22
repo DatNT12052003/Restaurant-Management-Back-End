@@ -9,6 +9,7 @@ import {
     IResponse,
 } from "~/interfaces";
 import { employeeService } from "~/services";
+import { uploadToCloudinary } from "~/utils/cloudinary";
 
 export const createEmployee = async (req: Request, res: Response) => {
     try {
@@ -42,10 +43,11 @@ export const createEmployeeWithAccount = async (req: Request, res: Response) => 
             return badRequestResponse(res, req.t("employee:FULL_NAME_REQUIRED"));
         }
 
-        if (!req.file) {
-            body.employee.avatar_url = null;
+        if (req.file) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            body.employee.avatar_url = result.secure_url;
         } else {
-            body.employee.avatar_url = req.file.path;
+            body.employee.avatar_url = null;
         }
 
         const newEmployeeWithAccount: { employee: IEmployee; account: IAccount } | null =
@@ -61,6 +63,7 @@ export const createEmployeeWithAccount = async (req: Request, res: Response) => 
             newEmployeeWithAccount,
         );
     } catch (error) {
+        console.error("Error in createEmployeeWithAccount:", error);
         serverErrorResponse(res);
     }
 };

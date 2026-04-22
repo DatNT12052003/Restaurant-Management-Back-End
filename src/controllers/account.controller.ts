@@ -4,7 +4,7 @@ import { OrderTypeEnum } from "~/common/enum";
 import { HTTP_RESPONSE } from "~/common/http-response";
 import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { createSuccessResponse, getSuccessResponse } from "~/common/responses/success";
-import { ICreateAccountPayload, IGetDataParams, IGetParams, IResponse } from "~/interfaces";
+import { IAccount, ICreateAccountPayload, IGetAccounts, IGetDataParams, IGetParams, IResponse } from "~/interfaces";
 import { accountService } from "~/services";
 
 export const createAccount = async (req: Request, res: Response) => {
@@ -15,13 +15,13 @@ export const createAccount = async (req: Request, res: Response) => {
             return badRequestResponse(res, req.t("account:USERNAME_PASSWORD_REQUIRED"));
         }
 
-        const response: IResponse<any> = await accountService.createAccount({ username, password });
+        const newAccount: IAccount | null = await accountService.createAccount({ username, password });
 
-        if (!response.success) {
+        if (!newAccount) {
             return createErrorResponse(res, req.t("account:ERROR_CREATING_ACCOUNT"));
         }
 
-        return createSuccessResponse(res, req.t("account:ACCOUNT_CREATED_SUCCESSFULLY"), response.data);
+        return createSuccessResponse(res, req.t("account:ACCOUNT_CREATED_SUCCESSFULLY"), newAccount);
     } catch (error) {
         serverErrorResponse(res);
     }
@@ -52,13 +52,13 @@ export const getAccounts = async (req: Request, res: Response) => {
             limit,
         };
 
-        const response: IResponse<any> = await accountService.getAccounts(params);
+        const accounts: IGetAccounts | null = await accountService.getAccounts(params);
 
-        if (!response.success) {
+        if (!accounts) {
             return createErrorResponse(res, req.t("account:ERROR_GETTING_ACCOUNTS"));
         }
 
-        return getSuccessResponse(res, req.t("account:GET_ACCOUNTS_SUCCESSFULLY"), response.data);
+        return getSuccessResponse(res, req.t("account:GET_ACCOUNTS_SUCCESSFULLY"), accounts);
     } catch (error) {
         serverErrorResponse(res);
     }

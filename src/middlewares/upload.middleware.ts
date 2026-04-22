@@ -1,12 +1,12 @@
 import multer from "multer";
-import { storage } from "../config/cloudinary";
+const memoryStorage = multer.memoryStorage();
 
 export const uploadAvatar = multer({
-    storage,
+    storage: memoryStorage,
     limits: { fileSize: 5 * 1024 * 1024 },
 }).single("avatar");
 
 export const uploadMedia = multer({
-    storage,
+    storage: memoryStorage,
     limits: { fileSize: 100 * 1024 * 1024 },
 }).single("media");
