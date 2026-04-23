@@ -3,58 +3,57 @@ import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate";
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
-    pgm.createTable("employees", {
+    pgm.createTable("refresh_tokens", {
         id: "id",
-        full_name: {
-            type: "varchar(255)",
-            notNull: true,
-        },
-        date_of_birth: {
-            type: "date",
-        },
-        gender: {
-            type: "varchar(10)",
-        },
-        address: {
+
+        hash_token: {
             type: "text",
-        },
-        email: {
-            type: "varchar(255)",
+            notNull: true,
             unique: true,
         },
-        phone_number: {
-            type: "varchar(20)",
-        },
-        avatar_url: {
-            type: "text",
-        },
-        status: {
-            type: "varchar(20)",
+
+        expires_at: {
+            type: "timestamp",
             notNull: true,
-            default: "active",
         },
+
+        revoked: {
+            type: "boolean",
+            notNull: true,
+            default: false,
+        },
+
         account_id: {
             type: "integer",
+            notNull: true,
             references: "accounts",
-            onDelete: "SET NULL",
+            onDelete: "CASCADE",
         },
+
         created_at: {
             type: "timestamp",
             default: pgm.func("now()"),
         },
+
         updated_at: {
             type: "timestamp",
             default: pgm.func("now()"),
         },
+
         deleted_at: {
             type: "timestamp",
         },
     });
 
-    pgm.createIndex("employees", "account_id");
-    pgm.createIndex("employees", "email");
+    pgm.createIndex("refresh_tokens", "account_id");
+    pgm.createIndex("refresh_tokens", "expires_at");
+
+    pgm.createIndex("refresh_tokens", "hash_token", {
+        name: "refresh_tokens_active_hash_idx",
+        where: "revoked = false",
+    });
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
-    pgm.dropTable("employees");
+    pgm.dropTable("refresh_tokens");
 }

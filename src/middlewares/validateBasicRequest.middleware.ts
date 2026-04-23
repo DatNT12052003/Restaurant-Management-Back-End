@@ -14,3 +14,10 @@ export const validateUpdate = (req: Request, res: Response, next: NextFunction) 
     }
     next();
 };
+
+export const validateLogin = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.body || Object.keys(req.body).length === 0) {
+        badRequestResponse(res, req.t("common:ERROR"));
+    }
+    next();
+};

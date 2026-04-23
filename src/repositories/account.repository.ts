@@ -12,11 +12,19 @@ export const createAccount = async (account: ICreateAccount): Promise<any> => {
 
 export const getAccounts = async (params: any) => {
     const allowedFields = ["username", "created_at", "updated_at", "deleted_at"];
-    const { query, values } = buildSelectQuery("accounts", allowedFields, params);
+    const table = "accounts where deleted_at IS NULL";
+    const { query, values } = buildSelectQuery(table, allowedFields, params);
     const result = await pool.query(query, values);
     const totalItems = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
     const totalPages = Math.ceil(totalItems / params.limit);
     const rows = result.rows.map(({ total_count, ...data }) => data);
 
     return { rows, totalItems, totalPages };
+};
+
+export const getAccountByUsername = async (username: string) => {
+    const query = `SELECT * FROM accounts WHERE username = $1 AND deleted_at IS NULL`;
+    const values = [username];
+    const result = await pool.query(query, values);
+    return result.rows[0];
 };

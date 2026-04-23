@@ -9,7 +9,7 @@
             "required": "Password is required"
         }
     },
-    "employee": {
+    "user": {
         "full_name": {
             "invalid": "Full name must be at least 2 words",
             "required": "Full name is required"

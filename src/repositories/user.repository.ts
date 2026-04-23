@@ -1,8 +1,7 @@
 import { pool } from "~/config/db";
-import { ICreateEmployeePayload } from "~/interfaces";
 import { buildInsertQuery } from "~/utils/query-builder";
 
-export const createEmployee = async (payload: any) => {
+export const createUser = async (payload: any) => {
     const allowedFields = [
         "full_name",
         "date_of_birth",
@@ -15,7 +14,7 @@ export const createEmployee = async (payload: any) => {
         "account_id",
     ];
     const returning = ["*"];
-    const { query, values } = buildInsertQuery("employees", payload, allowedFields, returning);
+    const { query, values } = buildInsertQuery("users", payload, allowedFields, returning);
     const result = await pool.query(query, values);
     return result.rows[0];
 };

@@ -1,0 +1,7 @@
+{
+    "full_name_required": "Full name is required.",
+    "error_creating_user": "Failed to create user.",
+    "user_created_successfully": "User created successfully.",
+    "error_creating_user_with_account": "Failed to create user with account.",
+    "user_with_account_created_successfully": "User with account created successfully."
+}

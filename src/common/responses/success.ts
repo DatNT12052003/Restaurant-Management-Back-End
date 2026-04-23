@@ -18,3 +18,12 @@ export const getSuccessResponse = (res: Response, message?: string, data?: any) 
         data: data,
     });
 };
+
+export const loginSuccessResponse = (res: Response, message?: string, data?: any) => {
+    return res.status(HTTP_RESPONSE.SUCCESS.statusCode).json({
+        success: true,
+        statusCode: HTTP_RESPONSE.SUCCESS.statusCode,
+        message: message || HTTP_RESPONSE.SUCCESS.message,
+        data: data,
+    });
+};

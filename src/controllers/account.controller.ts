@@ -12,16 +12,16 @@ export const createAccount = async (req: Request, res: Response) => {
         const { username, password }: ICreateAccountPayload = req.body;
 
         if (!username || !password) {
-            return badRequestResponse(res, req.t("account:USERNAME_PASSWORD_REQUIRED"));
+            return badRequestResponse(res, req.t("account:username_password_required"));
         }
 
         const newAccount: IAccount | null = await accountService.createAccount({ username, password });
 
         if (!newAccount) {
-            return createErrorResponse(res, req.t("account:ERROR_CREATING_ACCOUNT"));
+            return createErrorResponse(res, req.t("account:error_creating_account"));
         }
 
-        return createSuccessResponse(res, req.t("account:ACCOUNT_CREATED_SUCCESSFULLY"), newAccount);
+        return createSuccessResponse(res, req.t("account:account_created_successfully"), newAccount);
     } catch (error) {
         serverErrorResponse(res);
     }
@@ -55,10 +55,10 @@ export const getAccounts = async (req: Request, res: Response) => {
         const accounts: IGetAccounts | null = await accountService.getAccounts(params);
 
         if (!accounts) {
-            return createErrorResponse(res, req.t("account:ERROR_GETTING_ACCOUNTS"));
+            return createErrorResponse(res, req.t("account:error_getting_accounts"));
         }
 
-        return getSuccessResponse(res, req.t("account:GET_ACCOUNTS_SUCCESSFULLY"), accounts);
+        return getSuccessResponse(res, req.t("account:get_accounts_successfully"), accounts);
     } catch (error) {
         serverErrorResponse(res);
     }

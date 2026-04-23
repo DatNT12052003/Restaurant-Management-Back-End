@@ -1,4 +1,4 @@
 {
-    "SUCCESS": "Success",
-    "ERROR": "Error"
+    "success": "Success",
+    "error": "Error"
 }

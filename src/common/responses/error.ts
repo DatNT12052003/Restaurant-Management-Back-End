@@ -17,6 +17,22 @@ export const badRequestResponse = (res: Response, message?: string) => {
     });
 };
 
+export const authorizationErrorResponse = (res: Response, message?: string) => {
+    return res.status(HTTP_RESPONSE.FORBIDDEN.statusCode).json({
+        success: false,
+        statusCode: HTTP_RESPONSE.FORBIDDEN.statusCode,
+        message: message || HTTP_RESPONSE.FORBIDDEN.message,
+    });
+};
+
+export const authenticationErrorResponse = (res: Response, message?: string) => {
+    return res.status(HTTP_RESPONSE.UNAUTHORIZED.statusCode).json({
+        success: false,
+        statusCode: HTTP_RESPONSE.UNAUTHORIZED.statusCode,
+        message: message || HTTP_RESPONSE.UNAUTHORIZED.message,
+    });
+};
+
 export const createErrorResponse = (res: Response, message?: string) => {
     return res.status(HTTP_RESPONSE.BAD_REQUEST.statusCode).json({
         success: false,

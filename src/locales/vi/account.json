@@ -1,7 +1,7 @@
 {
-    "USERNAME_PASSWORD_REQUIRED": "Tên đăng nhập và mật khẩu là bắt buộc.",
-    "ERROR_CREATING_ACCOUNT": "Tạo tài khoản thất bại.",
-    "ACCOUNT_CREATED_SUCCESSFULLY": "Tài khoản đã được tạo thành công.",
-    "ERROR_GETTING_ACCOUNTS": "Lấy danh sách tài khoản thất bại.",
-    "GET_ACCOUNTS_SUCCESSFULLY": "Danh sách tài khoản đã được lấy thành công."
+    "username_password_required": "Tên đăng nhập và mật khẩu là bắt buộc.",
+    "error_creating_account": "Tạo tài khoản thất bại.",
+    "account_created_successfully": "Tài khoản đã được tạo thành công.",
+    "error_getting_accounts": "Lấy danh sách tài khoản thất bại.",
+    "get_accounts_successfully": "Danh sách tài khoản đã được lấy thành công."
 }

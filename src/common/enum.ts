@@ -9,7 +9,7 @@ export enum GenderEnum {
     OTHER = "other",
 }
 
-export enum EmployeeStatusEnum {
+export enum UserStatusEnum {
     ACTIVE = "active",
     INACTIVE = "inactive",
 }

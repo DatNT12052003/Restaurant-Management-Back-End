@@ -6,7 +6,7 @@ import i18n from "./config/i18n";
 
 import { errorHandler, requestLogger } from "./middlewares";
 
-import { accountRouter, employeeRouter } from "~/routes";
+import { accountRouter, authRouter, userRouter } from "~/routes";
 
 const app = express();
 
@@ -16,9 +16,11 @@ app.use(requestLogger);
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+app.use("/api/auth", authRouter);
 app.use("/api/accounts", accountRouter);
-app.use("/api/employees", employeeRouter);
+app.use("/api/users", userRouter);
 
 app.use(errorHandler);
 

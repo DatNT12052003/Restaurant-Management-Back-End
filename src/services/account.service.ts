@@ -2,9 +2,7 @@ import { IAccount, ICreateAccount, ICreateAccountPayload, IGetAccounts, IGetData
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "~/common/constant";
 import { accountRepository } from "~/repositories";
-import { HTTP_RESPONSE } from "~/common/http-response";
 import { getAccountsResource } from "~/resources";
-import { off } from "node:cluster";
 
 export const createAccount = async (payload: ICreateAccountPayload): Promise<IAccount | null> => {
     try {

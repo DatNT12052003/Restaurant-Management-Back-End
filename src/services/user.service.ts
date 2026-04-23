@@ -3,34 +3,34 @@ import {
     IAccount,
     ICreateAccount,
     ICreateAccountPayload,
-    ICreateEmployeePayload,
-    ICreateEmployeeWithAccountPayload,
-    IEmployee,
+    ICreateUserPayload,
+    ICreateUserWithAccountPayload,
+    IUser,
     IResponse,
 } from "~/interfaces";
-import { accountRepository, employeeRepository } from "~/repositories";
+import { accountRepository, userRepository } from "~/repositories";
 import { pool } from "../config/db";
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "~/common/constant";
 import { string } from "zod";
 import { stringToDate } from "~/utils/common";
 
-export const createEmployee = async (payload: ICreateEmployeePayload): Promise<IEmployee | null> => {
+export const createUser = async (payload: ICreateUserPayload): Promise<IUser | null> => {
     try {
-        const newEmployee: IEmployee = await employeeRepository.createEmployee({
+        const newUser: IUser = await userRepository.createUser({
             ...payload,
             date_of_birth: stringToDate(payload.date_of_birth),
         });
 
-        return newEmployee;
+        return newUser;
     } catch (error) {
         return null;
     }
 };
 
-export const createEmployeeWithAccount = async (
-    payload: ICreateEmployeeWithAccountPayload,
-): Promise<{ employee: IEmployee; account: IAccount } | null> => {
+export const createUserWithAccount = async (
+    payload: ICreateUserWithAccountPayload,
+): Promise<{ user: IUser; account: IAccount } | null> => {
     try {
         await pool.query("BEGIN");
 
@@ -44,19 +44,19 @@ export const createEmployeeWithAccount = async (
             return null;
         }
 
-        const newEmployee: IEmployee = await employeeRepository.createEmployee({
-            ...payload.employee,
-            date_of_birth: stringToDate(payload.employee.date_of_birth),
+        const newUser: IUser = await userRepository.createUser({
+            ...payload.user,
+            date_of_birth: stringToDate(payload.user.date_of_birth),
             account_id: newAccount.id,
         });
-        if (!newEmployee) {
+        if (!newUser) {
             await pool.query("ROLLBACK");
             return null;
         }
 
         await pool.query("COMMIT");
 
-        return { employee: newEmployee, account: newAccount };
+        return { user: newUser, account: newAccount };
     } catch (error) {
         await pool.query("ROLLBACK");
         return null;

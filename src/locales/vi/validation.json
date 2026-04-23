@@ -9,7 +9,7 @@
             "required": "Mật khẩu là bắt buộc"
         }
     },
-    "employee": {
+    "user": {
         "full_name": {
             "invalid": "Họ tên phải có ít nhất 2 từ",
             "required": "Họ tên là bắt buộc"

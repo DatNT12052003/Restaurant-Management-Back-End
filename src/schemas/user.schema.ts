@@ -1,23 +1,23 @@
 import { z } from "zod";
 
-export const createEmployeeSchema = z.object({
+export const createUserSchema = z.object({
     body: z.object({
         full_name: z
             .string()
-            .min(1, { message: "validation:employee.full_name.required" })
+            .min(1, { message: "validation:user.full_name.required" })
             .refine(
                 (val) => {
                     const words = val.trim().split(/\s+/);
                     return words.length >= 2;
                 },
                 {
-                    message: "validation:employee.full_name.invalid",
+                    message: "validation:user.full_name.invalid",
                 },
             ),
     }),
 });
 
-export const createEmployeeWithAccountSchema = z.object({
+export const createUserWithAccountSchema = z.object({
     body: z.object({
         account: z.object({
             username: z
@@ -29,21 +29,21 @@ export const createEmployeeWithAccountSchema = z.object({
                 .min(1, { message: "validation:account.password.required" })
                 .min(6, { message: "validation:account.password.invalid" }),
         }),
-        employee: z.object({
+        user: z.object({
             full_name: z
                 .string()
-                .min(1, { message: "validation:employee.full_name.required" })
+                .min(1, { message: "validation:user.full_name.required" })
                 .refine(
                     (val) => {
                         const words = val.trim().split(/\s+/);
                         return words.length >= 2;
                     },
                     {
-                        message: "validation:employee.full_name.invalid",
+                        message: "validation:user.full_name.invalid",
                     },
                 ),
         }),
     }),
 });
 
-export type CreateEmployeeWithAccountInput = z.infer<typeof createEmployeeWithAccountSchema>["body"];
+export type CreateUserWithAccountInput = z.infer<typeof createUserWithAccountSchema>["body"];

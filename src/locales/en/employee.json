@@ -1,7 +1,0 @@
-{
-    "FULL_NAME_REQUIRED": "Full name is required.",
-    "ERROR_CREATING_EMPLOYEE": "Failed to create employee.",
-    "EMPLOYEE_CREATED_SUCCESSFULLY": "Employee created successfully.",
-    "ERROR_CREATING_EMPLOYEE_WITH_ACCOUNT": "Failed to create employee with account.",
-    "EMPLOYEE_WITH_ACCOUNT_CREATED_SUCCESSFULLY": "Employee with account created successfully."
-}

@@ -1,2 +1,3 @@
 export * as accountController from "./account.controller";
-export * as employeeController from "./employee.controller";
+export * as userController from "./user.controller";
+export * as authController from "./auth.controller";

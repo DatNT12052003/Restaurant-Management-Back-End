@@ -1,4 +1,4 @@
 {
-    "SUCCESS": "Thành công",
-    "ERROR": "Lỗi"
+    "success": "Thành công",
+    "error": "Lỗi"
 }

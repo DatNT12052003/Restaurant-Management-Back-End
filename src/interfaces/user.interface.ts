@@ -1,7 +1,7 @@
-import { EmployeeStatusEnum, GenderEnum } from "../common/enum";
+import { UserStatusEnum, GenderEnum } from "../common/enum";
 import { ICreateAccountPayload } from "./account.interface";
 
-export interface IEmployee {
+export interface IUser {
     id: number;
     full_name: string;
     date_of_birth: Date | null;
@@ -10,20 +10,20 @@ export interface IEmployee {
     email: string | null;
     phone_number: string | null;
     avatar_url: string | null;
-    status: EmployeeStatusEnum;
+    status: UserStatusEnum;
     account_id?: number | null;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
 }
 
-export interface ICreateEmployeePayload extends Partial<
-    Omit<IEmployee, "id" | "date_of_birth" | "created_at" | "updated_at" | "deleted_at">
+export interface ICreateUserPayload extends Partial<
+    Omit<IUser, "id" | "date_of_birth" | "created_at" | "updated_at" | "deleted_at">
 > {
     date_of_birth?: string | null;
 }
 
-export interface ICreateEmployeeWithAccountPayload {
-    employee: ICreateEmployeePayload;
+export interface ICreateUserWithAccountPayload {
+    user: ICreateUserPayload;
     account: ICreateAccountPayload;
 }

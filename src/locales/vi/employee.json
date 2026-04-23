@@ -1,7 +1,0 @@
-{
-    "FULL_NAME_REQUIRED": "Họ tên là bắt buộc.",
-    "ERROR_CREATING_EMPLOYEE": "Tạo nhân viên thất bại.",
-    "EMPLOYEE_CREATED_SUCCESSFULLY": "Nhân viên đã được tạo thành công.",
-    "ERROR_CREATING_EMPLOYEE_WITH_ACCOUNT": "Tạo nhân viên với tài khoản thất bại.",
-    "EMPLOYEE_WITH_ACCOUNT_CREATED_SUCCESSFULLY": "Nhân viên với tài khoản đã được tạo thành công."
-}
