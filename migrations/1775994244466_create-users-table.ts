@@ -3,7 +3,7 @@ import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate";
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
-    pgm.createTable("employees", {
+    pgm.createTable("users", {
         id: "id",
         full_name: {
             type: "varchar(255)",
@@ -24,6 +24,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         },
         phone_number: {
             type: "varchar(20)",
+            unique: true,
         },
         avatar_url: {
             type: "text",
@@ -51,10 +52,10 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         },
     });
 
-    pgm.createIndex("employees", "account_id");
-    pgm.createIndex("employees", "email");
+    pgm.createIndex("users", "account_id");
+    pgm.createIndex("users", "email");
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
-    pgm.dropTable("employees");
+    pgm.dropTable("users");
 }

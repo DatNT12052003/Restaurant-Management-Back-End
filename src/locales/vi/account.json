@@ -1,0 +1,7 @@
+{
+    "username_password_required": "Tên đăng nhập và mật khẩu là bắt buộc.",
+    "error_creating_account": "Tạo tài khoản thất bại.",
+    "account_created_successfully": "Tài khoản đã được tạo thành công.",
+    "error_getting_accounts": "Lấy danh sách tài khoản thất bại.",
+    "get_accounts_successfully": "Danh sách tài khoản đã được lấy thành công."
+}

@@ -1,0 +1,7 @@
+{
+    "full_name_required": "Họ tên là bắt buộc.",
+    "error_creating_user": "Tạo người dùng thất bại.",
+    "user_created_successfully": "Người dùng đã được tạo thành công.",
+    "error_creating_user_with_account": "Tạo người dùng với tài khoản thất bại.",
+    "user_with_account_created_successfully": "Người dùng với tài khoản đã được tạo thành công."
+}

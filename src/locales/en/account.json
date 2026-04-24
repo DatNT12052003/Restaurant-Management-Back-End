@@ -1,0 +1,7 @@
+{
+    "username_password_required": "Username and password are required.",
+    "error_creating_account": "Failed to create account.",
+    "account_created_successfully": "Account created successfully.",
+    "error_getting_accounts": "Failed to retrieve account list.",
+    "get_accounts_successfully": "Account list retrieved successfully."
+}

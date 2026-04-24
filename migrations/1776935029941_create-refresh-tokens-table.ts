@@ -3,41 +3,36 @@ import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate";
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
-    pgm.createTable("guests", {
+    pgm.createTable("refresh_tokens", {
         id: "id",
 
-        full_name: {
-            type: "varchar(255)",
+        jti: {
+            type: "uuid",
             notNull: true,
-        },
-
-        gender: {
-            type: "varchar(10)",
-        },
-
-        phone_number: {
-            type: "varchar(20)",
-        },
-
-        email: {
-            type: "varchar(255)",
             unique: true,
         },
 
-        address: {
+        hash_token: {
             type: "text",
+            notNull: true,
         },
 
-        status: {
-            type: "varchar(20)",
+        expires_at: {
+            type: "timestamp",
             notNull: true,
-            default: "new",
+        },
+
+        revoked: {
+            type: "boolean",
+            notNull: true,
+            default: false,
         },
 
         account_id: {
             type: "integer",
+            notNull: true,
             references: "accounts",
-            onDelete: "SET NULL",
+            onDelete: "CASCADE",
         },
 
         created_at: {
@@ -55,11 +50,15 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         },
     });
 
-    pgm.createIndex("guests", "phone_number");
-    pgm.createIndex("guests", "email");
-    pgm.createIndex("guests", "account_id");
+    pgm.createIndex("refresh_tokens", "account_id");
+    pgm.createIndex("refresh_tokens", "expires_at");
+
+    pgm.createIndex("refresh_tokens", "hash_token", {
+        name: "refresh_tokens_active_hash_idx",
+        where: "revoked = false",
+    });
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
-    pgm.dropTable("guests");
+    pgm.dropTable("refresh_tokens");
 }

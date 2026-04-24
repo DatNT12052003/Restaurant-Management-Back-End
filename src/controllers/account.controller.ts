@@ -1,11 +1,56 @@
 import { Request, Response } from "express";
+import { PAGINATION } from "~/common/constant";
+import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
+import { createSuccessResponse, getSuccessResponse } from "~/common/responses/success";
+import { IAccount, ICreateAccountPayload, IGetAccounts, IGetQuery, ISelectQuery } from "~/interfaces";
+import { accountService } from "~/services";
 
-export const createAccount = (req: Request, res: Response) => {
-    res.send("Create account");
+export const createAccount = async (req: Request, res: Response) => {
+    try {
+        const { username, password }: ICreateAccountPayload = req.body;
+
+        if (!username || !password) {
+            return badRequestResponse(res, req.t("account:username_password_required"));
+        }
+
+        const newAccount: IAccount | null = await accountService.createAccount({ username, password });
+
+        if (!newAccount) {
+            return createErrorResponse(res, req.t("account:error_creating_account"));
+        }
+
+        return createSuccessResponse(res, req.t("account:account_created_successfully"), newAccount);
+    } catch (error) {
+        serverErrorResponse(res);
+    }
 };
 
-export const getAccount = (req: Request, res: Response) => {
-    res.send("Get account");
+export const getAccounts = async (req: Request, res: Response) => {
+    try {
+        const query: IGetQuery = req.query;
+        const currentPage = query.currentPage || PAGINATION.DEFAULT_PAGE;
+        const limit = query.limit || PAGINATION.DEFAULT_LIMIT;
+        const offset = (currentPage - 1) * limit;
+
+        const params: ISelectQuery = {
+            search: query.search,
+            filters: query.filters,
+            orderBy: query.orderBy,
+            limit,
+            offset,
+            returning: ["id", "username", "created_at", "updated_at", "deleted_at"],
+        };
+
+        const accounts: IGetAccounts | null = await accountService.getAccounts(params);
+
+        if (!accounts) {
+            return createErrorResponse(res, req.t("account:error_getting_accounts"));
+        }
+
+        return getSuccessResponse(res, req.t("account:get_accounts_successfully"), accounts);
+    } catch (error) {
+        serverErrorResponse(res);
+    }
 };
 
 export const updateAccount = (req: Request, res: Response) => {
