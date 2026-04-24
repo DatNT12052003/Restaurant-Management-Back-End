@@ -5,7 +5,7 @@ import { authenticationErrorResponse, authorizationErrorResponse } from "~/commo
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) return authenticationErrorResponse(res, "Authorization header missing");
+    if (!authHeader) return authenticationErrorResponse(res, req.t("common:authorization_header_missing"));
 
     const token = authHeader.split(" ")[1];
 
@@ -14,6 +14,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
         req.account = payload;
         next();
     } catch {
-        return authorizationErrorResponse(res, "Invalid or expired token");
+        return authorizationErrorResponse(res, req.t("common:invalid_or_expired_token"));
     }
 };

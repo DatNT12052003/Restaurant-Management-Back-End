@@ -1,17 +1,24 @@
 import { ICreateAccountPayload } from "./account.interface";
+import { IUser } from "./user.interface";
 
 export interface ILoginPayload extends ICreateAccountPayload {}
 
 export interface IAuth {
-    id: number;
+    account_id: number;
     username: string;
     access_token: string;
     refresh_token: string;
 }
 
-export interface IJwtPayload {
-    id: number;
+export interface IMe {
+    account_id: number;
     username: string;
-    roles?: string[];
-    permissions?: string[];
+    user: IUser;
+    roles: string[];
+    permissions: string[];
+}
+
+export interface IJwtPayload {
+    account_id: number;
+    username: string;
 }

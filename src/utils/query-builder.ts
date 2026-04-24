@@ -1,6 +1,6 @@
 import e from "express";
 import { OrderTypeEnum } from "~/common/enum";
-import { IQueryResult, ISelectQueryParams } from "~/interfaces";
+import { IQueryResult, ISelectQuery } from "~/interfaces";
 
 export const buildInsertQuery = (
     table: string,
@@ -35,50 +35,96 @@ export const buildInsertQuery = (
     return { query, values };
 };
 
-export const buildSelectQuery = (table: string, allowedFields: string[], params: ISelectQueryParams): IQueryResult => {
-    const {
-        searchText,
-        searchField,
-        filterField,
-        filterValue,
-        orderBy,
-        orderType,
-        offset,
-        limit,
-        returning = ["*"],
-    } = params;
-
-    const safeSearchField = searchField && allowedFields.includes(searchField) ? searchField : allowedFields[0];
-    const safeFilterField = filterField && allowedFields.includes(filterField) ? filterField : null;
-    const safeOrderBy = orderBy && allowedFields.includes(orderBy) ? orderBy : "id";
-    const safeOrderType = orderType === OrderTypeEnum.DESC ? "DESC" : "ASC";
+export const buildSelectAllQuery = (baseTable: string, allowedFields: string[], params: ISelectQuery): IQueryResult => {
+    const { search, filters = [], orderBy = [], offset, limit, joins = [], returning = ["*"] } = params;
 
     const values: any[] = [];
     const conditions: string[] = [];
 
-    if (searchText && safeSearchField) {
-        conditions.push(`${safeSearchField} ILIKE $${values.length + 1}`);
-        values.push(`%${searchText}%`);
+    const joinClause = joins.map((j) => `${j.type || "INNER"} JOIN ${j.table} ON ${j.on}`).join(" ");
+
+    if (search?.text && search.fields.length > 0) {
+        const searchConditions = search.fields
+            .filter((f) => allowedFields.includes(f))
+            .map((field) => {
+                values.push(`%${search.text}%`);
+                return `${field} ILIKE $${values.length}`;
+            });
+
+        if (searchConditions.length > 0) {
+            conditions.push(`(${searchConditions.join(" OR ")})`);
+        }
     }
 
-    if (safeFilterField && filterValue !== undefined && filterValue !== null) {
-        conditions.push(`${safeFilterField} = $${values.length + 1}`);
-        values.push(filterValue);
-    }
+    filters.forEach((f) => {
+        if (!allowedFields.includes(f.field)) return;
+
+        const operator = f.operator || "=";
+
+        if (operator === "IN" && Array.isArray(f.value)) {
+            const placeholders = f.value.map((v) => {
+                values.push(v);
+                return `$${values.length}`;
+            });
+            conditions.push(`${f.field} IN (${placeholders.join(", ")})`);
+        } else if (operator === "IS") {
+            conditions.push(`${f.field} IS ${f.value === null ? "NULL" : "NOT NULL"}`);
+        } else {
+            values.push(operator === "ILIKE" ? `%${f.value}%` : f.value);
+            conditions.push(`${f.field} ${operator} $${values.length}`);
+        }
+    });
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    const selectFields = [...returning, "count(*) OVER() AS total_count"].join(", ");
+    const orderClause =
+        orderBy.length > 0
+            ? orderBy
+                  .filter((o) => allowedFields.includes(o.field))
+                  .map((o) => `${o.field} ${o.direction === "DESC" ? "DESC" : "ASC"}`)
+                  .join(", ")
+            : "id ASC";
+
+    const selectFields = [...returning, "COUNT(*) OVER() AS total_count"].join(", ");
 
     const query = `
         SELECT ${selectFields}
-        FROM ${table}
+        FROM ${baseTable}
+        ${joinClause}
         ${whereClause}
-        ORDER BY ${safeOrderBy} ${safeOrderType}
-        LIMIT $${values.length + 1} OFFSET $${values.length + 2}
+        ORDER BY ${orderClause}
+        LIMIT $${values.length + 1}
+        OFFSET $${values.length + 2}
     `.trim();
 
     values.push(limit, offset);
+
+    return { query, values };
+};
+
+export const buildSelectByIdQuery = (table: string, id: string | number, returning: string[] = ["*"]): IQueryResult => {
+    const query = `
+        SELECT ${returning.join(", ")}
+        FROM ${table}
+        WHERE id = $1 AND deleted_at IS NULL
+    `;
+    const values = [id];
+
+    return { query, values };
+};
+
+export const buildSelectByFieldQuery = (
+    table: string,
+    field: string,
+    value: any,
+    returning: string[] = ["*"],
+): IQueryResult => {
+    const query = `
+        SELECT ${returning.join(", ")}
+        FROM ${table}
+        WHERE ${field} = $1 AND deleted_at IS NULL
+    `;
+    const values = [value];
 
     return { query, values };
 };

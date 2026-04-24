@@ -1,4 +1,6 @@
 {
     "success": "Thành công",
-    "error": "Lỗi"
+    "error": "Lỗi",
+    "authorization_header_missing": "Thiếu header Authorization.",
+    "invalid_or_expired_token": "Token không hợp lệ hoặc đã hết hạn."
 }

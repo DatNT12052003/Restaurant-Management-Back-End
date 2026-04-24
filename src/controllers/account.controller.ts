@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
 import { PAGINATION } from "~/common/constant";
-import { OrderTypeEnum } from "~/common/enum";
-import { HTTP_RESPONSE } from "~/common/http-response";
 import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { createSuccessResponse, getSuccessResponse } from "~/common/responses/success";
-import { IAccount, ICreateAccountPayload, IGetAccounts, IGetDataParams, IGetParams, IResponse } from "~/interfaces";
+import { IAccount, ICreateAccountPayload, IGetAccounts, IGetQuery, ISelectQuery } from "~/interfaces";
 import { accountService } from "~/services";
 
 export const createAccount = async (req: Request, res: Response) => {
@@ -29,27 +27,18 @@ export const createAccount = async (req: Request, res: Response) => {
 
 export const getAccounts = async (req: Request, res: Response) => {
     try {
-        const currentPage = parseInt(req.query.currentPage as string) || PAGINATION.DEFAULT_PAGE;
-        const limit = parseInt(req.query.limit as string) || PAGINATION.DEFAULT_LIMIT;
+        const query: IGetQuery = req.query;
+        const currentPage = query.currentPage || PAGINATION.DEFAULT_PAGE;
+        const limit = query.limit || PAGINATION.DEFAULT_LIMIT;
         const offset = (currentPage - 1) * limit;
-        const searchText = (req.query.searchText as string) || "";
-        const searchField = (req.query.searchField as string) || "username";
-        const filterField = (req.query.filterField as string) || "";
-        const filterValue = (req.query.filterValue as string) || "";
-        const orderBy = (req.query.orderBy as string) || "created_at";
-        const orderType = (
-            ((req.query.orderType as OrderTypeEnum) || "DESC").toUpperCase() === "ASC" ? "ASC" : "DESC"
-        ) as OrderTypeEnum;
 
-        const params: IGetDataParams = {
-            searchText,
-            searchField,
-            filterField,
-            filterValue,
-            orderBy,
-            orderType,
-            offset,
+        const params: ISelectQuery = {
+            search: query.search,
+            filters: query.filters,
+            orderBy: query.orderBy,
             limit,
+            offset,
+            returning: ["id", "username", "created_at", "updated_at", "deleted_at"],
         };
 
         const accounts: IGetAccounts | null = await accountService.getAccounts(params);

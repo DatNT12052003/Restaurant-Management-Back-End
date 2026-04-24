@@ -1,8 +1,8 @@
-import { ICreateAccount, IQueryResult } from "~/interfaces";
+import { IAccount, ICreateAccount, IQueryResult, ISelectQuery } from "~/interfaces";
 import { pool } from "../config/db";
-import { buildInsertQuery, buildSelectQuery } from "~/utils/query-builder";
+import { buildInsertQuery, buildSelectAllQuery } from "~/utils/query-builder";
 
-export const createAccount = async (account: ICreateAccount): Promise<any> => {
+export const createAccount = async (account: ICreateAccount): Promise<IAccount> => {
     const allowedFields = ["username", "hash_password"];
     const returning = ["id", "username", "created_at", "updated_at", "deleted_at"];
     const { query, values }: IQueryResult = buildInsertQuery("accounts", account, allowedFields, returning);
@@ -10,19 +10,19 @@ export const createAccount = async (account: ICreateAccount): Promise<any> => {
     return result.rows[0];
 };
 
-export const getAccounts = async (params: any) => {
+export const getAccounts = async (params: ISelectQuery): Promise<{ rows: IAccount[]; totalCount: number }> => {
     const allowedFields = ["username", "created_at", "updated_at", "deleted_at"];
-    const table = "accounts where deleted_at IS NULL";
-    const { query, values } = buildSelectQuery(table, allowedFields, params);
+    const baseTable = "accounts";
+
+    const { query, values } = buildSelectAllQuery(baseTable, allowedFields, params);
     const result = await pool.query(query, values);
-    const totalItems = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
-    const totalPages = Math.ceil(totalItems / params.limit);
+    const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
     const rows = result.rows.map(({ total_count, ...data }) => data);
 
-    return { rows, totalItems, totalPages };
+    return { rows, totalCount };
 };
 
-export const getAccountByUsername = async (username: string) => {
+export const getAccountByUsername = async (username: string): Promise<IAccount> => {
     const query = `SELECT * FROM accounts WHERE username = $1 AND deleted_at IS NULL`;
     const values = [username];
     const result = await pool.query(query, values);

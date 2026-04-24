@@ -1,4 +1,4 @@
-import { IAccount, ICreateAccount, ICreateAccountPayload, IGetAccounts, IGetDataParams, IResponse } from "~/interfaces";
+import { IAccount, ICreateAccount, ICreateAccountPayload, IGetAccounts, ISelectQuery } from "~/interfaces";
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "~/common/constant";
 import { accountRepository } from "~/repositories";
@@ -19,17 +19,18 @@ export const createAccount = async (payload: ICreateAccountPayload): Promise<IAc
     }
 };
 
-export const getAccounts = async (params: IGetDataParams): Promise<IGetAccounts | null> => {
+export const getAccounts = async (params: ISelectQuery): Promise<IGetAccounts | null> => {
     try {
         const result = await accountRepository.getAccounts(params);
+        const totalPages = Math.ceil(result.totalCount / params.limit!);
 
         const data: IGetAccounts = {
             accounts: getAccountsResource(result.rows),
             pagination: {
-                limit: params.limit,
-                currentPage: params.offset / params.limit + 1,
-                totalPages: result.totalPages,
-                totalItems: result.totalItems,
+                limit: params.limit!,
+                currentPage: params.offset! / params.limit! + 1,
+                totalPages,
+                totalItems: result.totalCount,
             },
         };
         return data;

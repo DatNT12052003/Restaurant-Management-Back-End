@@ -1,4 +1,5 @@
 import express from "express";
+import qs from "qs";
 import cors from "cors";
 import middleware from "i18next-http-middleware";
 
@@ -9,6 +10,13 @@ import { errorHandler, requestLogger } from "./middlewares";
 import { accountRouter, authRouter, userRouter } from "~/routes";
 
 const app = express();
+
+app.set("query parser", (str: string) =>
+    qs.parse(str, {
+        allowDots: true,
+        comma: true,
+    }),
+);
 
 app.use(middleware.handle(i18n));
 

@@ -1,4 +1,6 @@
 {
     "success": "Success",
-    "error": "Error"
+    "error": "Error",
+    "authorization_header_missing": "Authorization header missing.",
+    "invalid_or_expired_token": "Invalid or expired token."
 }

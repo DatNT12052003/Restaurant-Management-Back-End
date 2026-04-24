@@ -14,21 +14,6 @@ export interface IPagination {
     totalPages: number;
     totalItems: number;
 }
-
-export interface IGetParams {
-    searchText?: string;
-    searchField?: string;
-    filterField?: string;
-    filterValue?: string;
-    orderBy?: string;
-    orderType?: OrderTypeEnum;
-    currentPage?: number;
-    limit?: number;
-}
-
-export interface IGetDataParams extends Required<Omit<IGetParams, "currentPage">> {
-    offset: number;
-}
 export interface IQueryResult {
     query: string;
     values: any[];
@@ -43,5 +28,33 @@ export interface ISelectQueryParams {
     orderType?: OrderTypeEnum;
     offset: number;
     limit: number;
+    returning?: string[];
+}
+
+export interface IGetQuery {
+    search?: {
+        text: string;
+        fields: string[];
+    };
+    filters?: {
+        field: string;
+        operator?: "=" | "!=" | ">" | "<" | "ILIKE" | "IN" | "IS";
+        value: any;
+    }[];
+    orderBy?: {
+        field: string;
+        direction?: "ASC" | "DESC";
+    }[];
+    currentPage?: number;
+    limit?: number;
+    joins?: {
+        type?: "INNER" | "LEFT" | "RIGHT";
+        table: string;
+        on: string;
+    }[];
+}
+
+export interface ISelectQuery extends Omit<IGetQuery, "currentPage"> {
+    offset?: number;
     returning?: string[];
 }
