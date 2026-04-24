@@ -21,4 +21,5 @@ export interface IMe {
 export interface IJwtPayload {
     account_id: number;
     username: string;
+    jti?: string;
 }

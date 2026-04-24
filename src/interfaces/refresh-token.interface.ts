@@ -1,5 +1,6 @@
 export interface IRefreshToken {
     id: number;
+    jti: string;
     hash_token: string;
     expires_at: Date;
     revoked: boolean;

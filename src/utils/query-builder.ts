@@ -131,7 +131,7 @@ export const buildSelectByFieldQuery = (
 
 export const buildUpdateQuery = (
     table: string,
-    id: string | number,
+    where: { field: string; value: any },
     payload: Record<string, any>,
     allowedFields: string[],
     returning: string[] = ["*"],
@@ -151,13 +151,13 @@ export const buildUpdateQuery = (
         throw new Error("No valid fields to update");
     }
 
-    const idPlaceholder = `$${index++}`;
-    values.push(id);
+    const wherePlaceholder = `$${index++}`;
+    values.push(where.value);
 
     const query = `
         UPDATE ${table}
         SET ${setClauses.join(", ")}
-        WHERE id = ${idPlaceholder}
+        WHERE ${where.field} = ${wherePlaceholder}
         RETURNING ${returning.join(", ")}
     `.trim();
 

@@ -6,10 +6,15 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     pgm.createTable("refresh_tokens", {
         id: "id",
 
+        jti: {
+            type: "uuid",
+            notNull: true,
+            unique: true,
+        },
+
         hash_token: {
             type: "text",
             notNull: true,
-            unique: true,
         },
 
         expires_at: {

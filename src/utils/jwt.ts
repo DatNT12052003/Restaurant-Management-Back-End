@@ -12,8 +12,8 @@ export const signAccessToken = (payload: IJwtPayload) => {
     });
 };
 
-export const signRefreshToken = (user_id: number) => {
-    return jwt.sign({ user_id }, refreshSecret, {
+export const signRefreshToken = (payload: IJwtPayload) => {
+    return jwt.sign(payload, refreshSecret, {
         expiresIn: "7d",
     });
 };

@@ -53,7 +53,6 @@ export const createUserWithAccount = async (req: Request, res: Response) => {
 
         return createSuccessResponse(res, req.t("user:user_with_account_created_successfully"), newUserWithAccount);
     } catch (error) {
-        console.error("Error in createUserWithAccount:", error);
         serverErrorResponse(res);
     }
 };

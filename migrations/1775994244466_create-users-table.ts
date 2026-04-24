@@ -24,6 +24,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         },
         phone_number: {
             type: "varchar(20)",
+            unique: true,
         },
         avatar_url: {
             type: "text",

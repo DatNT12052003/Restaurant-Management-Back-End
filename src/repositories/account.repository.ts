@@ -22,6 +22,13 @@ export const getAccounts = async (params: ISelectQuery): Promise<{ rows: IAccoun
     return { rows, totalCount };
 };
 
+export const getAccountById = async (id: number): Promise<IAccount> => {
+    const query = `SELECT * FROM accounts WHERE id = $1 AND deleted_at IS NULL`;
+    const values = [id];
+    const result = await pool.query(query, values);
+    return result.rows[0];
+};
+
 export const getAccountByUsername = async (username: string): Promise<IAccount> => {
     const query = `SELECT * FROM accounts WHERE username = $1 AND deleted_at IS NULL`;
     const values = [username];
