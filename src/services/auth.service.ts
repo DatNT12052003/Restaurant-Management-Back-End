@@ -45,7 +45,6 @@ export const login = async (payload: ILoginPayload): Promise<IAuth | null> => {
         };
         return authData;
     } catch (error) {
-        console.error("Error in login:", error);
         return null;
     }
 };
@@ -132,7 +131,6 @@ export const logout = async (refresh_token: string): Promise<boolean> => {
         }
         return true;
     } catch (error) {
-        console.error("Error in logout:", error);
         return false;
     }
 };
@@ -142,7 +140,6 @@ export const logoutAll = async (account_id: number): Promise<boolean> => {
         await refreshTokenRepository.revokeAllRefreshTokensByAccountId(account_id);
         return true;
     } catch (error) {
-        console.error("Error in logoutAll:", error);
         return false;
     }
 };

@@ -62,3 +62,15 @@ export const createUserWithAccount = async (
         return null;
     }
 };
+
+export const getUserByAccountId = async (account_id: number): Promise<IUser | null> => {
+    try {
+        const user = await userRepository.getUserByAccountId(account_id);
+        if (!user) {
+            return null;
+        }
+        return user;
+    } catch (error) {
+        return null;
+    }
+};

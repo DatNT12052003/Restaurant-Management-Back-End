@@ -54,6 +54,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
 
     pgm.createIndex("users", "account_id");
     pgm.createIndex("users", "email");
+    pgm.createIndex("users", "phone_number");
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {

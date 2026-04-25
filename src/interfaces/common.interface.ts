@@ -58,3 +58,9 @@ export interface ISelectQuery extends Omit<IGetQuery, "currentPage"> {
     offset?: number;
     returning?: string[];
 }
+
+export interface ISendEmail {
+    to: string;
+    subject: string;
+    html: string;
+}

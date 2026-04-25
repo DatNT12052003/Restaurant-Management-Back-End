@@ -11,5 +11,7 @@ router.get("/me", authMiddleware, authController.getMe);
 router.post("/refresh", authController.refreshToken);
 router.post("/logout", authController.logout);
 router.post("/logout-all", authMiddleware, authController.logoutAll);
+router.post("/otp/send", authController.sendOtp);
+router.post("/otp/verify", authController.verifyOtp);
 
 export default router;

@@ -7,3 +7,4 @@ export * from "./user-role.interface";
 export * from "./user-permission.interface";
 export * from "./auth.interface";
 export * from "./refresh-token.interface";
+export * from "./otp.interface";

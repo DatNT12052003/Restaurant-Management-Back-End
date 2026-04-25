@@ -129,6 +129,27 @@ export const buildSelectByFieldQuery = (
     return { query, values };
 };
 
+export const buildFindOneQuery = (
+    table: string,
+    conditions: { field: string; value: unknown }[],
+    returning: string[] = ["*"],
+): IQueryResult => {
+    const whereClauses = conditions.map((c, index) => `${c.field} = $${index + 1}`);
+
+    const where = conditions.length > 0 ? `${whereClauses.join(" AND ")} AND deleted_at IS NULL` : "deleted_at IS NULL";
+
+    const query = `
+    SELECT ${returning.join(", ")}
+    FROM ${table}
+    WHERE ${where}
+    LIMIT 1
+  `;
+
+    const values = conditions.map((c) => c.value);
+
+    return { query, values };
+};
+
 export const buildUpdateQuery = (
     table: string,
     where: { field: string; value: any },

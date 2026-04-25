@@ -1,3 +1,4 @@
+import e from "express";
 import { z } from "zod";
 
 export const createUserSchema = z.object({
@@ -40,6 +41,19 @@ export const createUserWithAccountSchema = z.object({
                     },
                     {
                         message: "validation:user.full_name.invalid",
+                    },
+                ),
+            email: z
+                .string()
+                .optional()
+                .nullable()
+                .refine(
+                    (val) => {
+                        if (!val) return true;
+                        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+                    },
+                    {
+                        message: "validation:user.email.invalid",
                     },
                 ),
         }),

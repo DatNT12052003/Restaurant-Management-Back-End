@@ -38,3 +38,15 @@ export const getAccounts = async (params: ISelectQuery): Promise<IGetAccounts | 
         return null;
     }
 };
+
+export const getAccountByUsername = async (username: string): Promise<IAccount | null> => {
+    try {
+        const account = await accountRepository.getAccountByUsername(username);
+        if (!account) {
+            return null;
+        }
+        return account;
+    } catch (error) {
+        return null;
+    }
+};
