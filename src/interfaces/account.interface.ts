@@ -21,6 +21,12 @@ export interface IGetAccounts {
     pagination: IPagination;
 }
 
-export interface IUpdatePasswordPayload extends ICreateAccountPayload {}
+export interface IUpdatePasswordBody {
+    reset_password_token: string;
+    new_password: string;
+    confirm_password: string;
+}
 
-// export interface IUpdatePassword extends ICreateAccount {}
+export interface IUpdatePasswordPayload {
+    hash_password: string;
+}

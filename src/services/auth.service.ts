@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { IAuth, IJwtPayload, ILoginBody, IMe } from "~/interfaces";
+import { IAuth, IJwtAccountPayload, ILoginBody, IMe, IUpdatePasswordBody, IUpdatePasswordPayload } from "~/interfaces";
 import {
     accountRepository,
     permissionRepository,
@@ -7,7 +7,7 @@ import {
     roleRepository,
     userRepository,
 } from "~/repositories";
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from "~/utils/jwt";
+import { signAccessToken, signRefreshToken, verifyRefreshToken, verifyResetPasswordToken } from "~/utils/jwt";
 import { v4 as uuidv4 } from "uuid";
 import { SALT_ROUNDS } from "~/common/constant";
 
@@ -48,7 +48,7 @@ export const login = async (body: ILoginBody): Promise<IAuth | null> => {
     }
 };
 
-export const getMe = async (payload: IJwtPayload): Promise<IMe | null> => {
+export const getMe = async (payload: IJwtAccountPayload): Promise<IMe | null> => {
     try {
         const user = await userRepository.getUserByAccountId(payload.account_id);
         if (!user) {
@@ -143,21 +143,27 @@ export const logoutAll = async (account_id: number): Promise<boolean> => {
     }
 };
 
-// export const resetPassword = async (payload: IUpdatePasswordPayload): Promise<boolean> => {
-//     try {
-//         const newHashPassword = bcrypt.hashSync(payload.password, SALT_ROUNDS);
-//         const updateData: IUpdatePassword = {
-//             username: payload.username,
-//             hash_password: newHashPassword,
-//         };
-//         await accountRepository.updateAccountPassword(updateData);
-//         const account = await accountRepository.getAccountByUsername(payload.username);
-//         if (!account) {
-//             return false;
-//         }
-//         await refreshTokenRepository.revokeAllRefreshTokensByAccountId(account.id);
-//         return true;
-//     } catch (error) {
-//         return false;
-//     }
-// };
+export const resetPassword = async (body: IUpdatePasswordBody): Promise<boolean> => {
+    try {
+        const account = verifyResetPasswordToken(body.reset_password_token);
+
+        if (!account || !account.account_id) {
+            return false;
+        }
+        if (body.new_password !== body.confirm_password) {
+            return false;
+        }
+
+        const newHashPassword = bcrypt.hashSync(body.new_password, SALT_ROUNDS);
+        const payload: IUpdatePasswordPayload = {
+            hash_password: newHashPassword,
+        };
+
+        await accountRepository.updateAccountPassword({ payload, id: account.account_id });
+
+        await refreshTokenRepository.revokeAllRefreshTokensByAccountId(account.account_id);
+        return true;
+    } catch (error) {
+        return false;
+    }
+};

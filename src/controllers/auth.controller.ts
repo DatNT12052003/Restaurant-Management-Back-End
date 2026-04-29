@@ -2,9 +2,10 @@ import { Request, Response } from "express";
 import { use } from "i18next";
 import { badRequestResponse, serverErrorResponse } from "~/common/responses/error";
 import { getSuccessResponse, loginSuccessResponse, successResponse } from "~/common/responses/success";
-import { ICreateOTPBody, IJwtPayload, ILoginBody, IUser } from "~/interfaces";
+import { ICreateOTPBody, IJwtAccountPayload, ILoginBody, IUpdatePasswordBody, IUser } from "~/interfaces";
 import { accountService, authService, mailService, otpService, userService } from "~/services";
 import { generateOTP } from "~/utils/common";
+import { signResetPasswordToken } from "~/utils/jwt";
 
 export const login = async (req: Request, res: Response) => {
     try {
@@ -31,7 +32,7 @@ export const getMe = async (req: Request, res: Response) => {
         if (!account_id || !username) {
             return badRequestResponse(res, req.t("auth:invalid_token"));
         }
-        const payload: IJwtPayload = { account_id, username };
+        const payload: IJwtAccountPayload = { account_id, username };
         const meData = await authService.getMe(payload);
         if (!meData) {
             return badRequestResponse(res, req.t("auth:user_not_found"));
@@ -140,8 +141,32 @@ export const verifyOtp = async (req: Request, res: Response) => {
         if (!isCodeValid) {
             return badRequestResponse(res, req.t("auth:invalid_or_expired_otp"));
         }
-        await otpService.markOTPAsUsed(otpRecord.id);
-        return successResponse(res, req.t("auth:otp_verified_successfully"));
+        const markAsUsedResult = await otpService.markOTPAsUsed(otpRecord.id);
+        if (!markAsUsedResult) {
+            return badRequestResponse(res, req.t("auth:error_marking_otp_as_used"));
+        }
+
+        const resetPasswordToken = signResetPasswordToken({ account_id });
+
+        return successResponse(res, req.t("auth:otp_verified_successfully"), {
+            reset_password_token: resetPasswordToken,
+        });
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const body: IUpdatePasswordBody = req.body;
+        if (!body.reset_password_token || !body.new_password || !body.confirm_password) {
+            return badRequestResponse(res, req.t("auth:reset_password_token_new_password_confirm_password_required"));
+        }
+        const result = await authService.resetPassword(body);
+        if (!result) {
+            return badRequestResponse(res, req.t("auth:invalid_or_expired_reset_password_token"));
+        }
+        return successResponse(res, req.t("auth:password_reset_successfully"));
     } catch (error) {
         return serverErrorResponse(res);
     }

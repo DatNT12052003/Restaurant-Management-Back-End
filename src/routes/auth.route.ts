@@ -13,5 +13,6 @@ router.post("/logout", authController.logout);
 router.post("/logout-all", authMiddleware, authController.logoutAll);
 router.post("/otp/send", authController.sendOtp);
 router.post("/otp/verify", authController.verifyOtp);
+router.post("/reset-password", authController.resetPassword);
 
 export default router;

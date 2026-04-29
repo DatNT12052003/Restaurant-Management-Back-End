@@ -18,8 +18,12 @@ export interface IMe {
     permissions: string[];
 }
 
-export interface IJwtPayload {
+export interface IJwtAccountPayload {
     account_id: number;
     username: string;
     jti?: string;
+}
+
+export interface IJwtResetPasswordPayload {
+    account_id: number;
 }

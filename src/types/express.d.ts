@@ -1,10 +1,11 @@
 import { JwtPayload } from "jsonwebtoken";
-import { IJwtPayload } from "~/interfaces";
+import { IJwtAccountPayload, IJwtResetPasswordPayload } from "~/interfaces";
 
 declare global {
     namespace Express {
         interface Request {
-            account?: JwtPayload & IJwtPayload;
+            account?: JwtPayload & IJwtAccountPayload;
+            reset_password_token?: JwtPayload & IJwtResetPasswordPayload;
         }
     }
 }
