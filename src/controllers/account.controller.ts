@@ -2,12 +2,19 @@ import { Request, Response } from "express";
 import { PAGINATION } from "~/common/constant";
 import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { createSuccessResponse, getSuccessResponse } from "~/common/responses/success";
-import { IAccount, ICreateAccountPayload, IGetAccounts, IGetQuery, ISelectQuery } from "~/interfaces";
+import {
+    IAccount,
+    ICreateAccountBody,
+    ICreateAccountPayload,
+    IGetAccounts,
+    IGetQuery,
+    ISelectQuery,
+} from "~/interfaces";
 import { accountService } from "~/services";
 
 export const createAccount = async (req: Request, res: Response) => {
     try {
-        const { username, password }: ICreateAccountPayload = req.body;
+        const { username, password }: ICreateAccountBody = req.body;
 
         if (!username || !password) {
             return badRequestResponse(res, req.t("account:username_password_required"));

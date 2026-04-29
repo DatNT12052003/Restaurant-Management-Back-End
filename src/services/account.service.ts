@@ -1,17 +1,17 @@
-import { IAccount, ICreateAccount, ICreateAccountPayload, IGetAccounts, ISelectQuery } from "~/interfaces";
+import { IAccount, ICreateAccountBody, ICreateAccountPayload, IGetAccounts, ISelectQuery } from "~/interfaces";
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "~/common/constant";
 import { accountRepository } from "~/repositories";
 import { getAccountsResource } from "~/resources";
 
-export const createAccount = async (payload: ICreateAccountPayload): Promise<IAccount | null> => {
+export const createAccount = async (body: ICreateAccountBody): Promise<IAccount | null> => {
     try {
-        const accountData: ICreateAccount = {
-            username: payload.username,
-            hash_password: bcrypt.hashSync(payload.password, SALT_ROUNDS),
+        const payload: ICreateAccountPayload = {
+            username: body.username,
+            hash_password: bcrypt.hashSync(body.password, SALT_ROUNDS),
         };
 
-        const newAccount = await accountRepository.createAccount(accountData);
+        const newAccount = await accountRepository.createAccount(payload);
 
         return newAccount;
     } catch (error) {
@@ -34,6 +34,18 @@ export const getAccounts = async (params: ISelectQuery): Promise<IGetAccounts | 
             },
         };
         return data;
+    } catch (error) {
+        return null;
+    }
+};
+
+export const getAccountById = async (id: number): Promise<IAccount | null> => {
+    try {
+        const account = await accountRepository.getAccountById(id);
+        if (!account) {
+            return null;
+        }
+        return account;
     } catch (error) {
         return null;
     }

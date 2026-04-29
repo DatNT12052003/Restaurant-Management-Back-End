@@ -1,8 +1,8 @@
 import { pool } from "~/config/db";
-import { IQueryResult, IUser } from "~/interfaces";
-import { buildInsertQuery, buildSelectByFieldQuery, buildSelectByIdQuery } from "~/utils/query-builder";
+import { ICreateUserPayload, IQueryResult, IUser } from "~/interfaces";
+import { buildInsertQuery, buildSelectByFieldQuery } from "~/utils/query-builder";
 
-export const createUser = async (payload: any): Promise<IUser> => {
+export const createUser = async (payload: ICreateUserPayload): Promise<IUser> => {
     const allowedFields = [
         "full_name",
         "date_of_birth",

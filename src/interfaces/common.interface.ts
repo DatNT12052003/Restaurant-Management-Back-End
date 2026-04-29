@@ -1,4 +1,4 @@
-import { OrderTypeEnum } from "~/common/enum";
+import { FilterOperatorEnum, JoinTypeEnum, OrderTypeEnum } from "~/common/enum";
 
 export interface IResponse<T> {
     success: boolean;
@@ -14,21 +14,13 @@ export interface IPagination {
     totalPages: number;
     totalItems: number;
 }
+
+export interface IServiceResponse<T> {
+    data: T | null;
+}
 export interface IQueryResult {
     query: string;
     values: any[];
-}
-
-export interface ISelectQueryParams {
-    searchText?: string;
-    searchField?: string;
-    filterField?: string;
-    filterValue?: any;
-    orderBy?: string;
-    orderType?: OrderTypeEnum;
-    offset: number;
-    limit: number;
-    returning?: string[];
 }
 
 export interface IGetQuery {
@@ -38,23 +30,23 @@ export interface IGetQuery {
     };
     filters?: {
         field: string;
-        operator?: "=" | "!=" | ">" | "<" | "ILIKE" | "IN" | "IS";
+        operator?: FilterOperatorEnum;
         value: any;
     }[];
     orderBy?: {
         field: string;
-        direction?: "ASC" | "DESC";
+        direction?: OrderTypeEnum;
     }[];
     currentPage?: number;
     limit?: number;
-    joins?: {
-        type?: "INNER" | "LEFT" | "RIGHT";
-        table: string;
-        on: string;
-    }[];
 }
 
 export interface ISelectQuery extends Omit<IGetQuery, "currentPage"> {
+    joins?: {
+        type?: JoinTypeEnum;
+        table: string;
+        on: string;
+    }[];
     offset?: number;
     returning?: string[];
 }

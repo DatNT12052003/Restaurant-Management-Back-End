@@ -1,14 +1,24 @@
-import { IAccount, ICreateAccount, IQueryResult, ISelectQuery } from "~/interfaces";
+import { IAccount, ICreateAccountPayload, IQueryResult, ISelectQuery } from "~/interfaces";
 import { pool } from "../config/db";
 import { buildInsertQuery, buildSelectAllQuery } from "~/utils/query-builder";
 
-export const createAccount = async (account: ICreateAccount): Promise<IAccount> => {
+export const createAccount = async (payload: ICreateAccountPayload): Promise<IAccount> => {
     const allowedFields = ["username", "hash_password"];
     const returning = ["id", "username", "created_at", "updated_at", "deleted_at"];
-    const { query, values }: IQueryResult = buildInsertQuery("accounts", account, allowedFields, returning);
+    const { query, values }: IQueryResult = buildInsertQuery("accounts", payload, allowedFields, returning);
     const result = await pool.query(query, values);
     return result.rows[0];
 };
+
+// export const updateAccountPassword = async (updateAccount: IUpdatePassword): Promise<void> => {
+//     const query = `
+//         UPDATE accounts
+//         SET hash_password = $1, updated_at = NOW()
+//         WHERE username = $2 AND deleted_at IS NULL
+//     `;
+//     const values = [updateAccount.hash_password, updateAccount.username];
+//     await pool.query(query, values);
+// };
 
 export const getAccounts = async (params: ISelectQuery): Promise<{ rows: IAccount[]; totalCount: number }> => {
     const allowedFields = ["username", "created_at", "updated_at", "deleted_at"];

@@ -1,6 +1,5 @@
-import { ILoginPayload } from "~/interfaces";
 import bcrypt from "bcrypt";
-import { IAuth, IJwtPayload, IMe } from "~/interfaces/auth.interface";
+import { IAuth, IJwtPayload, ILoginBody, IMe } from "~/interfaces";
 import {
     accountRepository,
     permissionRepository,
@@ -9,17 +8,17 @@ import {
     userRepository,
 } from "~/repositories";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "~/utils/jwt";
-import { createRefreshToken } from "~/repositories/refresh-token.repository";
 import { v4 as uuidv4 } from "uuid";
+import { SALT_ROUNDS } from "~/common/constant";
 
-export const login = async (payload: ILoginPayload): Promise<IAuth | null> => {
+export const login = async (body: ILoginBody): Promise<IAuth | null> => {
     try {
-        const account = await accountRepository.getAccountByUsername(payload.username);
+        const account = await accountRepository.getAccountByUsername(body.username);
         if (!account) {
             return null;
         }
 
-        const isPasswordValid = bcrypt.compareSync(payload.password, account.hash_password);
+        const isPasswordValid = bcrypt.compareSync(body.password, account.hash_password);
         if (!isPasswordValid) {
             return null;
         }
@@ -30,7 +29,7 @@ export const login = async (payload: ILoginPayload): Promise<IAuth | null> => {
 
         const hashRefreshToken = bcrypt.hashSync(refreshToken, 10);
 
-        await createRefreshToken({
+        await refreshTokenRepository.createRefreshToken({
             jti,
             hash_token: hashRefreshToken,
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -101,7 +100,7 @@ export const refreshToken = async (refreshToken: string): Promise<IAuth | null> 
         const hashRefreshToken = bcrypt.hashSync(newRefreshToken, 10);
 
         await refreshTokenRepository.revokeRefreshToken(storedToken.id);
-        await createRefreshToken({
+        await refreshTokenRepository.createRefreshToken({
             jti,
             hash_token: hashRefreshToken,
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -143,3 +142,22 @@ export const logoutAll = async (account_id: number): Promise<boolean> => {
         return false;
     }
 };
+
+// export const resetPassword = async (payload: IUpdatePasswordPayload): Promise<boolean> => {
+//     try {
+//         const newHashPassword = bcrypt.hashSync(payload.password, SALT_ROUNDS);
+//         const updateData: IUpdatePassword = {
+//             username: payload.username,
+//             hash_password: newHashPassword,
+//         };
+//         await accountRepository.updateAccountPassword(updateData);
+//         const account = await accountRepository.getAccountByUsername(payload.username);
+//         if (!account) {
+//             return false;
+//         }
+//         await refreshTokenRepository.revokeAllRefreshTokensByAccountId(account.id);
+//         return true;
+//     } catch (error) {
+//         return false;
+//     }
+// };

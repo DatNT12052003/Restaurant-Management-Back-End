@@ -2,13 +2,13 @@ import { Request, Response } from "express";
 import { use } from "i18next";
 import { badRequestResponse, serverErrorResponse } from "~/common/responses/error";
 import { getSuccessResponse, loginSuccessResponse, successResponse } from "~/common/responses/success";
-import { IJwtPayload, ILoginPayload, IUser } from "~/interfaces";
+import { ICreateOTPBody, IJwtPayload, ILoginBody, IUser } from "~/interfaces";
 import { accountService, authService, mailService, otpService, userService } from "~/services";
 import { generateOTP } from "~/utils/common";
 
 export const login = async (req: Request, res: Response) => {
     try {
-        const body: ILoginPayload = req.body;
+        const body: ILoginBody = req.body;
         if (!body.username || !body.password) {
             return badRequestResponse(res, req.t("auth:username_password_required"));
         }
@@ -92,21 +92,18 @@ export const logoutAll = async (req: Request, res: Response) => {
 
 export const sendOtp = async (req: Request, res: Response) => {
     try {
-        const { username, type } = req.body;
-        const account = await accountService.getAccountByUsername(username);
-        if (!account) {
-            return badRequestResponse(res, req.t("auth:account_not_found"));
+        const { account_id, type } = req.body;
+        const otp = generateOTP();
+        const expires_at = new Date(Date.now() + 60 * 1000);
+        if (!account_id || !type || !expires_at) {
+            return badRequestResponse(res, req.t("auth:account_id_type_expires_at_required"));
         }
-        const user: IUser | null = await userService.getUserByAccountId(account?.id);
+        const createOtpBody: ICreateOTPBody = { code: otp, type, expires_at, account_id };
+
+        const user = await userService.getUserByAccountId(account_id);
         if (!user) {
             return badRequestResponse(res, req.t("auth:user_not_found"));
         }
-        const otp = generateOTP();
-        const expires_at = new Date(Date.now() + 60 * 1000);
-        if (!username || !account || !type || !expires_at) {
-            return badRequestResponse(res, req.t("auth:username_type_expires_at_required"));
-        }
-        const createOtpPayload = { code: otp, type, expires_at, account_id: account.id };
 
         if (!user.email) {
             return badRequestResponse(res, req.t("auth:user_email_not_found"));
@@ -121,7 +118,7 @@ export const sendOtp = async (req: Request, res: Response) => {
             return badRequestResponse(res, req.t("auth:error_sending_otp_email"));
         }
 
-        const saveOtpResult = await otpService.createOTP(createOtpPayload);
+        const saveOtpResult = await otpService.createOTP(createOtpBody);
         if (!saveOtpResult) {
             return badRequestResponse(res, req.t("auth:error_saving_otp"));
         }
@@ -134,12 +131,8 @@ export const sendOtp = async (req: Request, res: Response) => {
 
 export const verifyOtp = async (req: Request, res: Response) => {
     try {
-        const { username, code, type } = req.body;
-        const account = await accountService.getAccountByUsername(username);
-        if (!account) {
-            return badRequestResponse(res, req.t("auth:account_not_found"));
-        }
-        const otpRecord = await otpService.getActiveOTP({ account_id: account.id, type });
+        const { account_id, code, type } = req.body;
+        const otpRecord = await otpService.getActiveOTP({ account_id, type });
         if (!otpRecord) {
             return badRequestResponse(res, req.t("auth:invalid_or_expired_otp"));
         }

@@ -7,6 +7,6 @@ export interface IRole {
     deleted_at?: Date | null;
 }
 
-export interface ICreateRolePayload extends Omit<IRole, "id" | "created_at" | "updated_at" | "deleted_at"> {}
+export interface ICreateRoleBody extends Pick<IRole, "name" | "type_name"> {}
 
-export interface IUpdateRolePayload extends Partial<Omit<IRole, "id" | "created_at" | "updated_at" | "deleted_at">> {}
+export interface ICreateRolePayload extends Omit<IRole, "id" | "created_at" | "updated_at" | "deleted_at"> {}

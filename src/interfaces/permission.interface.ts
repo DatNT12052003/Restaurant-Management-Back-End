@@ -7,11 +7,4 @@ export interface IPermission {
     deleted_at?: Date | null;
 }
 
-export interface ICreatePermissionPayload extends Omit<
-    IPermission,
-    "id" | "created_at" | "updated_at" | "deleted_at"
-> {}
-
-export interface IUpdatePermissionPayload extends Partial<
-    Omit<IPermission, "id" | "created_at" | "updated_at" | "deleted_at">
-> {}
+export interface ICreatePermissionBody extends Pick<IPermission, "name" | "type_name"> {}

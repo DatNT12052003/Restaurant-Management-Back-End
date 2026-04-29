@@ -10,7 +10,9 @@ export interface IRefreshToken {
     deleted_at?: Date | null;
 }
 
-export interface ICreateRefreshTokenPayload extends Omit<
+export interface ICreateRefreshTokenBody extends Omit<
     IRefreshToken,
     "id" | "revoked" | "created_at" | "updated_at" | "deleted_at"
 > {}
+
+export interface ICreateRefreshTokenPayload extends ICreateRefreshTokenBody {}

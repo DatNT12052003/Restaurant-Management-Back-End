@@ -1,7 +1,7 @@
-import { ICreateAccountPayload } from "./account.interface";
+import { ICreateAccountBody } from "./account.interface";
 import { IUser } from "./user.interface";
 
-export interface ILoginPayload extends ICreateAccountPayload {}
+export interface ILoginBody extends ICreateAccountBody {}
 
 export interface IAuth {
     account_id: number;

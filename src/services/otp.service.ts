@@ -1,16 +1,15 @@
-import { ICreateOtp } from "~/interfaces";
+import { ICreateOTPBody, ICreateOtpPayload, IGetActiveOtp, IOtp } from "~/interfaces";
 import bcrypt from "bcrypt";
-import { ICreateOTPPayload, IGetActiveOtp, IOtp } from "~/interfaces/otp.interface";
 import { otpRepository } from "~/repositories";
 
-export const createOTP = async (payload: ICreateOTPPayload): Promise<IOtp | null> => {
+export const createOTP = async (body: ICreateOTPBody): Promise<IOtp | null> => {
     try {
-        const hash_code = bcrypt.hashSync(payload.code, 10);
-        const otpData: ICreateOtp = {
+        const hash_code = bcrypt.hashSync(body.code, 10);
+        const otpData: ICreateOtpPayload = {
             hash_code,
-            type: payload.type,
-            expires_at: payload.expires_at,
-            account_id: payload.account_id,
+            type: body.type,
+            expires_at: body.expires_at,
+            account_id: body.account_id,
         };
         const newOtp = await otpRepository.createOtp(otpData);
         return newOtp;

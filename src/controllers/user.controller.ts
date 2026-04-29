@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { createSuccessResponse } from "~/common/responses/success";
-import { IAccount, ICreateUserPayload, ICreateUserWithAccountPayload, IUser, IResponse } from "~/interfaces";
+import { IAccount, IUser, IResponse, ICreateUserBody, ICreateUserWithAccountBody } from "~/interfaces";
 import { userService } from "~/services";
 import { uploadToCloudinary } from "~/utils/cloudinary";
 
 export const createUser = async (req: Request, res: Response) => {
     try {
-        const body: ICreateUserPayload = req.body;
+        const body: ICreateUserBody = req.body;
 
         if (!body.full_name) {
             return badRequestResponse(res, req.t("user:full_name_required"));
@@ -31,7 +31,7 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const createUserWithAccount = async (req: Request, res: Response) => {
     try {
-        const body: ICreateUserWithAccountPayload = req.body;
+        const body: ICreateUserWithAccountBody = req.body;
 
         if (!body.user.full_name) {
             return badRequestResponse(res, req.t("user:full_name_required"));
@@ -47,7 +47,7 @@ export const createUserWithAccount = async (req: Request, res: Response) => {
         const newUserWithAccount: { user: IUser; account: IAccount } | null =
             await userService.createUserWithAccount(body);
 
-        if (!newUserWithAccount) {
+        if (!newUserWithAccount?.user || !newUserWithAccount?.account) {
             return createErrorResponse(res, req.t("user:error_creating_user_with_account"));
         }
 

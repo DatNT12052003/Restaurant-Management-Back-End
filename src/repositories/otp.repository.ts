@@ -1,8 +1,8 @@
 import { pool } from "~/config/db";
-import { ICreateOtp, IGetActiveOtp, IOtp } from "~/interfaces";
+import { ICreateOtpPayload, IGetActiveOtp, IOtp } from "~/interfaces";
 import { buildInsertQuery } from "~/utils/query-builder";
 
-export const createOtp = async (data: ICreateOtp): Promise<IOtp> => {
+export const createOtp = async (data: ICreateOtpPayload): Promise<IOtp> => {
     const allowedFields = ["hash_code", "type", "expires_at", "account_id"];
     const returning = ["*"];
     const { query, values } = buildInsertQuery("otps", data, allowedFields, returning);
