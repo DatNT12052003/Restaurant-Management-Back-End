@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { IJwtAccountPayload, IJwtResetPasswordPayload } from "~/interfaces";
+import { IJwtAccountPayload } from "~/interfaces";
 
 const { ACCESS_SECRET, REFRESH_SECRET, RESET_PASSWORD_SECRET } = process.env;
 
@@ -19,7 +19,7 @@ export const signRefreshToken = (payload: IJwtAccountPayload) => {
     });
 };
 
-export const signResetPasswordToken = (payload: IJwtResetPasswordPayload) => {
+export const signResetPasswordToken = (payload: IJwtAccountPayload) => {
     return jwt.sign(payload, resetPasswordSecret, {
         expiresIn: "5m",
     });
@@ -29,5 +29,4 @@ export const verifyAccessToken = (token: string) => jwt.verify(token, accessSecr
 
 export const verifyRefreshToken = (token: string) => jwt.verify(token, refreshSecret) as IJwtAccountPayload;
 
-export const verifyResetPasswordToken = (token: string) =>
-    jwt.verify(token, resetPasswordSecret) as IJwtResetPasswordPayload;
+export const verifyResetPasswordToken = (token: string) => jwt.verify(token, resetPasswordSecret) as IJwtAccountPayload;

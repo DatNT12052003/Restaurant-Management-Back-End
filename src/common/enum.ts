@@ -6,6 +6,12 @@ export enum OTPTypeEnum {
     TWO_FA = "TWO_FA",
 }
 
+export enum TokenTypeEnum {
+    ACCESS = "ACCESS",
+    REFRESH = "REFRESH",
+    RESET_PASSWORD = "RESET_PASSWORD",
+}
+
 export enum FilterOperatorEnum {
     EQUAL = "=",
     NOT_EQUAL = "!=",
@@ -28,17 +34,17 @@ export enum JoinTypeEnum {
 }
 
 export enum GenderEnum {
-    MALE = "male",
-    FEMALE = "female",
-    OTHER = "other",
+    MALE = "MALE",
+    FEMALE = "FEMALE",
+    OTHER = "OTHER",
 }
 
 export enum UserStatusEnum {
-    ACTIVE = "active",
-    INACTIVE = "inactive",
+    ACTIVE = "ACTIVE",
+    INACTIVE = "INACTIVE",
 }
 
 export enum GuestStatusEnum {
-    NEW = "new",
-    REGULAR = "regular",
+    NEW = "NEW",
+    REGULAR = "REGULAR",
 }

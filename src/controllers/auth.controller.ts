@@ -3,7 +3,7 @@ import { use } from "i18next";
 import { badRequestResponse, serverErrorResponse } from "~/common/responses/error";
 import { getSuccessResponse, loginSuccessResponse, successResponse } from "~/common/responses/success";
 import { ICreateOTPBody, IJwtAccountPayload, ILoginBody, IUpdatePasswordBody, IUser } from "~/interfaces";
-import { accountService, authService, mailService, otpService, userService } from "~/services";
+import { accountService, authService, mailService, otpService, tokenService, userService } from "~/services";
 import { generateOTP } from "~/utils/common";
 import { signResetPasswordToken } from "~/utils/jwt";
 
@@ -146,7 +146,10 @@ export const verifyOtp = async (req: Request, res: Response) => {
             return badRequestResponse(res, req.t("auth:error_marking_otp_as_used"));
         }
 
-        const resetPasswordToken = signResetPasswordToken({ account_id });
+        const resetPasswordToken = await tokenService.createResetPasswordToken({ account_id });
+        if (!resetPasswordToken) {
+            return badRequestResponse(res, req.t("auth:error_creating_reset_password_token"));
+        }
 
         return successResponse(res, req.t("auth:otp_verified_successfully"), {
             reset_password_token: resetPasswordToken,

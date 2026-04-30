@@ -3,13 +3,14 @@ import { IAuth, IJwtAccountPayload, ILoginBody, IMe, IUpdatePasswordBody, IUpdat
 import {
     accountRepository,
     permissionRepository,
-    refreshTokenRepository,
+    tokenRepository,
     roleRepository,
     userRepository,
 } from "~/repositories";
 import { signAccessToken, signRefreshToken, verifyRefreshToken, verifyResetPasswordToken } from "~/utils/jwt";
 import { v4 as uuidv4 } from "uuid";
 import { SALT_ROUNDS } from "~/common/constant";
+import { TokenTypeEnum } from "~/common/enum";
 
 export const login = async (body: ILoginBody): Promise<IAuth | null> => {
     try {
@@ -29,10 +30,11 @@ export const login = async (body: ILoginBody): Promise<IAuth | null> => {
 
         const hashRefreshToken = bcrypt.hashSync(refreshToken, 10);
 
-        await refreshTokenRepository.createRefreshToken({
+        await tokenRepository.createToken({
             jti,
             hash_token: hashRefreshToken,
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            type: TokenTypeEnum.REFRESH,
             account_id: account.id,
         });
 
@@ -78,7 +80,7 @@ export const refreshToken = async (refreshToken: string): Promise<IAuth | null> 
             return null;
         }
 
-        const storedToken = await refreshTokenRepository.getRefreshTokenByJti(payload.jti);
+        const storedToken = await tokenRepository.getTokenByJti(payload.jti);
 
         if (!storedToken) {
             return null;
@@ -99,11 +101,12 @@ export const refreshToken = async (refreshToken: string): Promise<IAuth | null> 
 
         const hashRefreshToken = bcrypt.hashSync(newRefreshToken, 10);
 
-        await refreshTokenRepository.revokeRefreshToken(storedToken.id);
-        await refreshTokenRepository.createRefreshToken({
+        await tokenRepository.revokeToken(storedToken.id);
+        await tokenRepository.createToken({
             jti,
             hash_token: hashRefreshToken,
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            type: TokenTypeEnum.REFRESH,
             account_id: account.id,
         });
 
@@ -123,9 +126,9 @@ export const logout = async (refresh_token: string): Promise<boolean> => {
     try {
         const payload = verifyRefreshToken(refresh_token);
         if (payload && payload.jti) {
-            const storedToken = await refreshTokenRepository.getRefreshTokenByJti(payload.jti);
+            const storedToken = await tokenRepository.getTokenByJti(payload.jti);
             if (storedToken) {
-                await refreshTokenRepository.revokeRefreshToken(storedToken.id);
+                await tokenRepository.revokeToken(storedToken.id);
             }
         }
         return true;
@@ -136,7 +139,7 @@ export const logout = async (refresh_token: string): Promise<boolean> => {
 
 export const logoutAll = async (account_id: number): Promise<boolean> => {
     try {
-        await refreshTokenRepository.revokeAllRefreshTokensByAccountId(account_id);
+        await tokenRepository.revokeAllRefreshTokensByAccountId(account_id);
         return true;
     } catch (error) {
         return false;
@@ -147,9 +150,18 @@ export const resetPassword = async (body: IUpdatePasswordBody): Promise<boolean>
     try {
         const account = verifyResetPasswordToken(body.reset_password_token);
 
-        if (!account || !account.account_id) {
+        if (!account || !account.account_id || !account.username || !account.jti) {
             return false;
         }
+        const storedToken = await tokenRepository.getTokenByJti(account.jti);
+        if (!storedToken) {
+            return false;
+        }
+        const isTokenValid = bcrypt.compareSync(body.reset_password_token, storedToken.hash_token);
+        if (!isTokenValid || storedToken.revoked || storedToken.expires_at < new Date()) {
+            return false;
+        }
+
         if (body.new_password !== body.confirm_password) {
             return false;
         }
@@ -161,7 +173,7 @@ export const resetPassword = async (body: IUpdatePasswordBody): Promise<boolean>
 
         await accountRepository.updateAccountPassword({ payload, id: account.account_id });
 
-        await refreshTokenRepository.revokeAllRefreshTokensByAccountId(account.account_id);
+        await tokenRepository.revokeAllTokensByAccountId(account.account_id);
         return true;
     } catch (error) {
         return false;

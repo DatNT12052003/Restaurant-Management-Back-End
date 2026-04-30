@@ -32,7 +32,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         status: {
             type: "varchar(20)",
             notNull: true,
-            default: "active",
+            default: "ACTIVE",
         },
         account_id: {
             type: "integer",

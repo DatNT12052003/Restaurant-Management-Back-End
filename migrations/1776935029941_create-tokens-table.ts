@@ -3,7 +3,7 @@ import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate";
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
-    pgm.createTable("refresh_tokens", {
+    pgm.createTable("tokens", {
         id: "id",
 
         jti: {
@@ -28,6 +28,12 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
             default: false,
         },
 
+        type: {
+            type: "varchar(255)",
+            notNull: true,
+            default: "REFRESH",
+        },
+
         account_id: {
             type: "integer",
             notNull: true,
@@ -50,15 +56,15 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         },
     });
 
-    pgm.createIndex("refresh_tokens", "account_id");
-    pgm.createIndex("refresh_tokens", "expires_at");
+    pgm.createIndex("tokens", "account_id");
+    pgm.createIndex("tokens", "expires_at");
 
-    pgm.createIndex("refresh_tokens", "hash_token", {
-        name: "refresh_tokens_active_hash_idx",
+    pgm.createIndex("tokens", "hash_token", {
+        name: "tokens_active_hash_idx",
         where: "revoked = false",
     });
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
-    pgm.dropTable("refresh_tokens");
+    pgm.dropTable("tokens");
 }
