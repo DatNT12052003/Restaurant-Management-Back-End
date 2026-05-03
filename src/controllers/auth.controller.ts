@@ -1,11 +1,9 @@
 import { Request, Response } from "express";
-import { use } from "i18next";
 import { badRequestResponse, serverErrorResponse } from "~/common/responses/error";
 import { getSuccessResponse, loginSuccessResponse, successResponse } from "~/common/responses/success";
 import { ICreateOTPBody, IJwtAccountPayload, ILoginBody, IUpdatePasswordBody, IUser } from "~/interfaces";
-import { accountService, authService, mailService, otpService, tokenService, userService } from "~/services";
+import { authService, mailService, otpService, tokenService, userService } from "~/services";
 import { generateOTP } from "~/utils/common";
-import { signResetPasswordToken } from "~/utils/jwt";
 
 export const login = async (req: Request, res: Response) => {
     try {
