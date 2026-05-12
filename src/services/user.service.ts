@@ -88,3 +88,15 @@ export const getUserByAccountId = async (account_id: number): Promise<IUser | nu
         return null;
     }
 };
+
+export const getUserByEmail = async (email: string): Promise<IUser | null> => {
+    try {
+        const user = await userRepository.getUserByEmail(email);
+        if (!user) {
+            return null;
+        }
+        return user;
+    } catch (error) {
+        return null;
+    }
+};

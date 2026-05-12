@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { badRequestResponse, serverErrorResponse } from "~/common/responses/error";
 import { getSuccessResponse, loginSuccessResponse, successResponse } from "~/common/responses/success";
 import { ICreateOTPBody, IJwtAccountPayload, ILoginBody, IUpdatePasswordBody, IUser } from "~/interfaces";
+import { getMeResource } from "~/resources";
 import { authService, mailService, otpService, tokenService, userService } from "~/services";
 import { generateOTP } from "~/utils/common";
 
@@ -17,6 +18,24 @@ export const login = async (req: Request, res: Response) => {
         if (!authData) {
             return badRequestResponse(res, req.t("auth:invalid_username_or_password"));
         }
+
+        const platform = req.headers["x-platform"];
+
+        if (platform === "web") {
+            res.cookie("refresh_token", authData.refresh_token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+
+            return loginSuccessResponse(res, req.t("auth:login_successfully"), {
+                account_id: authData.account_id,
+                username: authData.username,
+                access_token: authData.access_token,
+            });
+        }
+
         return loginSuccessResponse(res, req.t("auth:login_successfully"), authData);
     } catch (error) {
         return serverErrorResponse(res);
@@ -35,7 +54,7 @@ export const getMe = async (req: Request, res: Response) => {
         if (!meData) {
             return badRequestResponse(res, req.t("auth:user_not_found"));
         }
-        return getSuccessResponse(res, req.t("auth:get_me_successfully"), meData);
+        return getSuccessResponse(res, req.t("auth:get_me_successfully"), getMeResource(meData));
     } catch (error) {
         return serverErrorResponse(res);
     }
@@ -51,6 +70,22 @@ export const refreshToken = async (req: Request, res: Response) => {
         if (!authData) {
             return badRequestResponse(res, req.t("auth:invalid_refresh_token"));
         }
+        const platform = req.headers["x-platform"];
+
+        if (platform === "web") {
+            res.cookie("refresh_token", authData.refresh_token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+            return loginSuccessResponse(res, req.t("auth:refresh_token_successfully"), {
+                account_id: authData.account_id,
+                username: authData.username,
+                access_token: authData.access_token,
+            });
+        }
+
         return loginSuccessResponse(res, req.t("auth:refresh_token_successfully"), authData);
     } catch (error) {
         return serverErrorResponse(res);
@@ -67,6 +102,16 @@ export const logout = async (req: Request, res: Response) => {
         if (!result) {
             return badRequestResponse(res, req.t("auth:invalid_refresh_token"));
         }
+        const platform = req.headers["x-platform"];
+
+        if (platform === "web") {
+            res.clearCookie("refresh_token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+            });
+        }
+
         return getSuccessResponse(res, req.t("auth:logout_successfully"), null);
     } catch (error) {
         return serverErrorResponse(res);
@@ -83,23 +128,33 @@ export const logoutAll = async (req: Request, res: Response) => {
         if (!result) {
             return badRequestResponse(res, req.t("auth:error_logging_out"));
         }
+
+        const platform = req.headers["x-platform"];
+
+        if (platform === "web") {
+            res.clearCookie("refresh_token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+            });
+        }
+
         return getSuccessResponse(res, req.t("auth:logout_all_successfully"), null);
     } catch (error) {
         return serverErrorResponse(res);
     }
 };
 
-export const sendOtp = async (req: Request, res: Response) => {
+export const forgotPassword = async (req: Request, res: Response) => {
     try {
-        const { account_id, type } = req.body;
+        const { email, type } = req.body;
         const otp = generateOTP();
         const expires_at = new Date(Date.now() + 60 * 1000);
-        if (!account_id || !type || !expires_at) {
-            return badRequestResponse(res, req.t("auth:account_id_type_expires_at_required"));
+        if (!email || !type || !expires_at) {
+            return badRequestResponse(res, req.t("auth:email_type_expires_at_required"));
         }
-        const createOtpBody: ICreateOTPBody = { code: otp, type, expires_at, account_id };
 
-        const user = await userService.getUserByAccountId(account_id);
+        const user = await userService.getUserByEmail(email);
         if (!user) {
             return badRequestResponse(res, req.t("auth:user_not_found"));
         }
@@ -107,6 +162,12 @@ export const sendOtp = async (req: Request, res: Response) => {
         if (!user.email) {
             return badRequestResponse(res, req.t("auth:user_email_not_found"));
         }
+
+        if (!user.account_id) {
+            return badRequestResponse(res, req.t("auth:user_account_not_found"));
+        }
+
+        const createOtpBody: ICreateOTPBody = { code: otp, type, expires_at, account_id: user.account_id };
 
         const mailResult = await mailService.sendMail({
             to: user.email,
@@ -122,13 +183,13 @@ export const sendOtp = async (req: Request, res: Response) => {
             return badRequestResponse(res, req.t("auth:error_saving_otp"));
         }
 
-        return successResponse(res, req.t("auth:otp_sent_successfully"));
+        return successResponse(res, req.t("auth:otp_sent_successfully"), { account_id: user.account_id });
     } catch (error) {
         return serverErrorResponse(res);
     }
 };
 
-export const verifyOtp = async (req: Request, res: Response) => {
+export const confirmOtp = async (req: Request, res: Response) => {
     try {
         const { account_id, code, type } = req.body;
         const otpRecord = await otpService.getActiveOTP({ account_id, type });

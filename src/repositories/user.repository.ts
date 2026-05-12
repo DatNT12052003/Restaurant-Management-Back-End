@@ -25,3 +25,9 @@ export const getUserByAccountId = async (account_id: number): Promise<IUser> => 
     const result = await pool.query(query, values);
     return result.rows[0];
 };
+
+export const getUserByEmail = async (email: string): Promise<IUser> => {
+    const { query, values }: IQueryResult = buildSelectByFieldQuery("users", "email", email, ["*"]);
+    const result = await pool.query(query, values);
+    return result.rows[0];
+};

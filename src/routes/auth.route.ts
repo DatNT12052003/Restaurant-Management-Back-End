@@ -11,8 +11,8 @@ router.get("/me", authMiddleware, authController.getMe);
 router.post("/refresh", authController.refreshToken);
 router.post("/logout", authController.logout);
 router.post("/logout-all", authMiddleware, authController.logoutAll);
-router.post("/otp/send", authController.sendOtp);
-router.post("/otp/verify", authController.verifyOtp);
+router.post("/forgot-password", authController.forgotPassword);
+router.post("/confirm-otp", authController.confirmOtp);
 router.post("/reset-password", authController.resetPassword);
 
 export default router;
