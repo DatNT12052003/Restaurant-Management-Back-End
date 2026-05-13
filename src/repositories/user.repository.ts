@@ -1,8 +1,8 @@
 import { pool } from "~/config/db";
-import { IQueryResult, IUser } from "~/interfaces";
-import { buildInsertQuery, buildSelectByFieldQuery, buildSelectByIdQuery } from "~/utils/query-builder";
+import { ICreateUserPayload, IQueryResult, IUser } from "~/interfaces";
+import { buildInsertQuery, buildSelectByFieldQuery } from "~/utils/query-builder";
 
-export const createUser = async (payload: any): Promise<IUser> => {
+export const createUser = async (payload: ICreateUserPayload): Promise<IUser> => {
     const allowedFields = [
         "full_name",
         "date_of_birth",
@@ -22,6 +22,12 @@ export const createUser = async (payload: any): Promise<IUser> => {
 
 export const getUserByAccountId = async (account_id: number): Promise<IUser> => {
     const { query, values }: IQueryResult = buildSelectByFieldQuery("users", "account_id", account_id, ["*"]);
+    const result = await pool.query(query, values);
+    return result.rows[0];
+};
+
+export const getUserByEmail = async (email: string): Promise<IUser> => {
+    const { query, values }: IQueryResult = buildSelectByFieldQuery("users", "email", email, ["*"]);
     const result = await pool.query(query, values);
     return result.rows[0];
 };

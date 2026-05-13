@@ -9,14 +9,24 @@ export interface IAccount {
     deleted_at: Date | null;
 }
 
-export interface ICreateAccountPayload {
+export interface ICreateAccountBody {
     username: string;
     password: string;
 }
 
-export interface ICreateAccount extends Pick<IAccount, "username" | "hash_password"> {}
+export interface ICreateAccountPayload extends Pick<IAccount, "username" | "hash_password"> {}
 
 export interface IGetAccounts {
     accounts: Partial<IAccount>[];
     pagination: IPagination;
+}
+
+export interface IUpdatePasswordBody {
+    reset_password_token: string;
+    new_password: string;
+    confirm_password: string;
+}
+
+export interface IUpdatePasswordPayload {
+    hash_password: string;
 }

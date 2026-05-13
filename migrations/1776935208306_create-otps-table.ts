@@ -57,12 +57,6 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         name: "otps_active_idx",
         where: "is_used = false",
     });
-
-    pgm.createIndex("otps", ["account_id", "type"], {
-        name: "otps_unique_active_per_type",
-        unique: true,
-        where: "is_used = false",
-    });
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {

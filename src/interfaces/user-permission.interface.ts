@@ -7,11 +7,9 @@ export interface IUserPermission {
     deleted_at?: Date | null;
 }
 
-export interface ICreateUserPermissionPayload extends Omit<
+export interface ICreateUserPermissionBody extends Omit<
     IUserPermission,
     "id" | "created_at" | "updated_at" | "deleted_at"
 > {}
 
-export interface IUpdateUserPermissionPayload extends Partial<
-    Omit<IUserPermission, "id" | "created_at" | "updated_at" | "deleted_at">
-> {}
+export interface ICreateUserPermissionPayload extends ICreateUserPermissionBody {}

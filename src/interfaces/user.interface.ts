@@ -1,5 +1,5 @@
 import { UserStatusEnum, GenderEnum } from "../common/enum";
-import { ICreateAccountPayload } from "./account.interface";
+import { ICreateAccountBody, ICreateAccountPayload } from "./account.interface";
 
 export interface IUser {
     id: number;
@@ -11,19 +11,22 @@ export interface IUser {
     phone_number: string | null;
     avatar_url: string | null;
     status: UserStatusEnum;
-    account_id?: number | null;
+    account_id: number | null;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
 }
 
-export interface ICreateUserPayload extends Partial<
-    Omit<IUser, "id" | "date_of_birth" | "created_at" | "updated_at" | "deleted_at">
+export interface ICreateUserBody extends Omit<
+    IUser,
+    "id" | "status" | "date_of_birth" | "created_at" | "updated_at" | "deleted_at"
 > {
     date_of_birth?: string | null;
 }
 
-export interface ICreateUserWithAccountPayload {
-    user: ICreateUserPayload;
-    account: ICreateAccountPayload;
+export interface ICreateUserPayload extends Omit<IUser, "id" | "status" | "created_at" | "updated_at" | "deleted_at"> {}
+
+export interface ICreateUserWithAccountBody {
+    user: ICreateUserBody;
+    account: ICreateAccountBody;
 }
