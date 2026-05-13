@@ -10,7 +10,7 @@ import corsOptions from "~/config/cors";
 
 import { errorHandler, requestLogger } from "./middlewares";
 
-import { accountRouter, authRouter, userRouter } from "~/routes";
+import { accountRouter, authRouter, restaurantRouter, userRouter } from "~/routes";
 
 const app = express();
 
@@ -33,6 +33,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRouter);
 app.use("/api/accounts", accountRouter);
 app.use("/api/users", userRouter);
+app.use("/api/restaurants", restaurantRouter);
 
 app.use(errorHandler);
 

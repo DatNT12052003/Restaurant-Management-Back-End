@@ -8,3 +8,4 @@ export * from "./user-permission.interface";
 export * from "./auth.interface";
 export * from "./token.interface";
 export * from "./otp.interface";
+export * from "./restaurant.interface";
