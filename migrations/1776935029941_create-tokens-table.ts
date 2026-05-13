@@ -31,7 +31,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         type: {
             type: "varchar(255)",
             notNull: true,
-            default: "REFRESH",
+            default: "refresh",
         },
 
         account_id: {

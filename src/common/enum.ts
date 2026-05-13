@@ -1,15 +1,15 @@
 export enum OTPTypeEnum {
-    RESET_PASSWORD = "RESET_PASSWORD",
-    VERIFY_EMAIL = "VERIFY_EMAIL",
-    LOGIN = "LOGIN",
-    CHANGE_EMAIL = "CHANGE_EMAIL",
-    TWO_FA = "TWO_FA",
+    RESET_PASSWORD = "reset_password",
+    VERIFY_EMAIL = "verify_email",
+    LOGIN = "login",
+    CHANGE_EMAIL = "change_email",
+    TWO_FA = "two_fa",
 }
 
 export enum TokenTypeEnum {
-    ACCESS = "ACCESS",
-    REFRESH = "REFRESH",
-    RESET_PASSWORD = "RESET_PASSWORD",
+    ACCESS = "access",
+    REFRESH = "refresh",
+    RESET_PASSWORD = "reset_password",
 }
 
 export enum FilterOperatorEnum {
@@ -17,34 +17,39 @@ export enum FilterOperatorEnum {
     NOT_EQUAL = "!=",
     GREATER_THAN = ">",
     LESS_THAN = "<",
-    ILIKE = "ILIKE",
-    IN = "IN",
-    IS = "IS",
+    ILIKE = "ilike",
+    IN = "in",
+    IS = "is",
 }
 
 export enum OrderTypeEnum {
-    ASC = "ASC",
-    DESC = "DESC",
+    ASC = "asc",
+    DESC = "desc",
 }
 
 export enum JoinTypeEnum {
-    INNER = "INNER",
-    LEFT = "LEFT",
-    RIGHT = "RIGHT",
+    INNER = "inner",
+    LEFT = "left",
+    RIGHT = "right",
 }
 
 export enum GenderEnum {
-    MALE = "MALE",
-    FEMALE = "FEMALE",
-    OTHER = "OTHER",
+    MALE = "male",
+    FEMALE = "female",
+    OTHER = "other",
 }
 
 export enum UserStatusEnum {
-    ACTIVE = "ACTIVE",
-    INACTIVE = "INACTIVE",
+    ACTIVE = "active",
+    INACTIVE = "inactive",
+}
+
+export enum RestaurantStatusEnum {
+    BLOCKED = "blocked",
+    UNBLOCKED = "unblocked",
 }
 
 export enum GuestStatusEnum {
-    NEW = "NEW",
-    REGULAR = "REGULAR",
+    NEW = "new",
+    REGULAR = "regular",
 }
