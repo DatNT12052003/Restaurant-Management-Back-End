@@ -1,5 +1,6 @@
 import { UserStatusEnum, GenderEnum } from "../common/enum";
 import { ICreateAccountBody, ICreateAccountPayload } from "./account.interface";
+import { IPagination } from "./common.interface";
 
 export interface IUser {
     id: number;
@@ -12,9 +13,25 @@ export interface IUser {
     avatar_url: string | null;
     status: UserStatusEnum;
     account_id: number | null;
+    restaurant_id: number | null;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
+}
+
+export interface IUserWithAccount extends IUser {
+    username: string;
+}
+
+export interface IEmployee {
+    employee: IUser;
+    roles: string[];
+    permissions: string[];
+}
+
+export interface IGetEmployees {
+    employees: IEmployee[];
+    pagination: IPagination;
 }
 
 export interface ICreateUserBody extends Omit<

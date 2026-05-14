@@ -8,8 +8,12 @@ import {
     ICreateUserWithAccountBody,
     ICreateAccountPayload,
     ICreateUserPayload,
+    IUserWithAccount,
+    IGetEmployees,
+    IEmployee,
+    ISelectQuery,
 } from "~/interfaces";
-import { accountRepository, userRepository } from "~/repositories";
+import { accountRepository, permissionRepository, roleRepository, userRepository } from "~/repositories";
 import { pool } from "../config/db";
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "~/common/constant";
@@ -26,6 +30,7 @@ export const createUser = async (body: ICreateUserBody): Promise<IUser | null> =
             phone_number: body.phone_number || null,
             avatar_url: body.avatar_url || null,
             account_id: null,
+            restaurant_id: null,
         };
         const newUser: IUser = await userRepository.createUser(payload);
 
@@ -60,6 +65,7 @@ export const createUserWithAccount = async (
             phone_number: body.user.phone_number,
             avatar_url: body.user.avatar_url,
             account_id: newAccount.id,
+            restaurant_id: null,
         };
 
         const newUser: IUser = await userRepository.createUser(userPayload);
@@ -96,6 +102,48 @@ export const getUserByEmail = async (email: string): Promise<IUser | null> => {
             return null;
         }
         return user;
+    } catch (error) {
+        return null;
+    }
+};
+
+export const getEmployees = async (params: ISelectQuery): Promise<IGetEmployees | null> => {
+    try {
+        const result = await userRepository.getUsersWithAccountInfo(params);
+        let employees: IEmployee[] = [];
+        for (const user of result.rows) {
+            const employeeInfo = await getInfoEmployeeByUserId(user);
+            if (employeeInfo) {
+                employees.push(employeeInfo);
+            }
+        }
+        const totalCount = result.totalCount;
+        const totalPages = Math.ceil(totalCount / params.limit!);
+
+        return {
+            employees: employees,
+            pagination: {
+                limit: params.limit!,
+                currentPage: params.offset! / params.limit! + 1,
+                totalPages,
+                totalItems: totalCount,
+            },
+        };
+    } catch (error) {
+        return null;
+    }
+};
+
+//=========================
+const getInfoEmployeeByUserId = async (user: IUserWithAccount): Promise<IEmployee | null> => {
+    try {
+        const roles = await roleRepository.getRolesByUserId(user.id);
+        const permissions = await permissionRepository.getPermissionsByUserId(user.id);
+        return {
+            employee: user,
+            roles,
+            permissions,
+        };
     } catch (error) {
         return null;
     }

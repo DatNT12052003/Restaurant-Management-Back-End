@@ -1,7 +1,18 @@
 import { Request, Response } from "express";
+import { PAGINATION } from "~/common/constant";
 import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { createSuccessResponse } from "~/common/responses/success";
-import { IAccount, IUser, IResponse, ICreateUserBody, ICreateUserWithAccountBody } from "~/interfaces";
+import {
+    IAccount,
+    IUser,
+    IResponse,
+    ICreateUserBody,
+    ICreateUserWithAccountBody,
+    IUserWithAccount,
+    IGetQuery,
+    ISelectQuery,
+    IGetEmployees,
+} from "~/interfaces";
 import { userService } from "~/services";
 import { uploadToCloudinary } from "~/utils/cloudinary";
 
@@ -52,6 +63,33 @@ export const createUserWithAccount = async (req: Request, res: Response) => {
         }
 
         return createSuccessResponse(res, req.t("user:user_with_account_created_successfully"), newUserWithAccount);
+    } catch (error) {
+        serverErrorResponse(res);
+    }
+};
+
+export const getUsersWithAccountInfo = async (req: Request, res: Response) => {
+    try {
+        const query: IGetQuery = req.query;
+        console.log("🚀 ~ file: user.controller.ts:114 ~ getUsersWithAccountInfo ~ query:", query);
+        const currentPage = query.currentPage || PAGINATION.DEFAULT_PAGE;
+        const limit = query.limit || PAGINATION.DEFAULT_LIMIT;
+        const offset = (currentPage - 1) * limit;
+
+        const params: ISelectQuery = {
+            search: query.search,
+            filters: query.filters,
+            orderBy: query.orderBy,
+            limit,
+            offset,
+            returning: ["*"],
+        };
+        console.log("🚀 ~ file: user.controller.ts:122 ~ getUsersWithAccountInfo ~ params:", params);
+        const users: IGetEmployees | null = await userService.getEmployees(params);
+        if (!users) {
+            return createErrorResponse(res, req.t("user:error_fetching_users"));
+        }
+        return createSuccessResponse(res, req.t("user:users_fetched_successfully"), users);
     } catch (error) {
         serverErrorResponse(res);
     }

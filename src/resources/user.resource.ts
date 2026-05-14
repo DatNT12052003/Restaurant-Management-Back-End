@@ -12,5 +12,6 @@ export const getUserResource = (user: IUser) => {
         avatar_url: user.avatar_url,
         status: user.status,
         account_id: user.account_id,
+        restaurant_id: user.restaurant_id,
     };
 };

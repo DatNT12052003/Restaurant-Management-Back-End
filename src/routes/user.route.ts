@@ -13,5 +13,6 @@ router.post(
     validate(createUserWithAccountSchema),
     userController.createUserWithAccount,
 );
+router.get("/with-account-info", userController.getUsersWithAccountInfo);
 
 export default router;
