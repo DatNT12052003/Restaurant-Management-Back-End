@@ -1,9 +1,10 @@
+import { RestaurantStatusEnum } from "~/common/enum";
 import { IPagination } from "./common.interface";
 
 export interface IRestaurant {
     id: number;
     name: string;
-    status: string;
+    status: RestaurantStatusEnum;
     address: string;
     created_at: Date;
     updated_at: Date;
@@ -11,6 +12,6 @@ export interface IRestaurant {
 }
 
 export interface IGetRestaurants {
-    accounts: Partial<IRestaurant>[];
+    restaurants: Partial<IRestaurant>[];
     pagination: IPagination;
 }

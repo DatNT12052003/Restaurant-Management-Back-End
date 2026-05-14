@@ -1,5 +1,5 @@
 import { ISelectQuery } from "~/interfaces";
-import { IGetRestaurants } from "~/interfaces/restaurant.interface";
+import { IGetRestaurants, IRestaurant } from "~/interfaces/restaurant.interface";
 import { restaurantRepository } from "~/repositories";
 
 export const getRestaurants = async (params: ISelectQuery): Promise<IGetRestaurants | null> => {
@@ -8,7 +8,7 @@ export const getRestaurants = async (params: ISelectQuery): Promise<IGetRestaura
         const totalPages = Math.ceil(result.totalCount / params.limit!);
 
         const data: IGetRestaurants = {
-            accounts: result.rows,
+            restaurants: result.rows,
             pagination: {
                 limit: params.limit!,
                 currentPage: params.offset! / params.limit! + 1,
@@ -17,6 +17,15 @@ export const getRestaurants = async (params: ISelectQuery): Promise<IGetRestaura
             },
         };
         return data;
+    } catch (error) {
+        return null;
+    }
+};
+
+export const getAllRestaurants = async (): Promise<IRestaurant[] | null> => {
+    try {
+        const restaurants = await restaurantRepository.getAllRestaurants();
+        return restaurants;
     } catch (error) {
         return null;
     }
