@@ -120,7 +120,9 @@ export const getEmployeesByRestaurantId = async (
                 employees.push(employeeInfo);
             }
         }
-        const filteredEmployees = employees.filter((e) => e.employee.restaurant_id === restaurant_id);
+        const filteredEmployees = employees
+            .filter((e) => e.employee.restaurant_id === restaurant_id)
+            .filter((e) => !e.roles.includes("guest"));
         const totalCount = filteredEmployees.length;
         const totalPages = Math.ceil(totalCount / params.limit!);
 
