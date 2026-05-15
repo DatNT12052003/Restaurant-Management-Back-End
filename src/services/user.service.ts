@@ -107,7 +107,10 @@ export const getUserByEmail = async (email: string): Promise<IUser | null> => {
     }
 };
 
-export const getEmployees = async (params: ISelectQuery): Promise<IGetEmployees | null> => {
+export const getEmployeesByRestaurantId = async (
+    params: ISelectQuery,
+    restaurant_id: number,
+): Promise<IGetEmployees | null> => {
     try {
         const result = await userRepository.getUsersWithAccountInfo(params);
         let employees: IEmployee[] = [];
@@ -117,11 +120,12 @@ export const getEmployees = async (params: ISelectQuery): Promise<IGetEmployees 
                 employees.push(employeeInfo);
             }
         }
-        const totalCount = result.totalCount;
+        const filteredEmployees = employees.filter((e) => e.employee.restaurant_id === restaurant_id);
+        const totalCount = filteredEmployees.length;
         const totalPages = Math.ceil(totalCount / params.limit!);
 
         return {
-            employees: employees,
+            employees: filteredEmployees,
             pagination: {
                 limit: params.limit!,
                 currentPage: params.offset! / params.limit! + 1,

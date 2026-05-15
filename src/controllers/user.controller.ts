@@ -68,10 +68,10 @@ export const createUserWithAccount = async (req: Request, res: Response) => {
     }
 };
 
-export const getUsersWithAccountInfo = async (req: Request, res: Response) => {
+export const getEmployeesByRestaurantId = async (req: Request, res: Response) => {
     try {
+        const restaurant_id = Number(req.params.restaurant_id);
         const query: IGetQuery = req.query;
-        console.log("🚀 ~ file: user.controller.ts:114 ~ getUsersWithAccountInfo ~ query:", query);
         const currentPage = query.currentPage || PAGINATION.DEFAULT_PAGE;
         const limit = query.limit || PAGINATION.DEFAULT_LIMIT;
         const offset = (currentPage - 1) * limit;
@@ -82,10 +82,9 @@ export const getUsersWithAccountInfo = async (req: Request, res: Response) => {
             orderBy: query.orderBy,
             limit,
             offset,
-            returning: ["*"],
+            returning: ["u.*", "a.username"],
         };
-        console.log("🚀 ~ file: user.controller.ts:122 ~ getUsersWithAccountInfo ~ params:", params);
-        const users: IGetEmployees | null = await userService.getEmployees(params);
+        const users: IGetEmployees | null = await userService.getEmployeesByRestaurantId(params, restaurant_id);
         if (!users) {
             return createErrorResponse(res, req.t("user:error_fetching_users"));
         }

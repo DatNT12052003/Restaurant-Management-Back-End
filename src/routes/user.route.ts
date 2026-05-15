@@ -13,6 +13,6 @@ router.post(
     validate(createUserWithAccountSchema),
     userController.createUserWithAccount,
 );
-router.get("/with-account-info", userController.getUsersWithAccountInfo);
+router.get("/employees/:restaurant_id", userController.getEmployeesByRestaurantId);
 
 export default router;
