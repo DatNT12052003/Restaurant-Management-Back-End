@@ -51,3 +51,15 @@ export const getAccountByUsername = async (username: string): Promise<IAccount> 
     const result = await pool.query(query, values);
     return result.rows[0];
 };
+
+export const deleteAccount = async (id: number): Promise<IAccount> => {
+    const query = `
+        UPDATE accounts
+        SET deleted_at = NOW()
+        WHERE id = $1 AND deleted_at IS NULL
+        RETURNING *
+    `;
+    const values = [id];
+    const result = await pool.query(query, values);
+    return result.rows[0];
+};

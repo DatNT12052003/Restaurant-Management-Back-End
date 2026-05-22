@@ -30,7 +30,7 @@ export const getRestaurants = async (req: Request, res: Response) => {
 
         return getSuccessResponse(res, req.t("restaurant:get_restaurants_successfully"), restaurants);
     } catch (error) {
-        serverErrorResponse(res);
+        return serverErrorResponse(res);
     }
 };
 
@@ -46,6 +46,6 @@ export const getAllRestaurants = async (req: Request, res: Response) => {
             getRestaurantsResource(restaurants),
         );
     } catch (error) {
-        serverErrorResponse(res);
+        return serverErrorResponse(res);
     }
 };

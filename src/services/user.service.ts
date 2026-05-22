@@ -12,12 +12,15 @@ import {
     IGetEmployees,
     IEmployee,
     ISelectQuery,
+    IUpdateUserBody,
+    IUpdateUserPayload,
 } from "~/interfaces";
 import { accountRepository, permissionRepository, roleRepository, userRepository } from "~/repositories";
 import { pool } from "../config/db";
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "~/common/constant";
 import { stringToDate } from "~/utils/common";
+import { RolesEnum } from "~/common/enum";
 
 export const createUser = async (body: ICreateUserBody): Promise<IUser | null> => {
     try {
@@ -65,7 +68,7 @@ export const createUserWithAccount = async (
             phone_number: body.user.phone_number,
             avatar_url: body.user.avatar_url,
             account_id: newAccount.id,
-            restaurant_id: null,
+            restaurant_id: body.user.restaurant_id || null,
         };
 
         const newUser: IUser = await userRepository.createUser(userPayload);
@@ -122,7 +125,7 @@ export const getEmployeesByRestaurantId = async (
         }
         const filteredEmployees = employees
             .filter((e) => e.employee.restaurant_id === restaurant_id)
-            .filter((e) => !e.roles.includes("guest"));
+            .filter((e) => !e.roles.includes(RolesEnum.GUEST));
         const totalCount = filteredEmployees.length;
         const totalPages = Math.ceil(totalCount / params.limit!);
 
@@ -135,6 +138,47 @@ export const getEmployeesByRestaurantId = async (
                 totalItems: totalCount,
             },
         };
+    } catch (error) {
+        return null;
+    }
+};
+
+export const updateUser = async (body: IUpdateUserBody, id: number): Promise<IUser | null> => {
+    try {
+        const payload: IUpdateUserPayload = {
+            full_name: body.full_name,
+            date_of_birth: stringToDate(body.date_of_birth),
+            gender: body.gender,
+            address: body.address,
+            email: body.email,
+            phone_number: body.phone_number,
+            avatar_url: body.avatar_url,
+            status: body.status,
+            restaurant_id: body.restaurant_id,
+        };
+
+        const updatedUser = await userRepository.updateUser({ payload, id });
+        if (!updatedUser) {
+            return null;
+        }
+
+        return updatedUser;
+    } catch (error) {
+        return null;
+    }
+};
+
+export const deleteUser = async (id: number): Promise<IUser | null> => {
+    try {
+        const user = await userRepository.deleteUser(id);
+        if (!user) {
+            return null;
+        }
+        const account = await accountRepository.deleteAccount(user.account_id!);
+        if (!user || !account) {
+            return null;
+        }
+        return user;
     } catch (error) {
         return null;
     }

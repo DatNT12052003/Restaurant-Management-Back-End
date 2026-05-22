@@ -1,7 +1,19 @@
 import { JoinTypeEnum } from "~/common/enum";
 import { pool } from "~/config/db";
-import { ICreateUserPayload, IQueryResult, ISelectQuery, IUser, IUserWithAccount } from "~/interfaces";
-import { buildInsertQuery, buildSelectAllQuery, buildSelectByFieldQuery } from "~/utils/query-builder";
+import {
+    ICreateUserPayload,
+    IQueryResult,
+    ISelectQuery,
+    IUpdateUserPayload,
+    IUser,
+    IUserWithAccount,
+} from "~/interfaces";
+import {
+    buildInsertQuery,
+    buildSelectAllQuery,
+    buildSelectByFieldQuery,
+    buildUpdateQuery,
+} from "~/utils/query-builder";
 
 export const createUser = async (payload: ICreateUserPayload): Promise<IUser> => {
     const allowedFields = [
@@ -93,4 +105,38 @@ export const getUsersWithAccountInfo = async (
     const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
     const rows = result.rows.map(({ total_count, ...data }) => data);
     return { rows, totalCount };
+};
+
+export const updateUser = async ({ payload, id }: { payload: IUpdateUserPayload; id: number }): Promise<IUser> => {
+    const allowedFields = [
+        "full_name",
+        "date_of_birth",
+        "gender",
+        "address",
+        "email",
+        "phone_number",
+        "avatar_url",
+        "status",
+        "account_id",
+        "restaurant_id",
+    ];
+
+    const returning = ["*"];
+
+    const { query, values } = buildUpdateQuery("users", { field: "id", value: id }, payload, allowedFields, returning);
+    const result = await pool.query(query, values);
+    return result.rows[0];
+};
+
+export const deleteUser = async (id: number): Promise<IUser> => {
+    const query = `
+        UPDATE users
+        SET deleted_at = NOW()
+        WHERE id = $1 AND deleted_at IS NULL
+        RETURNING *
+    `;
+    const values = [id];
+    const result = await pool.query(query, values);
+    console.log("RESULT DELETE = ", result.rows[0]);
+    return result.rows[0];
 };

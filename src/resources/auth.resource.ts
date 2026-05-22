@@ -14,6 +14,7 @@ export const getMeResource = (me: IMe) => {
             phone_number: me.user.phone_number,
             avatar_url: me.user.avatar_url,
             status: me.user.status,
+            created_at: me.user.created_at,
             account_id: me.user.account_id,
             restaurant_id: me.user.restaurant_id,
         },

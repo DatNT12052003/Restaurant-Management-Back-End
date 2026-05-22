@@ -12,6 +12,7 @@ import {
     IGetQuery,
     ISelectQuery,
     IGetEmployees,
+    IUpdateUserBody,
 } from "~/interfaces";
 import { userService } from "~/services";
 import { uploadToCloudinary } from "~/utils/cloudinary";
@@ -36,7 +37,7 @@ export const createUser = async (req: Request, res: Response) => {
 
         return createSuccessResponse(res, req.t("user:user_created_successfully"), newUser);
     } catch (error) {
-        serverErrorResponse(res);
+        return serverErrorResponse(res);
     }
 };
 
@@ -64,7 +65,47 @@ export const createUserWithAccount = async (req: Request, res: Response) => {
 
         return createSuccessResponse(res, req.t("user:user_with_account_created_successfully"), newUserWithAccount);
     } catch (error) {
-        serverErrorResponse(res);
+        return serverErrorResponse(res);
+    }
+};
+
+export const updateUser = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const body: IUpdateUserBody = req.body;
+        if (req.file) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            body.avatar_url = result.secure_url;
+        } else {
+            body.avatar_url = null;
+        }
+        if (isNaN(id)) {
+            return badRequestResponse(res, req.t("user:invalid_user_id"));
+        }
+        const updatedUser: IUser | null = await userService.updateUser(body, id);
+        if (!updatedUser) {
+            return createErrorResponse(res, req.t("user:error_updating_user"));
+        }
+        return createSuccessResponse(res, req.t("user:user_updated_successfully"), updatedUser);
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) {
+            return badRequestResponse(res, req.t("user:invalid_user_id"));
+        }
+        console.log("ID = ", id);
+        const deletedUser: IUser | null = await userService.deleteUser(id);
+        if (!deletedUser) {
+            return createErrorResponse(res, req.t("user:error_deleting_user"));
+        }
+        return createSuccessResponse(res, req.t("user:user_deleted_successfully"), deletedUser);
+    } catch (error) {
+        return serverErrorResponse(res);
     }
 };
 
@@ -90,6 +131,6 @@ export const getEmployeesByRestaurantId = async (req: Request, res: Response) =>
         }
         return createSuccessResponse(res, req.t("user:users_fetched_successfully"), users);
     } catch (error) {
-        serverErrorResponse(res);
+        return serverErrorResponse(res);
     }
 };

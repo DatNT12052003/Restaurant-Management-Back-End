@@ -24,7 +24,7 @@ export interface IUserWithAccount extends IUser {
 }
 
 export interface IEmployee {
-    employee: IUser;
+    employee: IUserWithAccount;
     roles: string[];
     permissions: string[];
 }
@@ -46,4 +46,20 @@ export interface ICreateUserPayload extends Omit<IUser, "id" | "status" | "creat
 export interface ICreateUserWithAccountBody {
     user: ICreateUserBody;
     account: ICreateAccountBody;
+}
+
+export interface IUpdateUserBody {
+    full_name?: string;
+    date_of_birth?: string | null;
+    gender?: GenderEnum | null;
+    address?: string | null;
+    email?: string | null;
+    phone_number?: string | null;
+    avatar_url?: string | null;
+    status?: UserStatusEnum;
+    restaurant_id?: number | null;
+}
+
+export interface IUpdateUserPayload extends Omit<IUpdateUserBody, "date_of_birth"> {
+    date_of_birth?: Date | null;
 }

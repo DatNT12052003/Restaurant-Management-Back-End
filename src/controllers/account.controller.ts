@@ -28,7 +28,7 @@ export const createAccount = async (req: Request, res: Response) => {
 
         return createSuccessResponse(res, req.t("account:account_created_successfully"), newAccount);
     } catch (error) {
-        serverErrorResponse(res);
+        return serverErrorResponse(res);
     }
 };
 
@@ -56,7 +56,7 @@ export const getAccounts = async (req: Request, res: Response) => {
 
         return getSuccessResponse(res, req.t("account:get_accounts_successfully"), accounts);
     } catch (error) {
-        serverErrorResponse(res);
+        return serverErrorResponse(res);
     }
 };
 
