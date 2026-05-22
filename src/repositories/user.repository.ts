@@ -137,6 +137,5 @@ export const deleteUser = async (id: number): Promise<IUser> => {
     `;
     const values = [id];
     const result = await pool.query(query, values);
-    console.log("RESULT DELETE = ", result.rows[0]);
     return result.rows[0];
 };

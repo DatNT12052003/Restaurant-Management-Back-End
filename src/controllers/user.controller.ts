@@ -98,7 +98,6 @@ export const deleteUser = async (req: Request, res: Response) => {
         if (isNaN(id)) {
             return badRequestResponse(res, req.t("user:invalid_user_id"));
         }
-        console.log("ID = ", id);
         const deletedUser: IUser | null = await userService.deleteUser(id);
         if (!deletedUser) {
             return createErrorResponse(res, req.t("user:error_deleting_user"));
