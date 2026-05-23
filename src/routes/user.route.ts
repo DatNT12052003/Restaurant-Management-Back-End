@@ -1,6 +1,13 @@
 import { Router } from "express";
 import { userController } from "~/controllers";
-import { uploadAvatar, validate, validateCreate, validateUpdate, validateUpdateUser } from "~/middlewares";
+import {
+    authMiddleware,
+    checkPermission,
+    isSelfOrAdminOrManager,
+    uploadAvatar,
+    validate,
+    validateCreate,
+} from "~/middlewares";
 import { createUserSchema, createUserWithAccountSchema } from "~/schemas";
 
 const router = Router();
@@ -13,8 +20,21 @@ router.post(
     validate(createUserWithAccountSchema),
     userController.createUserWithAccount,
 );
-router.patch("/:id", uploadAvatar, userController.updateUser);
-router.patch("/delete/:id", userController.deleteUser);
+router.patch(
+    "/:id",
+    authMiddleware,
+    checkPermission("employee.update"),
+    isSelfOrAdminOrManager,
+    uploadAvatar,
+    userController.updateUser,
+);
+router.patch(
+    "/delete/:id",
+    authMiddleware,
+    checkPermission("employee.delete"),
+    isSelfOrAdminOrManager,
+    userController.deleteUser,
+);
 router.get("/employees/:restaurant_id", userController.getEmployeesByRestaurantId);
 
 export default router;
