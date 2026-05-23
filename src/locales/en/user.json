@@ -10,5 +10,7 @@
     "error_deleting_user": "Failed to delete user",
     "user_deleted_successfully": "User deleted successfully",
     "error_fetching_users": "Failed to fetch users",
-    "users_fetched_successfully": "Users fetched successfully"
+    "users_fetched_successfully": "Users fetched successfully",
+    "error_creating_employee": "Failed to create employee",
+    "employee_created_successfully": "Employee created successfully"
 }

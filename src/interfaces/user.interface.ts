@@ -34,6 +34,10 @@ export interface IGetEmployees {
     pagination: IPagination;
 }
 
+export interface ICreateEmployeeBody extends ICreateUserWithAccountBody {
+    roles: string[];
+}
+
 export interface ICreateUserBody extends Omit<
     IUser,
     "id" | "status" | "date_of_birth" | "created_at" | "updated_at" | "deleted_at"

@@ -14,8 +14,15 @@ import {
     ISelectQuery,
     IUpdateUserBody,
     IUpdateUserPayload,
+    ICreateEmployeeBody,
 } from "~/interfaces";
-import { accountRepository, permissionRepository, roleRepository, userRepository } from "~/repositories";
+import {
+    accountRepository,
+    permissionRepository,
+    roleRepository,
+    userRepository,
+    userRoleRepository,
+} from "~/repositories";
 import { pool } from "../config/db";
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "~/common/constant";
@@ -180,6 +187,40 @@ export const deleteUser = async (id: number): Promise<IUser | null> => {
         }
         return user;
     } catch (error) {
+        return null;
+    }
+};
+
+export const createEmployee = async (body: ICreateEmployeeBody): Promise<{ user: IUser; account: IAccount } | null> => {
+    const roles = await roleRepository.getAndCheckRoles(body.roles);
+    const roleIds = roles.map((r) => r.id);
+
+    try {
+        await pool.query("BEGIN");
+
+        const createUserWithAccountBody: ICreateUserWithAccountBody = {
+            user: body.user,
+            account: body.account,
+        };
+        const newUserWithAccount = await createUserWithAccount(createUserWithAccountBody);
+
+        if (!newUserWithAccount) {
+            return null;
+        }
+
+        const userId = newUserWithAccount.user.id;
+
+        const rolesAssigned = await userRoleRepository.assignRolesToUser(userId, roleIds);
+
+        if (!rolesAssigned) {
+            return null;
+        }
+
+        await pool.query("COMMIT");
+
+        return newUserWithAccount;
+    } catch (error) {
+        await pool.query("ROLLBACK");
         return null;
     }
 };

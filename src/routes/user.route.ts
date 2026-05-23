@@ -37,4 +37,14 @@ router.patch(
 );
 router.get("/employees/:restaurant_id", userController.getEmployeesByRestaurantId);
 
+router.post(
+    "/employee",
+    authMiddleware,
+    checkPermission("employee.create"),
+    isSelfOrAdminOrManager,
+    // validate(createUserWithAccountSchema),
+    uploadAvatar,
+    userController.createEmployee,
+);
+
 export default router;

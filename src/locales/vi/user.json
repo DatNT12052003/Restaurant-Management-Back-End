@@ -10,5 +10,7 @@
     "error_deleting_user": "Xóa người dùng thất bại",
     "user_deleted_successfully": "Người dùng đã được xóa thành công",
     "error_fetching_users": "Lấy danh sách người dùng thất bại",
-    "users_fetched_successfully": "Danh sách người dùng đã được lấy thành công"
+    "users_fetched_successfully": "Danh sách người dùng đã được lấy thành công",
+    "error_creating_employee": "Tạo nhân viên thất bại",
+    "employee_created_successfully": "Nhân viên đã được tạo thành công"
 }

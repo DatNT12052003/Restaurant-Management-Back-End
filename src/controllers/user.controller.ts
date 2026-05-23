@@ -13,6 +13,7 @@ import {
     ISelectQuery,
     IGetEmployees,
     IUpdateUserBody,
+    ICreateEmployeeBody,
 } from "~/interfaces";
 import { userService } from "~/services";
 import { uploadToCloudinary } from "~/utils/cloudinary";
@@ -129,6 +130,28 @@ export const getEmployeesByRestaurantId = async (req: Request, res: Response) =>
             return createErrorResponse(res, req.t("user:error_fetching_users"));
         }
         return createSuccessResponse(res, req.t("user:users_fetched_successfully"), users);
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
+
+export const createEmployee = async (req: Request, res: Response) => {
+    try {
+        const body: ICreateEmployeeBody = req.body;
+        if (!body.user.full_name) {
+            return badRequestResponse(res, req.t("user:full_name_required"));
+        }
+        if (req.file) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            body.user.avatar_url = result.secure_url;
+        } else {
+            body.user.avatar_url = null;
+        }
+        const newUserWithAccount: { user: IUser; account: IAccount } | null = await userService.createEmployee(body);
+        if (!newUserWithAccount?.user || !newUserWithAccount?.account) {
+            return createErrorResponse(res, req.t("user:error_creating_employee"));
+        }
+        return createSuccessResponse(res, req.t("user:employee_created_successfully"), newUserWithAccount);
     } catch (error) {
         return serverErrorResponse(res);
     }
