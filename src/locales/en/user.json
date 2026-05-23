@@ -1,7 +1,14 @@
 {
-    "full_name_required": "Full name is required.",
-    "error_creating_user": "Failed to create user.",
-    "user_created_successfully": "User created successfully.",
-    "error_creating_user_with_account": "Failed to create user with account.",
-    "user_with_account_created_successfully": "User with account created successfully."
+    "full_name_required": "Full name is required",
+    "error_creating_user": "Failed to create user",
+    "user_created_successfully": "User created successfully",
+    "error_creating_user_with_account": "Failed to create user with account",
+    "user_with_account_created_successfully": "User with account created successfully",
+    "invalid_user_id": "Invalid user ID",
+    "error_updating_user": "Failed to update user",
+    "user_updated_successfully": "User updated successfully",
+    "error_deleting_user": "Failed to delete user",
+    "user_deleted_successfully": "User deleted successfully",
+    "error_fetching_users": "Failed to fetch users",
+    "users_fetched_successfully": "Users fetched successfully"
 }
