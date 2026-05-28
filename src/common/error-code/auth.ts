@@ -1,5 +1,6 @@
 export const LOGIN = {
-    INVALID_USERNAME_PASSWORD: 1,
+    NOT_EXIST: 1,
+    INVALID_USERNAME_PASSWORD: 2,
     LOGIN_FAILED: 0,
 };
 

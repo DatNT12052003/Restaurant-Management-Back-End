@@ -17,7 +17,7 @@ export const login = async (body: ILoginBody): Promise<IAuth | number> => {
     try {
         const account = await accountRepository.getAccountByUsername(body.username);
         if (!account) {
-            return LOGIN.INVALID_USERNAME_PASSWORD;
+            return LOGIN.NOT_EXIST;
         }
 
         const isPasswordValid = bcrypt.compareSync(body.password, account.hash_password);

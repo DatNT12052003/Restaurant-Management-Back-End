@@ -19,6 +19,8 @@ export const login = async (req: Request, res: Response) => {
 
         if (typeof authData === "number") {
             switch (authData) {
+                case LOGIN.NOT_EXIST:
+                    return badRequestResponse(res, req.t("auth:user_not_exist"));
                 case LOGIN.INVALID_USERNAME_PASSWORD:
                     return badRequestResponse(res, req.t("auth:invalid_username_or_password"));
                 default:

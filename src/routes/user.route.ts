@@ -58,4 +58,12 @@ router.patch(
     userController.updateEmployee,
 );
 
+router.patch(
+    "/employee/delete/:id",
+    authMiddleware,
+    checkPermission(EmployeePermissionEnum.DELETE),
+    isSelfOrAdminOrManager,
+    userController.deleteUser,
+);
+
 export default router;
