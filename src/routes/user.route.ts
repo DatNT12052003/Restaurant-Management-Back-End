@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { EmployeePermissionEnum, UserPermissionEnum } from "~/common/permission-enum";
 import { userController } from "~/controllers";
 import {
     authMiddleware,
@@ -23,7 +24,7 @@ router.post(
 router.patch(
     "/:id",
     authMiddleware,
-    checkPermission("employee.update"),
+    checkPermission(UserPermissionEnum.UPDATE),
     isSelfOrAdminOrManager,
     uploadAvatar,
     userController.updateUser,
@@ -31,7 +32,7 @@ router.patch(
 router.patch(
     "/delete/:id",
     authMiddleware,
-    checkPermission("employee.delete"),
+    checkPermission(UserPermissionEnum.DELETE),
     isSelfOrAdminOrManager,
     userController.deleteUser,
 );
@@ -40,7 +41,7 @@ router.get("/employees/:restaurant_id", userController.getEmployeesByRestaurantI
 router.post(
     "/employee",
     authMiddleware,
-    checkPermission("employee.create"),
+    checkPermission(EmployeePermissionEnum.CREATE),
     isSelfOrAdminOrManager,
     // validate(createUserWithAccountSchema),
     uploadAvatar,
