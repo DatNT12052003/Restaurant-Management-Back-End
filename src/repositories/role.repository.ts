@@ -16,7 +16,7 @@ export const getRoles = async (): Promise<IRole[]> => {
     return result.rows;
 };
 
-export const getAndCheckRoles = async (roleNames: string[]): Promise<IRole[]> => {
+export const getRolesByTypeNames = async (roleNames: string[]): Promise<IRole[]> => {
     const query = `SELECT * FROM roles WHERE type_name = ANY($1)`;
     const result = await pool.query(query, [roleNames]);
     return result.rows;

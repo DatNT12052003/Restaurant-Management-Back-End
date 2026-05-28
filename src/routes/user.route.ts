@@ -48,4 +48,14 @@ router.post(
     userController.createEmployee,
 );
 
+router.patch(
+    "/employee/:id",
+    authMiddleware,
+    checkPermission(EmployeePermissionEnum.UPDATE),
+    isSelfOrAdminOrManager,
+    // validate(createUserWithAccountSchema),
+    uploadAvatar,
+    userController.updateEmployee,
+);
+
 export default router;

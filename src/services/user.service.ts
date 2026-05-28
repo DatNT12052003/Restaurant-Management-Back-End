@@ -15,6 +15,8 @@ import {
     IUpdateUserBody,
     IUpdateUserPayload,
     ICreateEmployeeBody,
+    IUpdateEmployeeBody,
+    IUpdateUsernamePayload,
 } from "~/interfaces";
 import {
     accountRepository,
@@ -37,6 +39,7 @@ import {
     GET_INFO_EMPLOYEE_BY_USER_ID,
     GET_USER_BY_ACCOUNT_ID,
     GET_USER_BY_EMAIL,
+    UPDATE_EMPLOYEE,
     UPDATE_USER,
 } from "~/common/error-code/user";
 
@@ -215,9 +218,6 @@ export const deleteUser = async (id: number): Promise<IUser | number> => {
 export const createEmployee = async (
     body: ICreateEmployeeBody,
 ): Promise<{ user: IUser; account: IAccount } | number> => {
-    const roles = await roleRepository.getAndCheckRoles(body.roles);
-    const roleIds = roles.map((r) => r.id);
-
     try {
         await pool.query("BEGIN");
 
@@ -228,14 +228,19 @@ export const createEmployee = async (
         const newUserWithAccount = await createUserWithAccount(createUserWithAccountBody);
 
         if (!newUserWithAccount || typeof newUserWithAccount === "number") {
+            await pool.query("ROLLBACK");
             return CREATE_EMPLOYEE.CREATE_USER_WITH_ACCOUNT_FAILED;
         }
 
         const userId = newUserWithAccount.user.id;
 
+        const roles = await roleRepository.getRolesByTypeNames(body.roles);
+        const roleIds = roles.map((r) => r.id);
+
         const rolesAssigned = await userRoleRepository.assignRolesToUser(userId, roleIds);
 
         if (!rolesAssigned) {
+            await pool.query("ROLLBACK");
             return CREATE_EMPLOYEE.ASSIGN_ROLES_FAILED;
         }
 
@@ -248,7 +253,89 @@ export const createEmployee = async (
     }
 };
 
-//=========================
+export const updateEmployee = async (
+    body: IUpdateEmployeeBody,
+    id: number,
+): Promise<{ updatedUser: IUser; updatedAccount: IAccount; roles: string[] } | number> => {
+    try {
+        await pool.query("BEGIN");
+        const updateUserPayload: IUpdateUserPayload = {
+            full_name: body.user.full_name,
+            date_of_birth: stringToDate(body.user.date_of_birth),
+            gender: body.user.gender,
+            address: body.user.address,
+            email: body.user.email,
+            phone_number: body.user.phone_number,
+            avatar_url: body.user.avatar_url,
+            status: body.user.status,
+            restaurant_id: body.user.restaurant_id,
+        };
+        const updatedUser = await userRepository.updateUser({ payload: updateUserPayload, id });
+        if (!updatedUser) {
+            await pool.query("ROLLBACK");
+            return UPDATE_EMPLOYEE.USER_NOT_FOUND;
+        }
+
+        const updatedAccount = await accountRepository.updateAccountUsername({
+            payload: { username: body.account.username },
+            id: updatedUser.account_id!,
+        });
+
+        if (!updatedAccount) {
+            await pool.query("ROLLBACK");
+            return UPDATE_EMPLOYEE.ACCOUNT_NOT_FOUND;
+        }
+
+        const currentRoles = await roleRepository.getRolesByUserId(id);
+        const allRoles = await roleRepository.getRoles();
+
+        let addRoles: string[] = [];
+        let removeRoles: string[] = [];
+
+        for (const role of body.roles) {
+            if (!allRoles.some((r) => r.type_name === role)) {
+                await pool.query("ROLLBACK");
+                return UPDATE_EMPLOYEE.ROLE_NOT_FOUND;
+            }
+        }
+
+        for (const role of body.roles) {
+            if (!currentRoles.includes(role)) {
+                addRoles.push(role);
+            }
+        }
+
+        for (const role of currentRoles) {
+            if (!body.roles.includes(role)) {
+                removeRoles.push(role);
+            }
+        }
+
+        const rolesEntities = await roleRepository.getRolesByTypeNames([...addRoles, ...removeRoles]);
+        const addRoleIds = rolesEntities.filter((r) => addRoles.includes(r.type_name)).map((r) => r.id);
+        const removeRoleIds = rolesEntities.filter((r) => removeRoles.includes(r.type_name)).map((r) => r.id);
+        if (addRoleIds.length > 0) {
+            const rolesAssigned = await userRoleRepository.assignRolesToUser(id, addRoleIds);
+            if (!rolesAssigned) {
+                await pool.query("ROLLBACK");
+                return UPDATE_EMPLOYEE.ADD_ROLES_FAILED;
+            }
+        }
+        if (removeRoleIds.length > 0) {
+            const rolesRemoved = await userRoleRepository.removeRolesFromUser(id, removeRoleIds);
+            if (!rolesRemoved) {
+                await pool.query("ROLLBACK");
+                return UPDATE_EMPLOYEE.REMOVE_ROLES_FAILED;
+            }
+        }
+        await pool.query("COMMIT");
+        return { updatedUser, updatedAccount, roles: body.roles };
+    } catch (error) {
+        await pool.query("ROLLBACK");
+        return UPDATE_EMPLOYEE.UPDATE_EMPLOYEE_FAILED;
+    }
+};
+
 const getInfoEmployeeByUserId = async (user: IUserWithAccount): Promise<IEmployee | number> => {
     try {
         const roles = await roleRepository.getRolesByUserId(user.id);

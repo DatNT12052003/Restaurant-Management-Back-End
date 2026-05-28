@@ -15,5 +15,11 @@
     "error_fetching_users": "Lấy danh sách người dùng thất bại",
     "users_fetched_successfully": "Danh sách người dùng đã được lấy thành công",
     "error_creating_employee": "Tạo nhân viên thất bại",
-    "employee_created_successfully": "Nhân viên đã được tạo thành công"
+    "employee_created_successfully": "Nhân viên đã được tạo thành công",
+    "role_not_found": "Không tìm thấy vai trò",
+    "add_roles_failed": "Thêm vai trò cho người dùng thất bại",
+    "remove_roles_failed": "Xóa vai trò khỏi người dùng thất bại",
+    "update_employee_failed": "Cập nhật nhân viên thất bại",
+    "error_updating_employee": "Cập nhật nhân viên thất bại",
+    "employee_updated_successfully": "Nhân viên đã được cập nhật thành công"
 }

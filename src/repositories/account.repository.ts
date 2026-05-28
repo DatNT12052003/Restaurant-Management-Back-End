@@ -1,4 +1,11 @@
-import { IAccount, ICreateAccountPayload, IQueryResult, ISelectQuery, IUpdatePasswordPayload } from "~/interfaces";
+import {
+    IAccount,
+    ICreateAccountPayload,
+    IQueryResult,
+    ISelectQuery,
+    IUpdatePasswordPayload,
+    IUpdateUsernamePayload,
+} from "~/interfaces";
 import { pool } from "../config/db";
 import { buildInsertQuery, buildSelectAllQuery } from "~/utils/query-builder";
 
@@ -60,6 +67,24 @@ export const deleteAccount = async (id: number): Promise<IAccount> => {
         RETURNING *
     `;
     const values = [id];
+    const result = await pool.query(query, values);
+    return result.rows[0];
+};
+
+export const updateAccountUsername = async ({
+    payload,
+    id,
+}: {
+    payload: IUpdateUsernamePayload;
+    id: number;
+}): Promise<IAccount> => {
+    const query = `
+        UPDATE accounts
+        SET username = $1, updated_at = NOW()
+        WHERE id = $2 AND deleted_at IS NULL
+        RETURNING *
+    `;
+    const values = [payload.username, id];
     const result = await pool.query(query, values);
     return result.rows[0];
 };

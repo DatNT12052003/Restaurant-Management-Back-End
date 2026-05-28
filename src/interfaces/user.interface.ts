@@ -1,5 +1,5 @@
 import { UserStatusEnum, GenderEnum } from "../common/enum";
-import { ICreateAccountBody, ICreateAccountPayload } from "./account.interface";
+import { ICreateAccountBody, ICreateAccountPayload, IUpdateUsernameBody } from "./account.interface";
 import { IPagination } from "./common.interface";
 
 export interface IUser {
@@ -35,6 +35,12 @@ export interface IGetEmployees {
 }
 
 export interface ICreateEmployeeBody extends ICreateUserWithAccountBody {
+    roles: string[];
+}
+
+export interface IUpdateEmployeeBody {
+    user: IUpdateUserBody;
+    account: IUpdateUsernameBody;
     roles: string[];
 }
 

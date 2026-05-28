@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { PAGINATION } from "~/common/constant";
-import { CREATE_EMPLOYEE, CREATE_USER_WITH_ACCOUNT, UPDATE_USER } from "~/common/error-code/user";
+import { CREATE_EMPLOYEE, CREATE_USER_WITH_ACCOUNT, UPDATE_EMPLOYEE, UPDATE_USER } from "~/common/error-code/user";
 import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { createSuccessResponse } from "~/common/responses/success";
 import {
@@ -15,7 +15,9 @@ import {
     IGetEmployees,
     IUpdateUserBody,
     ICreateEmployeeBody,
+    IUpdateEmployeeBody,
 } from "~/interfaces";
+import { updateEmployeeResource } from "~/resources";
 import { userService } from "~/services";
 import { uploadToCloudinary } from "~/utils/cloudinary";
 
@@ -179,6 +181,49 @@ export const createEmployee = async (req: Request, res: Response) => {
             }
         }
         return createSuccessResponse(res, req.t("user:employee_created_successfully"), newUserWithAccount);
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
+
+export const updateEmployee = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const body: IUpdateEmployeeBody = req.body;
+        if (req.file) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            body.user.avatar_url = result.secure_url;
+        } else {
+            body.user.avatar_url = null;
+        }
+
+        if (isNaN(id)) {
+            return badRequestResponse(res, req.t("user:invalid_user_id"));
+        }
+        const updatedEmployee = await userService.updateEmployee(body, id);
+        if (typeof updatedEmployee === "number") {
+            switch (updatedEmployee) {
+                case UPDATE_EMPLOYEE.USER_NOT_FOUND:
+                    return createErrorResponse(res, req.t("user:user_not_found"));
+                case UPDATE_EMPLOYEE.ACCOUNT_NOT_FOUND:
+                    return createErrorResponse(res, req.t("user:account_not_found"));
+                case UPDATE_EMPLOYEE.ROLE_NOT_FOUND:
+                    return createErrorResponse(res, req.t("user:role_not_found"));
+                case UPDATE_EMPLOYEE.ADD_ROLES_FAILED:
+                    return createErrorResponse(res, req.t("user:add_roles_failed"));
+                case UPDATE_EMPLOYEE.REMOVE_ROLES_FAILED:
+                    return createErrorResponse(res, req.t("user:remove_roles_failed"));
+                case UPDATE_EMPLOYEE.UPDATE_EMPLOYEE_FAILED:
+                    return createErrorResponse(res, req.t("user:update_employee_failed"));
+                default:
+                    return createErrorResponse(res, req.t("user:error_updating_employee"));
+            }
+        }
+        return createSuccessResponse(
+            res,
+            req.t("user:employee_updated_successfully"),
+            updateEmployeeResource(updatedEmployee),
+        );
     } catch (error) {
         return serverErrorResponse(res);
     }

@@ -1,4 +1,5 @@
-import { IUser } from "~/interfaces";
+import { IAccount, IUser } from "~/interfaces";
+import { getAccountResource } from "~/resources";
 
 export const getUserResource = (user: IUser) => {
     return {
@@ -13,5 +14,21 @@ export const getUserResource = (user: IUser) => {
         status: user.status,
         account_id: user.account_id,
         restaurant_id: user.restaurant_id,
+    };
+};
+
+export const updateEmployeeResource = ({
+    updatedUser,
+    updatedAccount,
+    roles,
+}: {
+    updatedUser: IUser;
+    updatedAccount: IAccount;
+    roles: string[];
+}) => {
+    return {
+        user: getUserResource(updatedUser),
+        account: getAccountResource(updatedAccount),
+        roles,
     };
 };
