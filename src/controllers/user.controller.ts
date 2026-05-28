@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PAGINATION } from "~/common/constant";
+import { CREATE_EMPLOYEE, CREATE_USER_WITH_ACCOUNT, UPDATE_USER } from "~/common/error-code/user";
 import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { createSuccessResponse } from "~/common/responses/success";
 import {
@@ -30,9 +31,9 @@ export const createUser = async (req: Request, res: Response) => {
             body.avatar_url = null;
         }
 
-        const newUser: IUser | null = await userService.createUser(body);
+        const newUser: IUser | number = await userService.createUser(body);
 
-        if (!newUser) {
+        if (typeof newUser === "number") {
             return createErrorResponse(res, req.t("user:error_creating_user"));
         }
 
@@ -57,11 +58,18 @@ export const createUserWithAccount = async (req: Request, res: Response) => {
             body.user.avatar_url = null;
         }
 
-        const newUserWithAccount: { user: IUser; account: IAccount } | null =
+        const newUserWithAccount: { user: IUser; account: IAccount } | number =
             await userService.createUserWithAccount(body);
 
-        if (!newUserWithAccount?.user || !newUserWithAccount?.account) {
-            return createErrorResponse(res, req.t("user:error_creating_user_with_account"));
+        if (typeof newUserWithAccount === "number") {
+            switch (newUserWithAccount) {
+                case CREATE_USER_WITH_ACCOUNT.CREATE_ACCOUNT_FAILED:
+                    return createErrorResponse(res, req.t("user:error_creating_account"));
+                case CREATE_USER_WITH_ACCOUNT.CREATE_USER_FAILED:
+                    return createErrorResponse(res, req.t("user:error_creating_user"));
+                default:
+                    return createErrorResponse(res, req.t("user:error_creating_user_with_account"));
+            }
         }
 
         return createSuccessResponse(res, req.t("user:user_with_account_created_successfully"), newUserWithAccount);
@@ -83,9 +91,14 @@ export const updateUser = async (req: Request, res: Response) => {
         if (isNaN(id)) {
             return badRequestResponse(res, req.t("user:invalid_user_id"));
         }
-        const updatedUser: IUser | null = await userService.updateUser(body, id);
-        if (!updatedUser) {
-            return createErrorResponse(res, req.t("user:error_updating_user"));
+        const updatedUser: IUser | number = await userService.updateUser(body, id);
+        if (typeof updatedUser === "number") {
+            switch (updatedUser) {
+                case UPDATE_USER.NOT_FOUND:
+                    return createErrorResponse(res, req.t("user:user_not_found"));
+                default:
+                    return createErrorResponse(res, req.t("user:error_updating_user"));
+            }
         }
         return createSuccessResponse(res, req.t("user:user_updated_successfully"), updatedUser);
     } catch (error) {
@@ -99,9 +112,16 @@ export const deleteUser = async (req: Request, res: Response) => {
         if (isNaN(id)) {
             return badRequestResponse(res, req.t("user:invalid_user_id"));
         }
-        const deletedUser: IUser | null = await userService.deleteUser(id);
-        if (!deletedUser) {
-            return createErrorResponse(res, req.t("user:error_deleting_user"));
+        const deletedUser: IUser | number = await userService.deleteUser(id);
+        if (typeof deletedUser === "number") {
+            switch (deletedUser) {
+                case 1:
+                    return createErrorResponse(res, req.t("user:user_not_found"));
+                case 2:
+                    return createErrorResponse(res, req.t("user:account_not_found"));
+                default:
+                    return createErrorResponse(res, req.t("user:error_deleting_user"));
+            }
         }
         return createSuccessResponse(res, req.t("user:user_deleted_successfully"), deletedUser);
     } catch (error) {
@@ -125,8 +145,8 @@ export const getEmployeesByRestaurantId = async (req: Request, res: Response) =>
             offset,
             returning: ["u.*", "a.username"],
         };
-        const users: IGetEmployees | null = await userService.getEmployeesByRestaurantId(params, restaurant_id);
-        if (!users) {
+        const users: IGetEmployees | number = await userService.getEmployeesByRestaurantId(params, restaurant_id);
+        if (typeof users === "number") {
             return createErrorResponse(res, req.t("user:error_fetching_users"));
         }
         return createSuccessResponse(res, req.t("user:users_fetched_successfully"), users);
@@ -147,9 +167,16 @@ export const createEmployee = async (req: Request, res: Response) => {
         } else {
             body.user.avatar_url = null;
         }
-        const newUserWithAccount: { user: IUser; account: IAccount } | null = await userService.createEmployee(body);
-        if (!newUserWithAccount?.user || !newUserWithAccount?.account) {
-            return createErrorResponse(res, req.t("user:error_creating_employee"));
+        const newUserWithAccount: { user: IUser; account: IAccount } | number = await userService.createEmployee(body);
+        if (typeof newUserWithAccount === "number") {
+            switch (newUserWithAccount) {
+                case CREATE_EMPLOYEE.CREATE_USER_WITH_ACCOUNT_FAILED:
+                    return createErrorResponse(res, req.t("user:error_creating_user_with_account"));
+                case CREATE_EMPLOYEE.ASSIGN_ROLES_FAILED:
+                    return createErrorResponse(res, req.t("user:error_assigning_roles"));
+                default:
+                    return createErrorResponse(res, req.t("user:error_creating_employee"));
+            }
         }
         return createSuccessResponse(res, req.t("user:employee_created_successfully"), newUserWithAccount);
     } catch (error) {

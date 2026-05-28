@@ -1,11 +1,11 @@
 import { Response } from "express";
 import { HTTP_RESPONSE } from "~/common/http-response";
 
-export const serverErrorResponse = (res: Response) => {
+export const serverErrorResponse = (res: Response, message?: string) => {
     return res.status(HTTP_RESPONSE.INTERNAL_SERVER_ERROR.statusCode).json({
         success: false,
         statusCode: HTTP_RESPONSE.INTERNAL_SERVER_ERROR.statusCode,
-        message: HTTP_RESPONSE.INTERNAL_SERVER_ERROR.message,
+        message: message || HTTP_RESPONSE.INTERNAL_SERVER_ERROR.message,
     });
 };
 

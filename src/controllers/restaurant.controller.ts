@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { PAGINATION } from "~/common/constant";
 import { createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { getSuccessResponse } from "~/common/responses/success";
-import { IGetQuery, IGetRestaurants, ISelectQuery } from "~/interfaces";
+import { IGetQuery, IGetRestaurants, IRestaurant, ISelectQuery } from "~/interfaces";
 import { getRestaurantsResource } from "~/resources/restaurant.resource";
 import { restaurantService } from "~/services";
 
@@ -22,9 +22,9 @@ export const getRestaurants = async (req: Request, res: Response) => {
             returning: ["id", "name", "status", "address", "created_at", "updated_at", "deleted_at"],
         };
 
-        const restaurants: IGetRestaurants | null = await restaurantService.getRestaurants(params);
+        const restaurants: IGetRestaurants | number = await restaurantService.getRestaurants(params);
 
-        if (!restaurants) {
+        if (typeof restaurants === "number") {
             return createErrorResponse(res, req.t("restaurant:error_getting_restaurants"));
         }
 
@@ -36,8 +36,8 @@ export const getRestaurants = async (req: Request, res: Response) => {
 
 export const getAllRestaurants = async (req: Request, res: Response) => {
     try {
-        const restaurants = await restaurantService.getAllRestaurants();
-        if (!restaurants) {
+        const restaurants: IRestaurant[] | number = await restaurantService.getAllRestaurants();
+        if (typeof restaurants === "number") {
             return createErrorResponse(res, req.t("restaurant:error_getting_restaurants"));
         }
         return getSuccessResponse(

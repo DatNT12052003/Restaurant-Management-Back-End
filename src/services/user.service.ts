@@ -28,8 +28,19 @@ import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "~/common/constant";
 import { stringToDate } from "~/utils/common";
 import { RolesEnum } from "~/common/enum";
+import {
+    CREATE_EMPLOYEE,
+    CREATE_USER,
+    CREATE_USER_WITH_ACCOUNT,
+    DELETE_USER,
+    GET_EMPLOYEES_BY_RESTAURANT_ID,
+    GET_INFO_EMPLOYEE_BY_USER_ID,
+    GET_USER_BY_ACCOUNT_ID,
+    GET_USER_BY_EMAIL,
+    UPDATE_USER,
+} from "~/common/error-code/user";
 
-export const createUser = async (body: ICreateUserBody): Promise<IUser | null> => {
+export const createUser = async (body: ICreateUserBody): Promise<IUser | number> => {
     try {
         const payload: ICreateUserPayload = {
             full_name: body.full_name || "",
@@ -46,13 +57,13 @@ export const createUser = async (body: ICreateUserBody): Promise<IUser | null> =
 
         return newUser;
     } catch (error) {
-        return null;
+        return CREATE_USER.CREATE_USER_FAILED;
     }
 };
 
 export const createUserWithAccount = async (
     body: ICreateUserWithAccountBody,
-): Promise<{ user: IUser; account: IAccount } | null> => {
+): Promise<{ user: IUser; account: IAccount } | number> => {
     try {
         await pool.query("BEGIN");
 
@@ -63,7 +74,7 @@ export const createUserWithAccount = async (
         const newAccount: IAccount = await accountRepository.createAccount(accountPayload);
         if (!newAccount) {
             await pool.query("ROLLBACK");
-            return null;
+            return CREATE_USER_WITH_ACCOUNT.CREATE_ACCOUNT_FAILED;
         }
 
         const userPayload: ICreateUserPayload = {
@@ -81,7 +92,7 @@ export const createUserWithAccount = async (
         const newUser: IUser = await userRepository.createUser(userPayload);
         if (!newUser) {
             await pool.query("ROLLBACK");
-            return null;
+            return CREATE_USER_WITH_ACCOUNT.CREATE_USER_FAILED;
         }
 
         await pool.query("COMMIT");
@@ -89,43 +100,48 @@ export const createUserWithAccount = async (
         return { user: newUser, account: newAccount };
     } catch (error) {
         await pool.query("ROLLBACK");
-        return null;
+        return CREATE_USER_WITH_ACCOUNT.CREATE_USER_WITH_ACCOUNT_FAILED;
     }
 };
 
-export const getUserByAccountId = async (account_id: number): Promise<IUser | null> => {
+export const getUserByAccountId = async (account_id: number): Promise<IUser | number> => {
     try {
         const user = await userRepository.getUserByAccountId(account_id);
         if (!user) {
-            return null;
+            return GET_USER_BY_ACCOUNT_ID.USER_NOT_FOUND;
         }
         return user;
     } catch (error) {
-        return null;
+        return GET_USER_BY_ACCOUNT_ID.GET_USER_BY_ACCOUNT_ID_FAILED;
     }
 };
 
-export const getUserByEmail = async (email: string): Promise<IUser | null> => {
+export const getUserByEmail = async (email: string): Promise<IUser | number> => {
     try {
         const user = await userRepository.getUserByEmail(email);
         if (!user) {
-            return null;
+            return GET_USER_BY_EMAIL.USER_NOT_FOUND;
         }
         return user;
     } catch (error) {
-        return null;
+        return GET_USER_BY_EMAIL.GET_USER_BY_EMAIL_FAILED;
     }
 };
 
 export const getEmployeesByRestaurantId = async (
     params: ISelectQuery,
     restaurant_id: number,
-): Promise<IGetEmployees | null> => {
+): Promise<IGetEmployees | number> => {
     try {
         const result = await userRepository.getUsersWithAccountInfo(params);
         let employees: IEmployee[] = [];
         for (const user of result.rows) {
             const employeeInfo = await getInfoEmployeeByUserId(user);
+
+            if (typeof employeeInfo === "number") {
+                return GET_EMPLOYEES_BY_RESTAURANT_ID.GET_EMPLOYEES_BY_RESTAURANT_ID_FAILED;
+            }
+
             if (employeeInfo) {
                 employees.push(employeeInfo);
             }
@@ -146,11 +162,11 @@ export const getEmployeesByRestaurantId = async (
             },
         };
     } catch (error) {
-        return null;
+        return GET_EMPLOYEES_BY_RESTAURANT_ID.GET_EMPLOYEES_BY_RESTAURANT_ID_FAILED;
     }
 };
 
-export const updateUser = async (body: IUpdateUserBody, id: number): Promise<IUser | null> => {
+export const updateUser = async (body: IUpdateUserBody, id: number): Promise<IUser | number> => {
     try {
         const payload: IUpdateUserPayload = {
             full_name: body.full_name,
@@ -166,32 +182,39 @@ export const updateUser = async (body: IUpdateUserBody, id: number): Promise<IUs
 
         const updatedUser = await userRepository.updateUser({ payload, id });
         if (!updatedUser) {
-            return null;
+            return UPDATE_USER.NOT_FOUND;
         }
 
         return updatedUser;
     } catch (error) {
-        return null;
+        return UPDATE_USER.UPDATE_USER_FAILED;
     }
 };
 
-export const deleteUser = async (id: number): Promise<IUser | null> => {
+export const deleteUser = async (id: number): Promise<IUser | number> => {
     try {
+        await pool.query("BEGIN");
         const user = await userRepository.deleteUser(id);
         if (!user) {
-            return null;
+            await pool.query("ROLLBACK");
+            return DELETE_USER.USER_NOT_FOUND;
         }
         const account = await accountRepository.deleteAccount(user.account_id!);
-        if (!user || !account) {
-            return null;
+        if (!account) {
+            await pool.query("ROLLBACK");
+            return DELETE_USER.ACCOUNT_NOT_FOUND;
         }
+        await pool.query("COMMIT");
         return user;
     } catch (error) {
-        return null;
+        await pool.query("ROLLBACK");
+        return DELETE_USER.DELETE_USER_FAILED;
     }
 };
 
-export const createEmployee = async (body: ICreateEmployeeBody): Promise<{ user: IUser; account: IAccount } | null> => {
+export const createEmployee = async (
+    body: ICreateEmployeeBody,
+): Promise<{ user: IUser; account: IAccount } | number> => {
     const roles = await roleRepository.getAndCheckRoles(body.roles);
     const roleIds = roles.map((r) => r.id);
 
@@ -204,8 +227,8 @@ export const createEmployee = async (body: ICreateEmployeeBody): Promise<{ user:
         };
         const newUserWithAccount = await createUserWithAccount(createUserWithAccountBody);
 
-        if (!newUserWithAccount) {
-            return null;
+        if (!newUserWithAccount || typeof newUserWithAccount === "number") {
+            return CREATE_EMPLOYEE.CREATE_USER_WITH_ACCOUNT_FAILED;
         }
 
         const userId = newUserWithAccount.user.id;
@@ -213,7 +236,7 @@ export const createEmployee = async (body: ICreateEmployeeBody): Promise<{ user:
         const rolesAssigned = await userRoleRepository.assignRolesToUser(userId, roleIds);
 
         if (!rolesAssigned) {
-            return null;
+            return CREATE_EMPLOYEE.ASSIGN_ROLES_FAILED;
         }
 
         await pool.query("COMMIT");
@@ -221,12 +244,12 @@ export const createEmployee = async (body: ICreateEmployeeBody): Promise<{ user:
         return newUserWithAccount;
     } catch (error) {
         await pool.query("ROLLBACK");
-        return null;
+        return CREATE_EMPLOYEE.CREATE_EMPLOYEE_FAILED;
     }
 };
 
 //=========================
-const getInfoEmployeeByUserId = async (user: IUserWithAccount): Promise<IEmployee | null> => {
+const getInfoEmployeeByUserId = async (user: IUserWithAccount): Promise<IEmployee | number> => {
     try {
         const roles = await roleRepository.getRolesByUserId(user.id);
         const permissions = await permissionRepository.getPermissionsByUserId(user.id);
@@ -236,6 +259,6 @@ const getInfoEmployeeByUserId = async (user: IUserWithAccount): Promise<IEmploye
             permissions,
         };
     } catch (error) {
-        return null;
+        return GET_INFO_EMPLOYEE_BY_USER_ID.GET_INFO_EMPLOYEE_BY_USER_ID_FAILED;
     }
 };

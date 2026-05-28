@@ -10,7 +10,7 @@ export const createOtp = async (data: ICreateOtpPayload): Promise<IOtp> => {
     return result.rows[0];
 };
 
-export const getActiveOtpByAccountIdAndType = async ({ account_id, type }: IGetActiveOtp): Promise<IOtp | null> => {
+export const getActiveOtpByAccountIdAndType = async ({ account_id, type }: IGetActiveOtp): Promise<IOtp> => {
     const query = `
         SELECT *
         FROM otps
