@@ -76,7 +76,7 @@ router.post(
     userController.createGuest,
 );
 
-router.get("/guests", userController.getGuests);
+router.get("/guests", authMiddleware, checkPermission(GuestPermissionEnum.VIEW), userController.getGuests);
 
 router.patch(
     "/guest/:id",
