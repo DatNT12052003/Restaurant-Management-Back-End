@@ -1,6 +1,8 @@
 {
     "success": "Success",
     "error": "Error",
-    "authorization_header_missing": "Authorization header missing.",
-    "invalid_or_expired_token": "Invalid or expired token."
+    "authorization_header_missing": "Authorization header missing",
+    "invalid_or_expired_token": "Invalid or expired token",
+    "authentication_required": "Authentication required",
+    "forbidden": "Forbidden"
 }

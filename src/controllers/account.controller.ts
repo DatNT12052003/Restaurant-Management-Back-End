@@ -20,15 +20,15 @@ export const createAccount = async (req: Request, res: Response) => {
             return badRequestResponse(res, req.t("account:username_password_required"));
         }
 
-        const newAccount: IAccount | null = await accountService.createAccount({ username, password });
+        const newAccount: IAccount | number = await accountService.createAccount({ username, password });
 
-        if (!newAccount) {
+        if (typeof newAccount === "number") {
             return createErrorResponse(res, req.t("account:error_creating_account"));
         }
 
         return createSuccessResponse(res, req.t("account:account_created_successfully"), newAccount);
     } catch (error) {
-        serverErrorResponse(res);
+        return serverErrorResponse(res);
     }
 };
 
@@ -48,15 +48,15 @@ export const getAccounts = async (req: Request, res: Response) => {
             returning: ["id", "username", "created_at", "updated_at", "deleted_at"],
         };
 
-        const accounts: IGetAccounts | null = await accountService.getAccounts(params);
+        const accounts: IGetAccounts | number = await accountService.getAccounts(params);
 
-        if (!accounts) {
+        if (typeof accounts === "number") {
             return createErrorResponse(res, req.t("account:error_getting_accounts"));
         }
 
         return getSuccessResponse(res, req.t("account:get_accounts_successfully"), accounts);
     } catch (error) {
-        serverErrorResponse(res);
+        return serverErrorResponse(res);
     }
 };
 

@@ -32,11 +32,16 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
         status: {
             type: "varchar(20)",
             notNull: true,
-            default: "ACTIVE",
+            default: "active",
         },
         account_id: {
             type: "integer",
             references: "accounts",
+            onDelete: "SET NULL",
+        },
+        restaurant_id: {
+            type: "integer",
+            references: "restaurants",
             onDelete: "SET NULL",
         },
         created_at: {
@@ -55,6 +60,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     pgm.createIndex("users", "account_id");
     pgm.createIndex("users", "email");
     pgm.createIndex("users", "phone_number");
+    pgm.createIndex("users", "restaurant_id");
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {

@@ -1,6 +1,14 @@
 import { Router } from "express";
+import { EmployeePermissionEnum, GuestPermissionEnum, UserPermissionEnum } from "~/common/permission-enum";
 import { userController } from "~/controllers";
-import { uploadAvatar, validate, validateCreate } from "~/middlewares";
+import {
+    authMiddleware,
+    checkPermission,
+    isSelfOrAdminOrManager,
+    uploadAvatar,
+    validate,
+    validateCreate,
+} from "~/middlewares";
 import { createUserSchema, createUserWithAccountSchema } from "~/schemas";
 
 const router = Router();
@@ -12,6 +20,80 @@ router.post(
     validateCreate,
     validate(createUserWithAccountSchema),
     userController.createUserWithAccount,
+);
+router.patch(
+    "/:id",
+    authMiddleware,
+    checkPermission(UserPermissionEnum.UPDATE),
+    isSelfOrAdminOrManager,
+    uploadAvatar,
+    userController.updateUser,
+);
+router.patch(
+    "/delete/:id",
+    authMiddleware,
+    checkPermission(UserPermissionEnum.DELETE),
+    isSelfOrAdminOrManager,
+    userController.deleteUser,
+);
+router.get("/employees/:restaurant_id", userController.getEmployeesByRestaurantId);
+
+router.post(
+    "/employee",
+    authMiddleware,
+    checkPermission(EmployeePermissionEnum.CREATE),
+    isSelfOrAdminOrManager,
+    // validate(createUserWithAccountSchema),
+    uploadAvatar,
+    userController.createEmployee,
+);
+
+router.patch(
+    "/employee/:id",
+    authMiddleware,
+    checkPermission(EmployeePermissionEnum.UPDATE),
+    isSelfOrAdminOrManager,
+    // validate(createUserWithAccountSchema),
+    uploadAvatar,
+    userController.updateEmployee,
+);
+
+router.patch(
+    "/employee/delete/:id",
+    authMiddleware,
+    checkPermission(EmployeePermissionEnum.DELETE),
+    isSelfOrAdminOrManager,
+    userController.deleteEmployee,
+);
+
+router.post(
+    "/guest",
+    authMiddleware,
+    checkPermission(GuestPermissionEnum.CREATE),
+    isSelfOrAdminOrManager,
+    // validate(createUserWithAccountSchema),
+    uploadAvatar,
+    userController.createGuest,
+);
+
+router.get("/guests", authMiddleware, checkPermission(GuestPermissionEnum.VIEW), userController.getGuests);
+
+router.patch(
+    "/guest/:id",
+    authMiddleware,
+    checkPermission(GuestPermissionEnum.UPDATE),
+    isSelfOrAdminOrManager,
+    // validate(createUserWithAccountSchema),
+    uploadAvatar,
+    userController.updateGuest,
+);
+
+router.patch(
+    "/guest/delete/:id",
+    authMiddleware,
+    checkPermission(GuestPermissionEnum.DELETE),
+    isSelfOrAdminOrManager,
+    userController.deleteGuest,
 );
 
 export default router;

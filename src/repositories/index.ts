@@ -4,3 +4,5 @@ export * as roleRepository from "./role.repository";
 export * as permissionRepository from "./permission.repository";
 export * as tokenRepository from "./token.repository";
 export * as otpRepository from "./otp.repository";
+export * as restaurantRepository from "./restaurant.repository";
+export * as userRoleRepository from "./user-role.repository";

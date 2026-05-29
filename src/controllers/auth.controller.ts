@@ -1,10 +1,59 @@
 import { Request, Response } from "express";
-import { badRequestResponse, serverErrorResponse } from "~/common/responses/error";
-import { getSuccessResponse, loginSuccessResponse, successResponse } from "~/common/responses/success";
-import { ICreateOTPBody, IJwtAccountPayload, ILoginBody, IUpdatePasswordBody, IUser } from "~/interfaces";
-import { getMeResource } from "~/resources";
+import { GET_ME, LOGIN, LOGOUT, LOGOUT_ALL, REFRESH_TOKEN, REGISTER, RESET_PASSWORD } from "~/common/error-code/auth";
+import { MARK_OTP_AS_USED } from "~/common/error-code/otp";
+import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
+import {
+    createSuccessResponse,
+    getSuccessResponse,
+    loginSuccessResponse,
+    successResponse,
+} from "~/common/responses/success";
+import {
+    IAccount,
+    ICreateGuestBody,
+    ICreateOTPBody,
+    IJwtAccountPayload,
+    ILoginBody,
+    IUpdatePasswordBody,
+    IUser,
+} from "~/interfaces";
+import { createGuestResource, getMeResource } from "~/resources";
 import { authService, mailService, otpService, tokenService, userService } from "~/services";
 import { generateOTP } from "~/utils/common";
+import { createGuest } from "./user.controller";
+import { uploadToCloudinary } from "~/utils/cloudinary";
+import { CREATE_GUEST } from "~/common/error-code/user";
+
+export const register = async (req: Request, res: Response) => {
+    try {
+        const body: ICreateGuestBody = req.body;
+        if (!body.user.full_name) {
+            return badRequestResponse(res, req.t("auth:full_name_required"));
+        }
+        if (req.file) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            body.user.avatar_url = result.secure_url;
+        } else {
+            body.user.avatar_url = null;
+        }
+        const newGuest: { user: IUser; account: IAccount } | number = await userService.createGuest(body);
+        if (typeof newGuest === "number") {
+            switch (newGuest) {
+                case CREATE_GUEST.CREATE_USER_WITH_ACCOUNT_FAILED:
+                    return createErrorResponse(res, req.t("auth:register_failed"));
+                case CREATE_GUEST.ASSIGN_ROLES_FAILED:
+                    return createErrorResponse(res, req.t("auth:register_failed"));
+                case CREATE_GUEST.CREATE_GUEST_FAILED:
+                    return createErrorResponse(res, req.t("auth:register_failed"));
+                default:
+                    return createErrorResponse(res, req.t("auth:register_failed"));
+            }
+        }
+        return createSuccessResponse(res, req.t("auth:register_success"), createGuestResource(newGuest));
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
 
 export const login = async (req: Request, res: Response) => {
     try {
@@ -15,8 +64,15 @@ export const login = async (req: Request, res: Response) => {
 
         const authData = await authService.login(body);
 
-        if (!authData) {
-            return badRequestResponse(res, req.t("auth:invalid_username_or_password"));
+        if (typeof authData === "number") {
+            switch (authData) {
+                case LOGIN.NOT_EXIST:
+                    return badRequestResponse(res, req.t("auth:user_not_exist"));
+                case LOGIN.INVALID_USERNAME_PASSWORD:
+                    return badRequestResponse(res, req.t("auth:invalid_username_or_password"));
+                default:
+                    return serverErrorResponse(res, req.t("auth:login_failed"));
+            }
         }
 
         const platform = req.headers["x-platform"];
@@ -38,7 +94,7 @@ export const login = async (req: Request, res: Response) => {
 
         return loginSuccessResponse(res, req.t("auth:login_successfully"), authData);
     } catch (error) {
-        return serverErrorResponse(res);
+        return serverErrorResponse(res, req.t("auth:login_failed"));
     }
 };
 
@@ -51,12 +107,21 @@ export const getMe = async (req: Request, res: Response) => {
         }
         const payload: IJwtAccountPayload = { account_id, username };
         const meData = await authService.getMe(payload);
-        if (!meData) {
-            return badRequestResponse(res, req.t("auth:user_not_found"));
+        if (typeof meData === "number") {
+            switch (meData) {
+                case GET_ME.USER_NOT_FOUND:
+                    return badRequestResponse(res, req.t("auth:user_not_found"));
+                case GET_ME.ROLES_NOT_FOUND:
+                    return badRequestResponse(res, req.t("auth:roles_not_found"));
+                case GET_ME.PERMISSIONS_NOT_FOUND:
+                    return badRequestResponse(res, req.t("auth:permissions_not_found"));
+                default:
+                    return serverErrorResponse(res, req.t("auth:get_me_failed"));
+            }
         }
         return getSuccessResponse(res, req.t("auth:get_me_successfully"), getMeResource(meData));
     } catch (error) {
-        return serverErrorResponse(res);
+        return serverErrorResponse(res, req.t("auth:get_me_failed"));
     }
 };
 
@@ -67,8 +132,18 @@ export const refreshToken = async (req: Request, res: Response) => {
             return badRequestResponse(res, req.t("auth:refresh_token_required"));
         }
         const authData = await authService.refreshToken(refresh_token);
-        if (!authData) {
-            return badRequestResponse(res, req.t("auth:invalid_refresh_token"));
+
+        if (typeof authData === "number") {
+            switch (authData) {
+                case REFRESH_TOKEN.INVALID_TOKEN:
+                    return badRequestResponse(res, req.t("auth:invalid_refresh_token"));
+                case REFRESH_TOKEN.TOKEN_NOT_FOUND:
+                    return badRequestResponse(res, req.t("auth:refresh_token_not_found"));
+                case REFRESH_TOKEN.ACCOUNT_NOT_FOUND:
+                    return badRequestResponse(res, req.t("auth:account_not_found"));
+                default:
+                    return serverErrorResponse(res, req.t("auth:refresh_token_failed"));
+            }
         }
         const platform = req.headers["x-platform"];
 
@@ -88,7 +163,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
         return loginSuccessResponse(res, req.t("auth:refresh_token_successfully"), authData);
     } catch (error) {
-        return serverErrorResponse(res);
+        return serverErrorResponse(res, req.t("auth:refresh_token_failed"));
     }
 };
 
@@ -99,8 +174,8 @@ export const logout = async (req: Request, res: Response) => {
             return badRequestResponse(res, req.t("auth:refresh_token_required"));
         }
         const result = await authService.logout(refresh_token);
-        if (!result) {
-            return badRequestResponse(res, req.t("auth:invalid_refresh_token"));
+        if (result === LOGOUT.LOGOUT_FAILED) {
+            return badRequestResponse(res, req.t("auth:logout_failed"));
         }
         const platform = req.headers["x-platform"];
 
@@ -112,9 +187,9 @@ export const logout = async (req: Request, res: Response) => {
             });
         }
 
-        return getSuccessResponse(res, req.t("auth:logout_successfully"), null);
+        return getSuccessResponse(res, req.t("auth:logout_successfully"));
     } catch (error) {
-        return serverErrorResponse(res);
+        return serverErrorResponse(res, req.t("auth:logout_failed"));
     }
 };
 
@@ -125,8 +200,8 @@ export const logoutAll = async (req: Request, res: Response) => {
             return badRequestResponse(res, req.t("auth:invalid_token"));
         }
         const result = await authService.logoutAll(account_id);
-        if (!result) {
-            return badRequestResponse(res, req.t("auth:error_logging_out"));
+        if (result === LOGOUT_ALL.LOGOUT_ALL_FAILED) {
+            return badRequestResponse(res, req.t("auth:logout_all_failed"));
         }
 
         const platform = req.headers["x-platform"];
@@ -141,7 +216,7 @@ export const logoutAll = async (req: Request, res: Response) => {
 
         return getSuccessResponse(res, req.t("auth:logout_all_successfully"), null);
     } catch (error) {
-        return serverErrorResponse(res);
+        return serverErrorResponse(res, req.t("auth:logout_all_failed"));
     }
 };
 
@@ -155,7 +230,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
         }
 
         const user = await userService.getUserByEmail(email);
-        if (!user) {
+        if (typeof user === "number") {
             return badRequestResponse(res, req.t("auth:user_not_found"));
         }
 
@@ -179,7 +254,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
         }
 
         const saveOtpResult = await otpService.createOTP(createOtpBody);
-        if (!saveOtpResult) {
+        if (typeof saveOtpResult === "number") {
             return badRequestResponse(res, req.t("auth:error_saving_otp"));
         }
 
@@ -193,20 +268,20 @@ export const confirmOtp = async (req: Request, res: Response) => {
     try {
         const { account_id, code, type } = req.body;
         const otpRecord = await otpService.getActiveOTP({ account_id, type });
-        if (!otpRecord) {
+        if (typeof otpRecord === "number") {
             return badRequestResponse(res, req.t("auth:invalid_or_expired_otp"));
         }
         const isCodeValid = await otpService.verifyOTP(otpRecord, code);
-        if (!isCodeValid) {
+        if (typeof isCodeValid === "number" || !isCodeValid) {
             return badRequestResponse(res, req.t("auth:invalid_or_expired_otp"));
         }
         const markAsUsedResult = await otpService.markOTPAsUsed(otpRecord.id);
-        if (!markAsUsedResult) {
+        if (typeof markAsUsedResult === "number" && markAsUsedResult === MARK_OTP_AS_USED.MARK_OTP_AS_USED_FAILED) {
             return badRequestResponse(res, req.t("auth:error_marking_otp_as_used"));
         }
 
         const resetPasswordToken = await tokenService.createResetPasswordToken({ account_id });
-        if (!resetPasswordToken) {
+        if (!resetPasswordToken || typeof resetPasswordToken === "number") {
             return badRequestResponse(res, req.t("auth:error_creating_reset_password_token"));
         }
 
@@ -225,8 +300,15 @@ export const resetPassword = async (req: Request, res: Response) => {
             return badRequestResponse(res, req.t("auth:reset_password_token_new_password_confirm_password_required"));
         }
         const result = await authService.resetPassword(body);
-        if (!result) {
-            return badRequestResponse(res, req.t("auth:invalid_or_expired_reset_password_token"));
+        if (typeof result === "number") {
+            switch (result) {
+                case RESET_PASSWORD.INVALID_RESET_PASSWORD_TOKEN:
+                    return badRequestResponse(res, req.t("auth:invalid_or_expired_reset_password_token"));
+                case RESET_PASSWORD.NEW_PASSWORD_CONFIRM_PASSWORD_NOT_MATCH:
+                    return badRequestResponse(res, req.t("auth:new_password_confirm_password_not_match"));
+                case RESET_PASSWORD.RESET_PASSWORD_FAILED:
+                    return serverErrorResponse(res, req.t("auth:reset_password_failed"));
+            }
         }
         return successResponse(res, req.t("auth:password_reset_successfully"));
     } catch (error) {

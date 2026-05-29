@@ -30,3 +30,9 @@ export interface IUpdatePasswordBody {
 export interface IUpdatePasswordPayload {
     hash_password: string;
 }
+
+export interface IUpdateUsernameBody {
+    username?: string;
+}
+
+export interface IUpdateUsernamePayload extends IUpdateUsernameBody {}

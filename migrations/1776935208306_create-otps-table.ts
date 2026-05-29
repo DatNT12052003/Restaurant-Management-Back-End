@@ -3,7 +3,7 @@ import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate";
 export const shorthands: ColumnDefinitions | undefined = undefined;
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
-    pgm.createType("otp_type", ["RESET_PASSWORD", "VERIFY_EMAIL", "LOGIN", "CHANGE_EMAIL", "TWO_FA"]);
+    pgm.createType("otp_type", ["reset_password", "verify_email", "login", "change_email", "two_fa"]);
 
     pgm.createTable("otps", {
         id: "id",

@@ -1,5 +1,3 @@
-import e from "express";
-import { OrderTypeEnum } from "~/common/enum";
 import { IQueryResult, ISelectQuery } from "~/interfaces";
 
 export const buildInsertQuery = (
@@ -41,6 +39,9 @@ export const buildSelectAllQuery = (baseTable: string, allowedFields: string[], 
     const values: any[] = [];
     const conditions: string[] = [];
 
+    const tableAlias = baseTable.trim().split(/\s+/)[1] || baseTable.trim();
+    conditions.push(`${tableAlias}.deleted_at IS NULL`);
+
     const joinClause = joins.map((j) => `${j.type || "INNER"} JOIN ${j.table} ON ${j.on}`).join(" ");
 
     if (search?.text && search.fields.length > 0) {
@@ -61,16 +62,16 @@ export const buildSelectAllQuery = (baseTable: string, allowedFields: string[], 
 
         const operator = f.operator || "=";
 
-        if (operator === "IN" && Array.isArray(f.value)) {
+        if (operator === "in" && Array.isArray(f.value)) {
             const placeholders = f.value.map((v) => {
                 values.push(v);
                 return `$${values.length}`;
             });
             conditions.push(`${f.field} IN (${placeholders.join(", ")})`);
-        } else if (operator === "IS") {
+        } else if (operator === "is") {
             conditions.push(`${f.field} IS ${f.value === null ? "NULL" : "NOT NULL"}`);
         } else {
-            values.push(operator === "ILIKE" ? `%${f.value}%` : f.value);
+            values.push(operator === "ilike" ? `%${f.value}%` : f.value);
             conditions.push(`${f.field} ${operator} $${values.length}`);
         }
     });
@@ -81,9 +82,9 @@ export const buildSelectAllQuery = (baseTable: string, allowedFields: string[], 
         orderBy.length > 0
             ? orderBy
                   .filter((o) => allowedFields.includes(o.field))
-                  .map((o) => `${o.field} ${o.direction === "DESC" ? "DESC" : "ASC"}`)
+                  .map((o) => `${o.field} ${o.direction === "desc" ? "DESC" : "ASC"}`)
                   .join(", ")
-            : "id ASC";
+            : `${baseTable.split(" ")[1] || baseTable}.id ASC`;
 
     const selectFields = [...returning, "COUNT(*) OVER() AS total_count"].join(", ");
 
