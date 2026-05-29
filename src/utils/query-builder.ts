@@ -39,6 +39,9 @@ export const buildSelectAllQuery = (baseTable: string, allowedFields: string[], 
     const values: any[] = [];
     const conditions: string[] = [];
 
+    const tableAlias = baseTable.trim().split(/\s+/)[1] || baseTable.trim();
+    conditions.push(`${tableAlias}.deleted_at IS NULL`);
+
     const joinClause = joins.map((j) => `${j.type || "INNER"} JOIN ${j.table} ON ${j.on}`).join(" ");
 
     if (search?.text && search.fields.length > 0) {

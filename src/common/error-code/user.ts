@@ -59,6 +59,10 @@ export const UPDATE_GUEST = {
     ACCOUNT_NOT_FOUND: 2,
     UPDATE_GUEST_FAILED: 0,
 };
+
+export const GET_GUESTS = {
+    GET_GUESTS_FAILED: 0,
+};
 //=========================
 export const GET_INFO_EMPLOYEE_BY_USER_ID = {
     GET_INFO_EMPLOYEE_BY_USER_ID_FAILED: 0,

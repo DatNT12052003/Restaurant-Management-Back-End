@@ -23,6 +23,16 @@
     "add_roles_failed": "Thêm vai trò cho người dùng thất bại",
     "remove_roles_failed": "Xóa vai trò khỏi người dùng thất bại",
     "update_employee_failed": "Cập nhật nhân viên thất bại",
+    "employee_not_found": "Không tìm thấy nhân viên",
+    "error_deleting_employee": "Xóa nhân viên thất bại",
+    "employee_deleted_successfully": "Nhân viên đã được xóa thành công",
+    "error_creating_guest": "Tạo khách hàng thất bại",
+    "guest_created_successfully": "Khách hàng đã được tạo thành công",
+    "error_fetching_guests": "Lấy danh sách khách hàng thất bại",
+    "guests_fetched_successfully": "Danh sách khách hàng đã được lấy thành công",
     "error_updating_employee": "Cập nhật nhân viên thất bại",
-    "employee_updated_successfully": "Nhân viên đã được cập nhật thành công"
+    "employee_updated_successfully": "Nhân viên đã được cập nhật thành công",
+    "guest_not_found": "Không tìm thấy khách hàng",
+    "error_deleting_guest": "Xóa khách hàng thất bại",
+    "guest_deleted_successfully": "Khách hàng đã được xóa thành công"
 }

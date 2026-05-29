@@ -63,7 +63,7 @@ router.patch(
     authMiddleware,
     checkPermission(EmployeePermissionEnum.DELETE),
     isSelfOrAdminOrManager,
-    userController.deleteUser,
+    userController.deleteEmployee,
 );
 
 router.post(
@@ -76,6 +76,8 @@ router.post(
     userController.createGuest,
 );
 
+router.get("/guests", userController.getGuests);
+
 router.patch(
     "/guest/:id",
     authMiddleware,
@@ -84,6 +86,14 @@ router.patch(
     // validate(createUserWithAccountSchema),
     uploadAvatar,
     userController.updateGuest,
+);
+
+router.patch(
+    "/guest/delete/:id",
+    authMiddleware,
+    checkPermission(GuestPermissionEnum.DELETE),
+    isSelfOrAdminOrManager,
+    userController.deleteGuest,
 );
 
 export default router;

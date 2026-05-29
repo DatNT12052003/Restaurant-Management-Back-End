@@ -19,6 +19,9 @@ import {
     IUpdateUsernamePayload,
     ICreateGuestBody,
     IUpdateGuestBody,
+    IGetAccounts,
+    IGetGuests,
+    IGuest,
 } from "~/interfaces";
 import {
     accountRepository,
@@ -39,6 +42,7 @@ import {
     CREATE_USER_WITH_ACCOUNT,
     DELETE_USER,
     GET_EMPLOYEES_BY_RESTAURANT_ID,
+    GET_GUESTS,
     GET_INFO_EMPLOYEE_BY_USER_ID,
     GET_USER_BY_ACCOUNT_ID,
     GET_USER_BY_EMAIL,
@@ -414,6 +418,29 @@ export const updateGuest = async (
     }
 };
 
+export const getGuests = async (params: ISelectQuery): Promise<IGetGuests | number> => {
+    try {
+        const result = await userRepository.getUsersWithAccountInfo(params);
+        if (!result) {
+            return GET_GUESTS.GET_GUESTS_FAILED;
+        }
+        const totalCount = result.totalCount;
+        const totalPages = Math.ceil(totalCount / params.limit!);
+
+        return {
+            guests: result.rows,
+            pagination: {
+                limit: params.limit!,
+                currentPage: params.offset! / params.limit! + 1,
+                totalPages,
+                totalItems: totalCount,
+            },
+        };
+    } catch (error) {
+        return GET_GUESTS.GET_GUESTS_FAILED;
+    }
+};
+
 const getInfoEmployeeByUserId = async (user: IUserWithAccount): Promise<IEmployee | number> => {
     try {
         const roles = await roleRepository.getRolesByUserId(user.id);
@@ -422,6 +449,20 @@ const getInfoEmployeeByUserId = async (user: IUserWithAccount): Promise<IEmploye
             employee: user,
             roles,
             permissions,
+        };
+    } catch (error) {
+        return GET_INFO_EMPLOYEE_BY_USER_ID.GET_INFO_EMPLOYEE_BY_USER_ID_FAILED;
+    }
+};
+
+const getInfoGuestByUserId = async (user: IUserWithAccount): Promise<IGuest | number> => {
+    try {
+        const roles = await roleRepository.getRolesByUserId(user.id);
+        if (!roles.includes(RolesEnum.GUEST)) {
+            return GET_INFO_EMPLOYEE_BY_USER_ID.GET_INFO_EMPLOYEE_BY_USER_ID_FAILED;
+        }
+        return {
+            ...user,
         };
     } catch (error) {
         return GET_INFO_EMPLOYEE_BY_USER_ID.GET_INFO_EMPLOYEE_BY_USER_ID_FAILED;

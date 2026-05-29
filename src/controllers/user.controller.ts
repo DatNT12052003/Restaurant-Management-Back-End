@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PAGINATION } from "~/common/constant";
+import { FilterOperatorEnum, JoinTypeEnum, RolesEnum } from "~/common/enum";
 import {
     CREATE_EMPLOYEE,
     CREATE_GUEST,
@@ -25,6 +26,7 @@ import {
     IUpdateEmployeeBody,
     ICreateGuestBody,
     IUpdateGuestBody,
+    IGetGuests,
 } from "~/interfaces";
 import { createEmployeeResource, createGuestResource, updateEmployeeResource, updateGuestResource } from "~/resources";
 import { userService } from "~/services";
@@ -243,6 +245,29 @@ export const updateEmployee = async (req: Request, res: Response) => {
     }
 };
 
+export const deleteEmployee = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) {
+            return badRequestResponse(res, req.t("user:invalid_user_id"));
+        }
+        const deletedUser: IUser | number = await userService.deleteUser(id);
+        if (typeof deletedUser === "number") {
+            switch (deletedUser) {
+                case 1:
+                    return createErrorResponse(res, req.t("user:employee_not_found"));
+                case 2:
+                    return createErrorResponse(res, req.t("user:account_not_found"));
+                default:
+                    return createErrorResponse(res, req.t("user:error_deleting_employee"));
+            }
+        }
+        return createSuccessResponse(res, req.t("user:employee_deleted_successfully"), deletedUser);
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
+
 export const createGuest = async (req: Request, res: Response) => {
     try {
         const body: ICreateGuestBody = req.body;
@@ -269,6 +294,50 @@ export const createGuest = async (req: Request, res: Response) => {
             }
         }
         return createSuccessResponse(res, req.t("user:guest_created_successfully"), createGuestResource(newGuest));
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
+
+export const getGuests = async (req: Request, res: Response) => {
+    try {
+        const query: IGetQuery = req.query;
+        const currentPage = query.currentPage || PAGINATION.DEFAULT_PAGE;
+        const limit = query.limit || PAGINATION.DEFAULT_LIMIT;
+        const offset = (currentPage - 1) * limit;
+
+        const params: ISelectQuery = {
+            search: query.search,
+            filters: [
+                ...(query.filters || []),
+                {
+                    field: "r.type_name",
+                    operator: FilterOperatorEnum.EQUAL,
+                    value: RolesEnum.GUEST,
+                },
+            ],
+            orderBy: query.orderBy,
+            limit,
+            offset,
+            joins: [
+                {
+                    type: JoinTypeEnum.INNER,
+                    table: "user_roles ur",
+                    on: "ur.user_id = u.id",
+                },
+                {
+                    type: JoinTypeEnum.INNER,
+                    table: "roles r",
+                    on: "r.id = ur.role_id",
+                },
+            ],
+            returning: ["u.*", "a.username"],
+        };
+        const guests: IGetGuests | number = await userService.getGuests(params);
+        if (typeof guests === "number") {
+            return createErrorResponse(res, req.t("user:error_fetching_guests"));
+        }
+        return createSuccessResponse(res, req.t("user:guests_fetched_successfully"), guests);
     } catch (error) {
         return serverErrorResponse(res);
     }
@@ -301,6 +370,29 @@ export const updateGuest = async (req: Request, res: Response) => {
             }
         }
         return createSuccessResponse(res, req.t("user:guest_updated_successfully"), updateGuestResource(updatedGuest));
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
+
+export const deleteGuest = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) {
+            return badRequestResponse(res, req.t("user:invalid_user_id"));
+        }
+        const deletedUser: IUser | number = await userService.deleteUser(id);
+        if (typeof deletedUser === "number") {
+            switch (deletedUser) {
+                case 1:
+                    return createErrorResponse(res, req.t("user:guest_not_found"));
+                case 2:
+                    return createErrorResponse(res, req.t("user:account_not_found"));
+                default:
+                    return createErrorResponse(res, req.t("user:error_deleting_guest"));
+            }
+        }
+        return createSuccessResponse(res, req.t("user:guest_deleted_successfully"), deletedUser);
     } catch (error) {
         return serverErrorResponse(res);
     }

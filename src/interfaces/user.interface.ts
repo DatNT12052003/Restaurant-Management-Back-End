@@ -44,7 +44,14 @@ export interface IUpdateEmployeeBody {
     roles: string[];
 }
 
+export interface IGuest extends IUserWithAccount {}
+
 export interface ICreateGuestBody extends ICreateUserWithAccountBody {}
+
+export interface IGetGuests {
+    guests: IGuest[];
+    pagination: IPagination;
+}
 
 export interface IUpdateGuestBody extends Omit<IUpdateEmployeeBody, "roles"> {}
 

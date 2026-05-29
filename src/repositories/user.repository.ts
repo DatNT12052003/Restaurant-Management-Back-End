@@ -61,6 +61,7 @@ export const getUsersWithAccountInfo = async (
         "u.restaurant_id",
         "u.created_at",
         "a.username",
+        "r.type_name",
     ];
 
     const fieldMap: Record<string, string> = {
@@ -75,6 +76,7 @@ export const getUsersWithAccountInfo = async (
         restaurant_id: "u.restaurant_id",
         created_at: "u.created_at",
         username: "a.username",
+        "r.type_name": "r.type_name",
     };
 
     const finalSearchFields = params.search?.fields.map((f) => fieldMap[f]).filter(Boolean) || [];
@@ -86,6 +88,7 @@ export const getUsersWithAccountInfo = async (
     const baseTable = "users u";
 
     const joins = [
+        ...(params.joins || []),
         {
             type: JoinTypeEnum.LEFT,
             table: "accounts a",

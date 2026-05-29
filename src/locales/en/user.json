@@ -25,6 +25,14 @@
     "update_employee_failed": "Failed to update employee",
     "error_updating_employee": "Failed to update employee",
     "employee_updated_successfully": "Employee updated successfully",
+    "employee_not_found": "Employee not found",
+    "error_deleting_employee": "Failed to delete employee",
+    "employee_deleted_successfully": "Employee deleted successfully",
     "error_creating_guest": "Failed to create guest",
-    "guest_created_successfully": "Guest created successfully"
+    "guest_created_successfully": "Guest created successfully",
+    "error_fetching_guests": "Failed to fetch guests",
+    "guests_fetched_successfully": "Guests fetched successfully",
+    "guest_not_found": "Guest not found",
+    "error_deleting_guest": "Failed to delete guest",
+    "guest_deleted_successfully": "Guest deleted successfully"
 }
