@@ -1,12 +1,59 @@
 import { Request, Response } from "express";
-import { GET_ME, LOGIN, LOGOUT, LOGOUT_ALL, REFRESH_TOKEN, RESET_PASSWORD } from "~/common/error-code/auth";
+import { GET_ME, LOGIN, LOGOUT, LOGOUT_ALL, REFRESH_TOKEN, REGISTER, RESET_PASSWORD } from "~/common/error-code/auth";
 import { MARK_OTP_AS_USED } from "~/common/error-code/otp";
-import { badRequestResponse, serverErrorResponse } from "~/common/responses/error";
-import { getSuccessResponse, loginSuccessResponse, successResponse } from "~/common/responses/success";
-import { ICreateOTPBody, IJwtAccountPayload, ILoginBody, IUpdatePasswordBody, IUser } from "~/interfaces";
-import { getMeResource } from "~/resources";
+import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
+import {
+    createSuccessResponse,
+    getSuccessResponse,
+    loginSuccessResponse,
+    successResponse,
+} from "~/common/responses/success";
+import {
+    IAccount,
+    ICreateGuestBody,
+    ICreateOTPBody,
+    IJwtAccountPayload,
+    ILoginBody,
+    IUpdatePasswordBody,
+    IUser,
+} from "~/interfaces";
+import { createGuestResource, getMeResource } from "~/resources";
 import { authService, mailService, otpService, tokenService, userService } from "~/services";
 import { generateOTP } from "~/utils/common";
+import { createGuest } from "./user.controller";
+import { uploadToCloudinary } from "~/utils/cloudinary";
+import { CREATE_GUEST } from "~/common/error-code/user";
+
+export const register = async (req: Request, res: Response) => {
+    try {
+        const body: ICreateGuestBody = req.body;
+        if (!body.user.full_name) {
+            return badRequestResponse(res, req.t("auth:full_name_required"));
+        }
+        if (req.file) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            body.user.avatar_url = result.secure_url;
+        } else {
+            body.user.avatar_url = null;
+        }
+        const newGuest: { user: IUser; account: IAccount } | number = await userService.createGuest(body);
+        if (typeof newGuest === "number") {
+            switch (newGuest) {
+                case CREATE_GUEST.CREATE_USER_WITH_ACCOUNT_FAILED:
+                    return createErrorResponse(res, req.t("auth:register_failed"));
+                case CREATE_GUEST.ASSIGN_ROLES_FAILED:
+                    return createErrorResponse(res, req.t("auth:register_failed"));
+                case CREATE_GUEST.CREATE_GUEST_FAILED:
+                    return createErrorResponse(res, req.t("auth:register_failed"));
+                default:
+                    return createErrorResponse(res, req.t("auth:register_failed"));
+            }
+        }
+        return createSuccessResponse(res, req.t("auth:register_success"), createGuestResource(newGuest));
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
 
 export const login = async (req: Request, res: Response) => {
     try {

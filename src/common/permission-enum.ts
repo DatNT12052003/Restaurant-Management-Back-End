@@ -12,6 +12,13 @@ export enum EmployeePermissionEnum {
     DELETE = "employee.delete",
 }
 
+export enum GuestPermissionEnum {
+    CREATE = "guest.create",
+    VIEW = "guest.view",
+    UPDATE = "guest.update",
+    DELETE = "guest.delete",
+}
+
 export enum RolePermissionEnum {
     CREATE = "role.create",
     VIEW = "role.view",

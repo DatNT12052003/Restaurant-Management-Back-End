@@ -5,6 +5,7 @@ import { loginSchema } from "~/schemas";
 
 const router = Router();
 
+router.post("/register", authController.register);
 router.post("/login", validateLogin, validate(loginSchema), authController.login);
 router.get("/me", authMiddleware, authController.getMe);
 router.post("/refresh", authController.refreshToken);

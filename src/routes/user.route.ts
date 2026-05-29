@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { EmployeePermissionEnum, UserPermissionEnum } from "~/common/permission-enum";
+import { EmployeePermissionEnum, GuestPermissionEnum, UserPermissionEnum } from "~/common/permission-enum";
 import { userController } from "~/controllers";
 import {
     authMiddleware,
@@ -64,6 +64,26 @@ router.patch(
     checkPermission(EmployeePermissionEnum.DELETE),
     isSelfOrAdminOrManager,
     userController.deleteUser,
+);
+
+router.post(
+    "/guest",
+    authMiddleware,
+    checkPermission(GuestPermissionEnum.CREATE),
+    isSelfOrAdminOrManager,
+    // validate(createUserWithAccountSchema),
+    uploadAvatar,
+    userController.createGuest,
+);
+
+router.patch(
+    "/guest/:id",
+    authMiddleware,
+    checkPermission(GuestPermissionEnum.UPDATE),
+    isSelfOrAdminOrManager,
+    // validate(createUserWithAccountSchema),
+    uploadAvatar,
+    userController.updateGuest,
 );
 
 export default router;

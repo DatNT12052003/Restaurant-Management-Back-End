@@ -1,6 +1,13 @@
 import { Request, Response } from "express";
 import { PAGINATION } from "~/common/constant";
-import { CREATE_EMPLOYEE, CREATE_USER_WITH_ACCOUNT, UPDATE_EMPLOYEE, UPDATE_USER } from "~/common/error-code/user";
+import {
+    CREATE_EMPLOYEE,
+    CREATE_GUEST,
+    CREATE_USER_WITH_ACCOUNT,
+    UPDATE_EMPLOYEE,
+    UPDATE_GUEST,
+    UPDATE_USER,
+} from "~/common/error-code/user";
 import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { createSuccessResponse } from "~/common/responses/success";
 import {
@@ -16,8 +23,10 @@ import {
     IUpdateUserBody,
     ICreateEmployeeBody,
     IUpdateEmployeeBody,
+    ICreateGuestBody,
+    IUpdateGuestBody,
 } from "~/interfaces";
-import { updateEmployeeResource } from "~/resources";
+import { createEmployeeResource, createGuestResource, updateEmployeeResource, updateGuestResource } from "~/resources";
 import { userService } from "~/services";
 import { uploadToCloudinary } from "~/utils/cloudinary";
 
@@ -169,7 +178,8 @@ export const createEmployee = async (req: Request, res: Response) => {
         } else {
             body.user.avatar_url = null;
         }
-        const newUserWithAccount: { user: IUser; account: IAccount } | number = await userService.createEmployee(body);
+        const newUserWithAccount: { user: IUser; account: IAccount; roles: string[] } | number =
+            await userService.createEmployee(body);
         if (typeof newUserWithAccount === "number") {
             switch (newUserWithAccount) {
                 case CREATE_EMPLOYEE.CREATE_USER_WITH_ACCOUNT_FAILED:
@@ -180,7 +190,11 @@ export const createEmployee = async (req: Request, res: Response) => {
                     return createErrorResponse(res, req.t("user:error_creating_employee"));
             }
         }
-        return createSuccessResponse(res, req.t("user:employee_created_successfully"), newUserWithAccount);
+        return createSuccessResponse(
+            res,
+            req.t("user:employee_created_successfully"),
+            createEmployeeResource(newUserWithAccount),
+        );
     } catch (error) {
         return serverErrorResponse(res);
     }
@@ -224,6 +238,69 @@ export const updateEmployee = async (req: Request, res: Response) => {
             req.t("user:employee_updated_successfully"),
             updateEmployeeResource(updatedEmployee),
         );
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
+
+export const createGuest = async (req: Request, res: Response) => {
+    try {
+        const body: ICreateGuestBody = req.body;
+        if (!body.user.full_name) {
+            return badRequestResponse(res, req.t("user:full_name_required"));
+        }
+        if (req.file) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            body.user.avatar_url = result.secure_url;
+        } else {
+            body.user.avatar_url = null;
+        }
+        const newGuest: { user: IUser; account: IAccount } | number = await userService.createGuest(body);
+        if (typeof newGuest === "number") {
+            switch (newGuest) {
+                case CREATE_GUEST.CREATE_USER_WITH_ACCOUNT_FAILED:
+                    return createErrorResponse(res, req.t("user:error_creating_user_with_account"));
+                case CREATE_GUEST.ASSIGN_ROLES_FAILED:
+                    return createErrorResponse(res, req.t("user:error_assigning_roles"));
+                case CREATE_GUEST.CREATE_GUEST_FAILED:
+                    return createErrorResponse(res, req.t("user:error_creating_guest"));
+                default:
+                    return createErrorResponse(res, req.t("user:error_creating_guest"));
+            }
+        }
+        return createSuccessResponse(res, req.t("user:guest_created_successfully"), createGuestResource(newGuest));
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
+
+export const updateGuest = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const body: IUpdateGuestBody = req.body;
+        if (req.file) {
+            const result = await uploadToCloudinary(req.file.buffer);
+            body.user.avatar_url = result.secure_url;
+        } else {
+            body.user.avatar_url = null;
+        }
+        if (isNaN(id)) {
+            return badRequestResponse(res, req.t("user:invalid_user_id"));
+        }
+        const updatedGuest = await userService.updateGuest(body, id);
+        if (typeof updatedGuest === "number") {
+            switch (updatedGuest) {
+                case UPDATE_GUEST.USER_NOT_FOUND:
+                    return createErrorResponse(res, req.t("user:user_not_found"));
+                case UPDATE_GUEST.ACCOUNT_NOT_FOUND:
+                    return createErrorResponse(res, req.t("user:account_not_found"));
+                case UPDATE_GUEST.UPDATE_GUEST_FAILED:
+                    return createErrorResponse(res, req.t("user:update_guest_failed"));
+                default:
+                    return createErrorResponse(res, req.t("user:error_updating_guest"));
+            }
+        }
+        return createSuccessResponse(res, req.t("user:guest_updated_successfully"), updateGuestResource(updatedGuest));
     } catch (error) {
         return serverErrorResponse(res);
     }

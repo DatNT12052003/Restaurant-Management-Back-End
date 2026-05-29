@@ -17,18 +17,29 @@ export const getUserResource = (user: IUser) => {
     };
 };
 
-export const updateEmployeeResource = ({
-    updatedUser,
-    updatedAccount,
+export const createEmployeeResource = ({
+    user,
+    account,
     roles,
 }: {
-    updatedUser: IUser;
-    updatedAccount: IAccount;
+    user: IUser;
+    account: IAccount;
     roles: string[];
 }) => {
     return {
-        user: getUserResource(updatedUser),
-        account: getAccountResource(updatedAccount),
+        user: getUserResource(user),
+        account: getAccountResource(account),
         roles,
     };
 };
+
+export const updateEmployeeResource = createEmployeeResource;
+
+export const createGuestResource = ({ user, account }: { user: IUser; account: IAccount }) => {
+    return {
+        user: getUserResource(user),
+        account: getAccountResource(account),
+    };
+};
+
+export const updateGuestResource = createGuestResource;

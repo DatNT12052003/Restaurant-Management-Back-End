@@ -17,6 +17,8 @@ import {
     ICreateEmployeeBody,
     IUpdateEmployeeBody,
     IUpdateUsernamePayload,
+    ICreateGuestBody,
+    IUpdateGuestBody,
 } from "~/interfaces";
 import {
     accountRepository,
@@ -32,6 +34,7 @@ import { stringToDate } from "~/utils/common";
 import { RolesEnum } from "~/common/enum";
 import {
     CREATE_EMPLOYEE,
+    CREATE_GUEST,
     CREATE_USER,
     CREATE_USER_WITH_ACCOUNT,
     DELETE_USER,
@@ -40,8 +43,10 @@ import {
     GET_USER_BY_ACCOUNT_ID,
     GET_USER_BY_EMAIL,
     UPDATE_EMPLOYEE,
+    UPDATE_GUEST,
     UPDATE_USER,
 } from "~/common/error-code/user";
+import { getRolesByTypeNames } from "~/repositories/role.repository";
 
 export const createUser = async (body: ICreateUserBody): Promise<IUser | number> => {
     try {
@@ -217,7 +222,7 @@ export const deleteUser = async (id: number): Promise<IUser | number> => {
 
 export const createEmployee = async (
     body: ICreateEmployeeBody,
-): Promise<{ user: IUser; account: IAccount } | number> => {
+): Promise<{ user: IUser; account: IAccount; roles: string[] } | number> => {
     try {
         await pool.query("BEGIN");
 
@@ -246,7 +251,7 @@ export const createEmployee = async (
 
         await pool.query("COMMIT");
 
-        return newUserWithAccount;
+        return { ...newUserWithAccount, roles: body.roles };
     } catch (error) {
         await pool.query("ROLLBACK");
         return CREATE_EMPLOYEE.CREATE_EMPLOYEE_FAILED;
@@ -256,7 +261,7 @@ export const createEmployee = async (
 export const updateEmployee = async (
     body: IUpdateEmployeeBody,
     id: number,
-): Promise<{ updatedUser: IUser; updatedAccount: IAccount; roles: string[] } | number> => {
+): Promise<{ user: IUser; account: IAccount; roles: string[] } | number> => {
     try {
         await pool.query("BEGIN");
         const updateUserPayload: IUpdateUserPayload = {
@@ -329,10 +334,83 @@ export const updateEmployee = async (
             }
         }
         await pool.query("COMMIT");
-        return { updatedUser, updatedAccount, roles: body.roles };
+        return { user: updatedUser, account: updatedAccount, roles: body.roles };
     } catch (error) {
         await pool.query("ROLLBACK");
         return UPDATE_EMPLOYEE.UPDATE_EMPLOYEE_FAILED;
+    }
+};
+
+export const createGuest = async (body: ICreateGuestBody): Promise<{ user: IUser; account: IAccount } | number> => {
+    try {
+        await pool.query("BEGIN");
+        const newGuest = await createUserWithAccount(body);
+
+        if (!newGuest || typeof newGuest === "number") {
+            await pool.query("ROLLBACK");
+            return CREATE_GUEST.CREATE_USER_WITH_ACCOUNT_FAILED;
+        }
+
+        const userId = newGuest.user.id;
+
+        const roles = await getRolesByTypeNames([RolesEnum.GUEST]);
+        const roleIds = roles.map((r) => r.id);
+        if (!roleIds || roleIds.length === 0) {
+            await pool.query("ROLLBACK");
+            return CREATE_GUEST.ASSIGN_ROLES_FAILED;
+        }
+
+        const roleAssigned = await userRoleRepository.assignRolesToUser(userId, roleIds);
+        if (!roleAssigned) {
+            await pool.query("ROLLBACK");
+            return CREATE_GUEST.ASSIGN_ROLES_FAILED;
+        }
+
+        await pool.query("COMMIT");
+        return newGuest;
+    } catch (error) {
+        await pool.query("ROLLBACK");
+        return CREATE_GUEST.CREATE_GUEST_FAILED;
+    }
+};
+
+export const updateGuest = async (
+    body: IUpdateGuestBody,
+    id: number,
+): Promise<{ user: IUser; account: IAccount } | number> => {
+    try {
+        await pool.query("BEGIN");
+        const updateUserPayload: IUpdateUserPayload = {
+            full_name: body.user.full_name,
+            date_of_birth: stringToDate(body.user.date_of_birth),
+            gender: body.user.gender,
+            address: body.user.address,
+            email: body.user.email,
+            phone_number: body.user.phone_number,
+            avatar_url: body.user.avatar_url,
+            status: body.user.status,
+            restaurant_id: body.user.restaurant_id,
+        };
+        const updatedUser = await userRepository.updateUser({ payload: updateUserPayload, id });
+        if (!updatedUser) {
+            await pool.query("ROLLBACK");
+            return UPDATE_GUEST.USER_NOT_FOUND;
+        }
+
+        const updatedAccount = await accountRepository.updateAccountUsername({
+            payload: { username: body.account.username },
+            id: updatedUser.account_id!,
+        });
+
+        if (!updatedAccount) {
+            await pool.query("ROLLBACK");
+            return UPDATE_GUEST.ACCOUNT_NOT_FOUND;
+        }
+        await pool.query("COMMIT");
+        return { user: updatedUser, account: updatedAccount };
+    } catch (error) {
+        await pool.query("ROLLBACK");
+        return UPDATE_GUEST.UPDATE_GUEST_FAILED;
     }
 };
 

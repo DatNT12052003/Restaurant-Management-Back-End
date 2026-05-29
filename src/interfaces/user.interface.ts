@@ -44,6 +44,10 @@ export interface IUpdateEmployeeBody {
     roles: string[];
 }
 
+export interface ICreateGuestBody extends ICreateUserWithAccountBody {}
+
+export interface IUpdateGuestBody extends Omit<IUpdateEmployeeBody, "roles"> {}
+
 export interface ICreateUserBody extends Omit<
     IUser,
     "id" | "status" | "date_of_birth" | "created_at" | "updated_at" | "deleted_at"

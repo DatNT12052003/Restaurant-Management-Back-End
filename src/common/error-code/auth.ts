@@ -1,3 +1,7 @@
+export const REGISTER = {
+    REGISTER_FAILED: 0,
+};
+
 export const LOGIN = {
     NOT_EXIST: 1,
     INVALID_USERNAME_PASSWORD: 2,

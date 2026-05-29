@@ -1,5 +1,15 @@
 import bcrypt from "bcrypt";
-import { IAuth, IJwtAccountPayload, ILoginBody, IMe, IUpdatePasswordBody, IUpdatePasswordPayload } from "~/interfaces";
+import {
+    IAccount,
+    IAuth,
+    ICreateGuestBody,
+    IJwtAccountPayload,
+    ILoginBody,
+    IMe,
+    IUpdatePasswordBody,
+    IUpdatePasswordPayload,
+    IUser,
+} from "~/interfaces";
 import {
     accountRepository,
     permissionRepository,
@@ -11,8 +21,17 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken, verifyResetPassw
 import { v4 as uuidv4 } from "uuid";
 import { SALT_ROUNDS } from "~/common/constant";
 import { TokenTypeEnum } from "~/common/enum";
-import { GET_ME, LOGIN, LOGOUT, LOGOUT_ALL, REFRESH_TOKEN, RESET_PASSWORD } from "~/common/error-code/auth";
+import { GET_ME, LOGIN, LOGOUT, LOGOUT_ALL, REFRESH_TOKEN, REGISTER, RESET_PASSWORD } from "~/common/error-code/auth";
+import { userService } from ".";
 
+export const register = async (body: ICreateGuestBody): Promise<{ user: IUser; account: IAccount } | number> => {
+    try {
+        const result = await userService.createGuest(body);
+        return result;
+    } catch (error) {
+        return REGISTER.REGISTER_FAILED;
+    }
+};
 export const login = async (body: ILoginBody): Promise<IAuth | number> => {
     try {
         const account = await accountRepository.getAccountByUsername(body.username);
