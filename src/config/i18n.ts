@@ -8,7 +8,7 @@ i18n.use(Backend)
     .init({
         fallbackLng: "en",
         preload: ["en", "vi"],
-        ns: ["common", "validation", "auth", "account", "user"],
+        ns: ["common", "validation", "auth", "account", "user", "restaurant", "room", "table"],
         defaultNS: "common",
         backend: {
             loadPath: path.join(__dirname, "../locales/{{lng}}/{{ns}}.json"),

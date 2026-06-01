@@ -6,3 +6,5 @@ export * as cloudinaryService from "./cloudinary.service";
 export * as mailService from "./mail.service";
 export * as otpService from "./otp.service";
 export * as restaurantService from "./restaurant.service";
+export * as roomService from "./room.service";
+export * as tableService from "./table.service";
