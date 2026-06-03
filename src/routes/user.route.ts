@@ -36,7 +36,7 @@ router.patch(
     isSelfOrAdminOrManager,
     userController.deleteUser,
 );
-router.get("/employees/:restaurant_id", userController.getEmployeesByRestaurantId);
+router.get("/employees", userController.getEmployees);
 
 router.post(
     "/employee",

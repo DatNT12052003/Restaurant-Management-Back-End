@@ -140,10 +140,7 @@ export const getUserByEmail = async (email: string): Promise<IUser | number> => 
     }
 };
 
-export const getEmployeesByRestaurantId = async (
-    params: ISelectQuery,
-    restaurant_id: number,
-): Promise<IGetEmployees | number> => {
+export const getEmployees = async (params: ISelectQuery): Promise<IGetEmployees | number> => {
     try {
         const result = await userRepository.getUsersWithAccountInfo(params);
         let employees: IEmployee[] = [];
@@ -158,9 +155,7 @@ export const getEmployeesByRestaurantId = async (
                 employees.push(employeeInfo);
             }
         }
-        const filteredEmployees = employees
-            .filter((e) => e.employee.restaurant_id === restaurant_id)
-            .filter((e) => !e.roles.includes(RolesEnum.GUEST));
+        const filteredEmployees = employees.filter((e) => !e.roles.includes(RolesEnum.GUEST));
         const totalCount = filteredEmployees.length;
         const totalPages = Math.ceil(totalCount / params.limit!);
 
