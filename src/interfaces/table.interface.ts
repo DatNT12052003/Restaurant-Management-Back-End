@@ -1,3 +1,5 @@
+import { IPagination } from "./common.interface";
+
 export interface ITable {
     id: number;
     name: string;
@@ -6,4 +8,9 @@ export interface ITable {
     created_at: Date;
     updated_at: Date;
     deleted_at?: Date | null;
+}
+
+export interface IGetTables {
+    tables: Partial<ITable>[];
+    pagination: IPagination;
 }
