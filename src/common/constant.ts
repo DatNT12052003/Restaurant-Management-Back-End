@@ -16,8 +16,17 @@ export const PG_ERROR = {
     UNIQUE_VIOLATION: "23505",
     FOREIGN_KEY_VIOLATION: "23503",
     CHECK_VIOLATION: "23514",
+    /** Vi phạm exclusion constraint (ví dụ: bàn bị đặt trùng giờ) */
+    EXCLUSION_VIOLATION: "23P01",
 };
 
 /** Tối đa số ảnh trong một lần tải lên */
 export const MAX_IMAGES_PER_UPLOAD = 10;
 export const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+/** Đặt bàn: thời lượng tối đa của một lần đặt (giờ) */
+export const MAX_RESERVATION_HOURS = 12;
+/** Đặt bàn: cho phép giờ bắt đầu sớm hơn hiện tại tối đa bấy nhiêu phút (ghi nhận khách vừa tới) */
+export const RESERVATION_PAST_GRACE_MINUTES = 15;
+/** Lịch đặt bàn: khoảng thời gian tối đa của một lần truy vấn (ngày) */
+export const MAX_SCHEDULE_RANGE_DAYS = 31;

@@ -10,3 +10,4 @@ export * as roomRepository from "./room.repository";
 export * as tableRepository from "./table.repository";
 export * as menuRepository from "./menu.repository";
 export * as imageRepository from "./image.repository";
+export * as reservationRepository from "./reservation.repository";

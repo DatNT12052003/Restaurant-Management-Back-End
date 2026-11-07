@@ -19,6 +19,8 @@ const respondError = (req: Request, res: Response, code: number, fallback: strin
             return badRequestResponse(res, req.t("table:duplicate_name"));
         case TABLE_ERROR.IN_USE:
             return badRequestResponse(res, req.t("table:in_use"));
+        case TABLE_ERROR.HAS_RESERVATIONS:
+            return badRequestResponse(res, req.t("table:has_reservations"));
         default:
             return createErrorResponse(res, req.t(fallback));
     }

@@ -11,3 +11,4 @@ export { default as dishRouter } from "./dish.route";
 export { default as comboRouter } from "./combo.route";
 export { default as restaurantMenuRouter } from "./restaurant-menu.route";
 export { default as imageRouter } from "./image.route";
+export { default as reservationRouter } from "./reservation.route";

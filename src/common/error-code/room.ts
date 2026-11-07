@@ -9,4 +9,6 @@ export const ROOM_ERROR = {
     RESTAURANT_REQUIRED: 3,
     TOO_MANY_TABLES: 4,
     IN_USE: 5,
+    /** Có bàn còn reservation chưa kết thúc */
+    HAS_RESERVATIONS: 6,
 };

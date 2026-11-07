@@ -3,7 +3,7 @@ import { RoomTypeEnum, UsageStatusEnum } from "~/common/enum";
 import { GET_ALL_TABLES, TABLE_ERROR } from "~/common/error-code/table";
 import { rollback, withTransaction } from "~/config/db";
 import { ICreateTableBody, IGetTables, ISelectQuery, ITable, IUpdateTableBody } from "~/interfaces";
-import { roomRepository, tableRepository } from "~/repositories";
+import { reservationRepository, roomRepository, tableRepository } from "~/repositories";
 import { getPgErrorCode } from "~/utils/common";
 import { buildPagination } from "~/utils/pagination";
 import { inScope } from "./room.service";
@@ -90,6 +90,7 @@ export const deleteTable = async (id: number, scope: Scope): Promise<{ id: numbe
         const table = await tableRepository.getTableById(id);
         if (!table || !inScope(table.restaurant_id!, scope)) return TABLE_ERROR.NOT_FOUND;
         if (BUSY_STATUSES.includes(table.status)) return TABLE_ERROR.IN_USE;
+        if ((await reservationRepository.countUpcomingByTables([id])) > 0) return TABLE_ERROR.HAS_RESERVATIONS;
         return (await tableRepository.deleteTable(id)) ?? TABLE_ERROR.NOT_FOUND;
     } catch (error) {
         return TABLE_ERROR.FAILED;

@@ -9,4 +9,6 @@ export const TABLE_ERROR = {
     ROOM_FULL: 3,
     DUPLICATE_NAME: 4,
     IN_USE: 5,
+    /** Bàn còn reservation chưa kết thúc */
+    HAS_RESERVATIONS: 6,
 };

@@ -24,6 +24,7 @@ import {
     roomRouter,
     tableRouter,
     userRouter,
+    reservationRouter,
 } from "~/routes";
 
 const app = express();
@@ -57,6 +58,7 @@ app.use("/api/dishes", dishRouter);
 app.use("/api/combos", comboRouter);
 app.use("/api/restaurant-menus", restaurantMenuRouter);
 app.use("/api/images", imageRouter);
+app.use("/api/reservations", reservationRouter);
 
 app.use(errorHandler);
 
