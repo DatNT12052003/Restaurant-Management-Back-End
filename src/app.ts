@@ -26,6 +26,8 @@ import {
     userRouter,
     reservationRouter,
     orderRouter,
+    discountRouter,
+    paymentRouter,
 } from "~/routes";
 
 const app = express();
@@ -61,6 +63,8 @@ app.use("/api/restaurant-menus", restaurantMenuRouter);
 app.use("/api/images", imageRouter);
 app.use("/api/reservations", reservationRouter);
 app.use("/api/orders", orderRouter);
+app.use("/api/discounts", discountRouter);
+app.use("/api/payments", paymentRouter);
 
 app.use(errorHandler);
 

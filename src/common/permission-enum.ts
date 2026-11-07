@@ -100,6 +100,22 @@ export enum OrderItemPermissionEnum {
     SERVE = "order_item.serve",
 }
 
+export enum PaymentPermissionEnum {
+    VIEW = "payment.view",
+    /** Thu tiền, xác nhận / hủy giao dịch chờ */
+    CREATE = "payment.create",
+    REFUND = "payment.refund",
+}
+
+export enum DiscountPermissionEnum {
+    VIEW = "discount.view",
+    CREATE = "discount.create",
+    UPDATE = "discount.update",
+    DELETE = "discount.delete",
+    /** Áp / gỡ mã giảm giá cho order */
+    APPLY = "discount.apply",
+}
+
 /** Toàn bộ permission của hệ thống, dùng cho seed và kiểm tra. */
 export const ALL_PERMISSIONS: string[] = [
     UserPermissionEnum,
@@ -116,4 +132,6 @@ export const ALL_PERMISSIONS: string[] = [
     ReservationPermissionEnum,
     OrderPermissionEnum,
     OrderItemPermissionEnum,
+    PaymentPermissionEnum,
+    DiscountPermissionEnum,
 ].flatMap((group) => Object.values(group) as string[]);

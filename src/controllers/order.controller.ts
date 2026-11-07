@@ -36,6 +36,9 @@ const ERROR_MESSAGES: Record<number, [typeof badRequestResponse, string]> = {
     [ORDER_ERROR.RESERVATION_HAS_ORDER]: [badRequestResponse, "order:reservation_has_order"],
     [ORDER_ERROR.GUEST_NOT_FOUND]: [notFoundResponse, "reservation:guest_not_found"],
     [ORDER_ERROR.STAFF_NOT_FOUND]: [notFoundResponse, "order:staff_not_found"],
+    [ORDER_ERROR.NOT_FULLY_PAID]: [badRequestResponse, "order:not_fully_paid"],
+    [ORDER_ERROR.PENDING_PAYMENTS]: [badRequestResponse, "order:pending_payments"],
+    [ORDER_ERROR.HAS_PAYMENTS]: [badRequestResponse, "order:has_payments"],
 };
 
 type Action = "get" | "create" | "update" | "round" | "table" | "item" | "complete" | "cancel";

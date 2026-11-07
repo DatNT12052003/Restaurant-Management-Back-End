@@ -30,5 +30,8 @@
     "has_served_items": "Order đã có món được phục vụ nên không thể hủy",
     "reservation_closed": "Đặt bàn đã hủy, hoàn tất hoặc khách không đến",
     "reservation_has_order": "Đặt bàn này đã có order",
-    "staff_not_found": "Không tìm thấy nhân viên phụ trách thuộc nhà hàng này"
+    "staff_not_found": "Không tìm thấy nhân viên phụ trách thuộc nhà hàng này",
+    "not_fully_paid": "Chưa thu đủ tiền của order",
+    "pending_payments": "Còn giao dịch đang chờ xác nhận",
+    "has_payments": "Order đã thu tiền; hãy hoàn tiền trước khi hủy"
 }

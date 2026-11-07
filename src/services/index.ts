@@ -13,3 +13,5 @@ export * as menuService from "./menu.service";
 export * as imageService from "./image.service";
 export * as reservationService from "./reservation.service";
 export * as orderService from "./order.service";
+export * as discountService from "./discount.service";
+export * as paymentService from "./payment.service";

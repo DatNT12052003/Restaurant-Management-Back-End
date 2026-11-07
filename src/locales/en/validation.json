@@ -59,6 +59,9 @@
         },
         "status": {
             "invalid": "Invalid restaurant status"
+        },
+        "percent": {
+            "invalid": "The rate must be between 0 and 100"
         }
     },
     "room": {
@@ -127,5 +130,46 @@
         "same_table": "The target table must differ from the current table",
         "item_status_invalid": "Invalid item status",
         "station_invalid": "Invalid station"
+    },
+    "discount": {
+        "code": {
+            "invalid": "The code must be 3–50 letters, digits, - or _"
+        },
+        "name": {
+            "required": "The name is required"
+        },
+        "type": {
+            "invalid": "Invalid discount type"
+        },
+        "value": {
+            "invalid": "The discount value must be greater than 0",
+            "percent": "A percentage discount is at most 100"
+        },
+        "min_order": {
+            "invalid": "Invalid minimum order value"
+        },
+        "max_discount": {
+            "invalid": "The maximum discount must be greater than 0"
+        },
+        "limit": {
+            "invalid": "The usage limit must be a positive integer"
+        },
+        "status": {
+            "invalid": "Invalid status"
+        }
+    },
+    "payment": {
+        "amount": {
+            "invalid": "The amount must be greater than 0"
+        },
+        "method": {
+            "invalid": "Invalid payment method"
+        },
+        "received": {
+            "invalid": "Invalid cash received"
+        },
+        "reason": {
+            "required": "A reason is required"
+        }
     }
 }

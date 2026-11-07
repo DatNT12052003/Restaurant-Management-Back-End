@@ -1,10 +1,12 @@
 import { Router } from "express";
-import { OrderPermissionEnum } from "~/common/permission-enum";
-import { orderController } from "~/controllers";
-import { authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { DiscountPermissionEnum, OrderPermissionEnum, PaymentPermissionEnum } from "~/common/permission-enum";
+import { discountController, orderController, paymentController } from "~/controllers";
+import { authMiddleware, checkAnyPermission, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
 import {
     activeOrdersSchema,
     addOrderTablesSchema,
+    applyDiscountSchema,
+    createPaymentSchema,
     cancelOrderSchema,
     createOrderSchema,
     createRoundSchema,
@@ -56,13 +58,50 @@ router.delete(
     restrictToRestaurant,
     orderController.releaseTable,
 );
-router.post("/:id/complete", UPDATE, validate(orderIdSchema), restrictToRestaurant, orderController.completeOrder);
+// Hoàn tất: phục vụ hoặc thu ngân (thường tự hoàn tất khi thu đủ tiền)
+router.post(
+    "/:id/complete",
+    checkAnyPermission([OrderPermissionEnum.UPDATE, PaymentPermissionEnum.CREATE]),
+    validate(orderIdSchema),
+    restrictToRestaurant,
+    orderController.completeOrder,
+);
 router.post(
     "/:id/cancel",
     checkPermission(OrderPermissionEnum.CANCEL),
     validate(cancelOrderSchema),
     restrictToRestaurant,
     orderController.cancelOrder,
+);
+
+// ---- Giai đoạn 5: giảm giá, thanh toán, hóa đơn ----
+router.post(
+    "/:id/discount",
+    checkPermission(DiscountPermissionEnum.APPLY),
+    validate(applyDiscountSchema),
+    restrictToRestaurant,
+    discountController.applyDiscount,
+);
+router.delete(
+    "/:id/discount",
+    checkPermission(DiscountPermissionEnum.APPLY),
+    validate(orderIdSchema),
+    restrictToRestaurant,
+    discountController.removeDiscount,
+);
+router.post(
+    "/:id/payments",
+    checkPermission(PaymentPermissionEnum.CREATE),
+    validate(createPaymentSchema),
+    restrictToRestaurant,
+    paymentController.createPayment,
+);
+router.get(
+    "/:id/invoice",
+    checkAnyPermission([OrderPermissionEnum.VIEW, PaymentPermissionEnum.VIEW]),
+    validate(orderIdSchema),
+    restrictToRestaurant,
+    paymentController.getInvoice,
 );
 
 export default router;

@@ -12,3 +12,5 @@ export * as menuRepository from "./menu.repository";
 export * as imageRepository from "./image.repository";
 export * as reservationRepository from "./reservation.repository";
 export * as orderRepository from "./order.repository";
+export * as discountRepository from "./discount.repository";
+export * as paymentRepository from "./payment.repository";

@@ -30,5 +30,8 @@
     "has_served_items": "Items have already been served, so the order cannot be cancelled",
     "reservation_closed": "The reservation is cancelled, completed, or a no-show",
     "reservation_has_order": "This reservation already has an order",
-    "staff_not_found": "The assigned staff member was not found in this restaurant"
+    "staff_not_found": "The assigned staff member was not found in this restaurant",
+    "not_fully_paid": "The order is not fully paid",
+    "pending_payments": "Some payments are still waiting for confirmation",
+    "has_payments": "The order has payments; refund them before cancelling"
 }

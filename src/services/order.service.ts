@@ -16,7 +16,13 @@ import {
     IUpdateOrderBody,
     OrderLineKind,
 } from "~/interfaces";
-import { orderRepository, reservationRepository, restaurantRepository } from "~/repositories";
+import {
+    discountRepository,
+    orderRepository,
+    paymentRepository,
+    reservationRepository,
+    restaurantRepository,
+} from "~/repositories";
 import { OPEN_ORDER_STATUSES } from "~/repositories/order.repository";
 import { emitToRestaurant } from "~/sockets";
 import { buildPagination } from "~/utils/pagination";
@@ -141,6 +147,7 @@ const openOrder = async (input: {
     await checkStaff(input.assignedStaffId, input.restaurantId);
 
     const code = await orderRepository.nextOrderCode(input.restaurantId);
+    const restaurant = await restaurantRepository.getRestaurantById(input.restaurantId);
     const created = await orderRepository.createOrder({
         code,
         restaurant_id: input.restaurantId,
@@ -151,6 +158,8 @@ const openOrder = async (input: {
         assigned_staff_id: input.assignedStaffId ?? input.actorId ?? null,
         status: OrderStatusEnum.CONFIRMED,
         note: input.note ?? null,
+        service_fee_rate: restaurant?.service_fee_percent ?? 0,
+        tax_rate: restaurant?.tax_percent ?? 0,
     });
     await orderRepository.addOrderTables(created.id, tableIds);
     await orderRepository.setTablesStatus(tableIds, UsageStatusEnum.OCCUPIED);
@@ -210,9 +219,14 @@ const emitTables = (restaurantId: number, tableIds: number[], status: UsageStatu
 const loadDetail = async (id: number): Promise<IOrderDetail | undefined> => {
     const order = await orderRepository.getOrderById(id);
     if (!order) return undefined;
-    const [rounds, lines] = await Promise.all([orderRepository.getRounds(id), orderRepository.getLines(id)]);
+    const [rounds, lines, payments] = await Promise.all([
+        orderRepository.getRounds(id),
+        orderRepository.getLines(id),
+        paymentRepository.getOrderPayments(id),
+    ]);
     return {
         ...order,
+        payments,
         rounds: rounds.map((r) => ({ ...r, lines: lines.filter((l) => l.round_id === r.id) })),
     };
 };
@@ -596,7 +610,10 @@ const closeOrder = async (
     return { released, reservationId };
 };
 
-const emitClosed = (
+/** Kết quả đóng order, dùng để phát sự kiện sau khi commit */
+export type IClosedOrder = Awaited<ReturnType<typeof closeOrder>>;
+
+export const emitClosed = (
     order: IOrder,
     status: OrderStatusEnum,
     closed: { released: number[]; reservationId: number | null },
@@ -612,15 +629,35 @@ const emitClosed = (
 };
 
 /**
- * Hoàn tất order: mọi món phải đã phục vụ hoặc đã hủy.
- * Giai đoạn 5 sẽ thêm điều kiện đã thanh toán đủ.
+ * Điều kiện hoàn tất: mọi món đã phục vụ hoặc đã hủy, đã thu đủ tiền, không còn giao dịch chờ xác nhận.
+ * Trả về mã lỗi, hoặc undefined nếu đủ điều kiện. Gọi trong transaction, sau khi đã khóa order.
  */
+const checkSettled = async (order: IOrder): Promise<number | undefined> => {
+    const counts = await orderRepository.countLinesByStatus(order.id);
+    if (UNFINISHED_LINE_STATUSES.some((s) => (counts[s] ?? 0) > 0)) return ORDER_ERROR.ITEMS_NOT_SERVED;
+    const summary = await paymentRepository.getSummary(order.id);
+    if (summary.pending > 0) return ORDER_ERROR.PENDING_PAYMENTS;
+    const fresh = await orderRepository.getOrderRow(order.id);
+    if (summary.paid < Number(fresh!.total)) return ORDER_ERROR.NOT_FULLY_PAID;
+    return undefined;
+};
+
+/**
+ * Tự hoàn tất order nếu đã đủ điều kiện (gọi từ thanh toán, trong transaction).
+ * Trả về thông tin đóng order để phát sự kiện, hoặc null nếu chưa đủ điều kiện.
+ */
+export const completeIfSettled = async (order: IOrder): Promise<IClosedOrder | null> => {
+    if (!isOpen(order) || (await checkSettled(order)) !== undefined) return null;
+    return closeOrder(order, OrderStatusEnum.COMPLETED, {});
+};
+
+/** Hoàn tất order: món đã phục vụ / hủy hết và đã thu đủ tiền (đặc tả 8.7). */
 export const completeOrder = async (id: number, scope: Scope): Promise<IOrderDetail | number> => {
     try {
         const result = await withTransaction(async () => {
             const order = await loadOrder(id, scope);
-            const counts = await orderRepository.countLinesByStatus(id);
-            if (UNFINISHED_LINE_STATUSES.some((s) => (counts[s] ?? 0) > 0)) return rollback(ORDER_ERROR.ITEMS_NOT_SERVED);
+            const error = await checkSettled(order);
+            if (error !== undefined) return rollback(error);
             return { order, closed: await closeOrder(order, OrderStatusEnum.COMPLETED, {}) };
         });
         if (typeof result === "number") return result;
@@ -631,7 +668,10 @@ export const completeOrder = async (id: number, scope: Scope): Promise<IOrderDet
     }
 };
 
-/** Hủy order: chỉ khi chưa phục vụ món nào. Mọi món còn lại chuyển sang `cancelled`. */
+/**
+ * Hủy order: chỉ khi chưa phục vụ món nào và chưa thu tiền (đã thu thì phải hoàn trước).
+ * Mọi món còn lại chuyển sang `cancelled`, giao dịch chờ bị hủy, mã giảm giá được trả lại lượt dùng.
+ */
 export const cancelOrder = async (
     id: number,
     reason: string | null | undefined,
@@ -643,6 +683,10 @@ export const cancelOrder = async (
             const order = await loadOrder(id, scope);
             const counts = await orderRepository.countLinesByStatus(id);
             if ((counts[I.SERVED] ?? 0) > 0) return rollback(ORDER_ERROR.HAS_SERVED_ITEMS);
+            if ((await paymentRepository.getSummary(id)).paid > 0) return rollback(ORDER_ERROR.HAS_PAYMENTS);
+            await paymentRepository.cancelPendingPayments(id);
+            const removed = await discountRepository.removeOrderDiscount(id);
+            if (removed) await discountRepository.changeUsage(removed.discount_id, -1);
             await orderRepository.cancelOpenLines(id, actorId ?? null, reason ?? null);
             await orderRepository.recomputeTotals(id);
             return {

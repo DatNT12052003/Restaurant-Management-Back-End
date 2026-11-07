@@ -142,3 +142,37 @@ export enum KitchenStationEnum {
     KITCHEN = "kitchen",
     BAR = "bar",
 }
+
+export enum DiscountTypeEnum {
+    /** Giảm theo % tạm tính (có thể giới hạn bằng max_discount) */
+    PERCENT = "percent",
+    /** Giảm số tiền cố định */
+    FIXED = "fixed",
+}
+
+export enum DiscountStatusEnum {
+    ACTIVE = "active",
+    INACTIVE = "inactive",
+}
+
+export enum PaymentMethodEnum {
+    CASH = "cash",
+    CARD = "card",
+    TRANSFER = "transfer",
+}
+
+/** Trạng thái giao dịch (đặc tả 4.8) */
+export enum PaymentStatusEnum {
+    PENDING = "pending",
+    PROCESSING = "processing",
+    PAID = "paid",
+    FAILED = "failed",
+    CANCELLED = "cancelled",
+    /** Payment gốc đã được hoàn hết */
+    REFUNDED = "refunded",
+}
+
+export enum PaymentTypeEnum {
+    PAYMENT = "payment",
+    REFUND = "refund",
+}

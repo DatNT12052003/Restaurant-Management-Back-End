@@ -6,6 +6,9 @@ export interface IRestaurant {
     name: string;
     status: RestaurantStatusEnum;
     address: string;
+    /** Phí dịch vụ và thuế (%) áp cho order mới */
+    service_fee_percent: string;
+    tax_percent: string;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
@@ -20,6 +23,8 @@ export interface ICreateRestaurantBody {
     name: string;
     address: string;
     status?: RestaurantStatusEnum;
+    service_fee_percent?: number;
+    tax_percent?: number;
 }
 
 export interface IUpdateRestaurantBody extends Partial<ICreateRestaurantBody> {}

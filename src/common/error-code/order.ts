@@ -30,4 +30,10 @@ export const ORDER_ERROR = {
     RESERVATION_HAS_ORDER: 17,
     GUEST_NOT_FOUND: 18,
     STAFF_NOT_FOUND: 19,
+    /** Chưa thu đủ tiền */
+    NOT_FULLY_PAID: 20,
+    /** Còn giao dịch chờ xác nhận */
+    PENDING_PAYMENTS: 21,
+    /** Đã thu tiền: phải hoàn tiền trước khi hủy order */
+    HAS_PAYMENTS: 22,
 };

@@ -1,0 +1,21 @@
+{
+    "get_successfully": "Payments loaded successfully",
+    "get_failed": "Failed to load payments",
+    "create_successfully": "Payment recorded",
+    "create_failed": "Failed to record payment",
+    "confirm_successfully": "Payment confirmed",
+    "confirm_failed": "Failed to confirm payment",
+    "cancel_successfully": "Payment cancelled",
+    "cancel_failed": "Failed to cancel payment",
+    "fail_successfully": "Payment marked as failed",
+    "fail_failed": "Failed to update payment",
+    "refund_successfully": "Refund recorded",
+    "refund_failed": "Failed to refund",
+    "not_found": "Payment not found",
+    "nothing_due": "Nothing is due on this order",
+    "amount_exceeds_due": "The amount exceeds the amount due",
+    "received_too_low": "The cash received is less than the payment amount",
+    "pending_cash": "Cash payments must be confirmed immediately",
+    "invalid_status": "This action is not allowed for a payment in this status",
+    "refund_exceeds": "The refund exceeds the refundable amount of this payment"
+}

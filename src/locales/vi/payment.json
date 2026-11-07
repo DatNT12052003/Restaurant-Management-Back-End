@@ -1,0 +1,21 @@
+{
+    "get_successfully": "Lấy dữ liệu thanh toán thành công",
+    "get_failed": "Lấy dữ liệu thanh toán thất bại",
+    "create_successfully": "Đã ghi nhận thanh toán",
+    "create_failed": "Ghi nhận thanh toán thất bại",
+    "confirm_successfully": "Đã xác nhận giao dịch",
+    "confirm_failed": "Xác nhận giao dịch thất bại",
+    "cancel_successfully": "Đã hủy giao dịch",
+    "cancel_failed": "Hủy giao dịch thất bại",
+    "fail_successfully": "Đã đánh dấu giao dịch thất bại",
+    "fail_failed": "Cập nhật giao dịch thất bại",
+    "refund_successfully": "Đã hoàn tiền",
+    "refund_failed": "Hoàn tiền thất bại",
+    "not_found": "Không tìm thấy giao dịch",
+    "nothing_due": "Order không còn tiền phải thu",
+    "amount_exceeds_due": "Số tiền vượt quá số còn phải thu",
+    "received_too_low": "Tiền khách đưa ít hơn số tiền thanh toán",
+    "pending_cash": "Tiền mặt phải được xác nhận ngay, không tạo giao dịch chờ",
+    "invalid_status": "Không thể thực hiện thao tác với giao dịch ở trạng thái này",
+    "refund_exceeds": "Số tiền hoàn vượt quá số còn có thể hoàn của giao dịch"
+}

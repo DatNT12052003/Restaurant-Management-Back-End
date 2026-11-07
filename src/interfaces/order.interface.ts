@@ -1,5 +1,6 @@
 import { KitchenStationEnum, OrderItemStatusEnum, OrderStatusEnum, RoomTypeEnum, UsageStatusEnum } from "~/common/enum";
 import { IPagination } from "./common.interface";
+import { IPayment } from "./payment.interface";
 
 /** Món lẻ (`dish`) hoặc combo trong order */
 export type OrderLineKind = "dish" | "combo";
@@ -76,12 +77,29 @@ export interface IOrder {
     created_by_name?: string | null;
     assigned_staff_name?: string | null;
     guest?: { id: number; full_name: string; phone_number: string | null } | null;
+    service_fee_rate?: string;
+    tax_rate?: string;
+    service_fee?: string;
+    tax?: string;
+    /** Đã thu (trừ hoàn) và đang chờ xác nhận — có khi đọc qua repository */
+    paid_amount?: string;
+    pending_amount?: string;
+    discount?: {
+        id: number;
+        code: string;
+        name: string;
+        type: string;
+        value: string;
+        min_order_value: string;
+        amount: string;
+    } | null;
     /** Đếm món theo trạng thái (danh sách / sơ đồ) */
     line_counts?: Partial<Record<OrderItemStatusEnum, number>>;
 }
 
 export interface IOrderDetail extends IOrder {
     rounds: IOrderRound[];
+    payments: IPayment[];
 }
 
 export interface IGetOrders {
@@ -153,4 +171,7 @@ export interface IOrderRow {
     cancelled_by?: number | null;
     completed_at?: Date | null;
     cancelled_at?: Date | null;
+    /** Tỷ lệ % chụp từ nhà hàng lúc mở order */
+    service_fee_rate?: string | number;
+    tax_rate?: string | number;
 }

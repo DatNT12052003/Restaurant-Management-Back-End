@@ -8,3 +8,4 @@ export * from "./room.schema";
 export * from "./menu.schema";
 export * from "./reservation.schema";
 export * from "./order.schema";
+export * from "./payment.schema";

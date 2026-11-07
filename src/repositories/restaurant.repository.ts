@@ -2,7 +2,7 @@ import { db } from "~/config/db";
 import { ICreateRestaurantBody, IRestaurant, ISelectQuery, IUpdateRestaurantBody } from "~/interfaces";
 import { buildInsertQuery, buildSelectAllQuery, buildSoftDeleteQuery, buildUpdateQuery } from "~/utils/query-builder";
 
-const WRITABLE_FIELDS = ["name", "address", "status", "updated_at"];
+const WRITABLE_FIELDS = ["name", "address", "status", "service_fee_percent", "tax_percent", "updated_at"];
 
 export const getRestaurants = async (params: ISelectQuery): Promise<{ rows: IRestaurant[]; totalCount: number }> => {
     const allowedFields = ["name", "status", "address", "created_at", "updated_at", "deleted_at"];

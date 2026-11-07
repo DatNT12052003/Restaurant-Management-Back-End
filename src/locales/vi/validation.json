@@ -59,6 +59,9 @@
         },
         "status": {
             "invalid": "Trạng thái nhà hàng không hợp lệ"
+        },
+        "percent": {
+            "invalid": "Tỷ lệ phải từ 0 đến 100"
         }
     },
     "room": {
@@ -127,5 +130,46 @@
         "same_table": "Bàn chuyển đến phải khác bàn hiện tại",
         "item_status_invalid": "Trạng thái món không hợp lệ",
         "station_invalid": "Khu chế biến không hợp lệ"
+    },
+    "discount": {
+        "code": {
+            "invalid": "Mã gồm 3–50 ký tự chữ, số, - hoặc _"
+        },
+        "name": {
+            "required": "Tên chương trình là bắt buộc"
+        },
+        "type": {
+            "invalid": "Loại giảm giá không hợp lệ"
+        },
+        "value": {
+            "invalid": "Giá trị giảm phải lớn hơn 0",
+            "percent": "Giảm theo % tối đa 100"
+        },
+        "min_order": {
+            "invalid": "Giá trị đơn tối thiểu không hợp lệ"
+        },
+        "max_discount": {
+            "invalid": "Mức giảm tối đa phải lớn hơn 0"
+        },
+        "limit": {
+            "invalid": "Giới hạn lượt dùng phải là số nguyên dương"
+        },
+        "status": {
+            "invalid": "Trạng thái không hợp lệ"
+        }
+    },
+    "payment": {
+        "amount": {
+            "invalid": "Số tiền phải lớn hơn 0"
+        },
+        "method": {
+            "invalid": "Phương thức thanh toán không hợp lệ"
+        },
+        "received": {
+            "invalid": "Tiền khách đưa không hợp lệ"
+        },
+        "reason": {
+            "required": "Lý do là bắt buộc"
+        }
     }
 }
