@@ -9,3 +9,5 @@ export * as menuController from "./menu.controller";
 export * as imageController from "./image.controller";
 export * as reservationController from "./reservation.controller";
 export * as orderController from "./order.controller";
+export * as discountController from "./discount.controller";
+export * as paymentController from "./payment.controller";

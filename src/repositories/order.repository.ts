@@ -10,6 +10,7 @@ import {
     OrderLineKind,
 } from "~/interfaces";
 import { buildInsertQuery, buildSelectAllQuery, buildUpdateQuery } from "~/utils/query-builder";
+import { calcDiscount, calcTotals, ITotals } from "~/utils/billing";
 
 /** Order chưa đóng */
 export const OPEN_ORDER_STATUSES: string[] = [OrderStatusEnum.PENDING, OrderStatusEnum.CONFIRMED, OrderStatusEnum.SERVING];
@@ -34,6 +35,8 @@ const ORDER_FIELDS = [
     "cancelled_by",
     "completed_at",
     "cancelled_at",
+    "service_fee_rate",
+    "tax_rate",
     "updated_at",
 ];
 
@@ -89,6 +92,17 @@ const PEOPLE = [
     "(SELECT u.full_name FROM users u WHERE u.id = o.assigned_staff_id) AS assigned_staff_name",
     `(SELECT json_build_object('id', g.id, 'full_name', g.full_name, 'phone_number', g.phone_number)
         FROM users g WHERE g.id = o.guest_user_id) AS guest`,
+    // Giai đoạn 5: tiền đã thu (trừ hoàn), tiền đang chờ xác nhận, mã giảm giá đang áp
+    `(SELECT COALESCE(SUM(CASE
+            WHEN p.type = 'payment' AND p.status IN ('paid', 'refunded') THEN p.amount
+            WHEN p.type = 'refund' AND p.status = 'paid' THEN -p.amount
+            ELSE 0 END), 0)::numeric(12,2)
+        FROM payments p WHERE p.order_id = o.id) AS paid_amount`,
+    `(SELECT COALESCE(SUM(p.amount), 0)::numeric(12,2) FROM payments p
+        WHERE p.order_id = o.id AND p.type = 'payment' AND p.status IN ('pending', 'processing')) AS pending_amount`,
+    `(SELECT json_build_object('id', d.id, 'code', d.code, 'name', d.name, 'type', d.type, 'value', d.value,
+            'min_order_value', d.min_order_value, 'amount', od.amount_applied)
+        FROM order_discounts od JOIN discounts d ON d.id = od.discount_id WHERE od.order_id = o.id) AS discount`,
 ];
 
 const ORDER_RETURNING = ["o.*", LAST_TABLES, LINE_COUNTS, ...PEOPLE];
@@ -275,23 +289,42 @@ export const updateOrder = async (id: number, row: IOrderRow): Promise<{ id: num
     return result.rows[0];
 };
 
-/** Tính lại tiền: tổng các dòng chưa hủy, trừ giảm giá (giai đoạn 5 sẽ có thuế / phí) */
-export const recomputeTotals = async (orderId: number): Promise<void> => {
-    await db().query(
-        `UPDATE orders o SET
-            subtotal = s.subtotal,
-            total = GREATEST(s.subtotal - o.discount_amount, 0),
-            updated_at = NOW()
-        FROM (
-            SELECT COALESCE(SUM(current_price * quantity), 0)::numeric(12,2) AS subtotal FROM (
-                SELECT current_price, quantity FROM order_items WHERE order_id = $1 AND status <> 'cancelled'
+/**
+ * Tính lại tiền của order (gọi trong transaction mỗi khi món / mã giảm giá thay đổi):
+ * tạm tính = các dòng chưa hủy; giảm giá theo mã đang áp; phí dịch vụ và thuế theo tỷ lệ đã chụp lúc mở order.
+ */
+export const recomputeTotals = async (orderId: number): Promise<ITotals | undefined> => {
+    const result = await db().query(
+        `SELECT o.service_fee_rate, o.tax_rate, od.id AS order_discount_id,
+            d.type, d.value, d.min_order_value, d.max_discount,
+            (SELECT COALESCE(SUM(current_price * quantity), 0) FROM (
+                SELECT current_price, quantity FROM order_items WHERE order_id = o.id AND status <> 'cancelled'
                 UNION ALL
-                SELECT current_price, quantity FROM order_combos WHERE order_id = $1 AND status <> 'cancelled'
-            ) x
-        ) s
+                SELECT current_price, quantity FROM order_combos WHERE order_id = o.id AND status <> 'cancelled'
+            ) x) AS subtotal
+        FROM orders o
+        LEFT JOIN order_discounts od ON od.order_id = o.id
+        LEFT JOIN discounts d ON d.id = od.discount_id
         WHERE o.id = $1`,
         [orderId],
     );
+    const row = result.rows[0];
+    if (!row) return undefined;
+    const subtotal = Number(row.subtotal);
+    const discount = row.order_discount_id ? calcDiscount(subtotal, row) : 0;
+    const totals = calcTotals(subtotal, discount, row.service_fee_rate, row.tax_rate);
+    if (row.order_discount_id) {
+        await db().query("UPDATE order_discounts SET amount_applied = $2, updated_at = NOW() WHERE id = $1", [
+            row.order_discount_id,
+            discount,
+        ]);
+    }
+    await db().query(
+        `UPDATE orders SET subtotal = $2, discount_amount = $3, service_fee = $4, tax = $5, total = $6, updated_at = NOW()
+        WHERE id = $1`,
+        [orderId, totals.subtotal, totals.discount_amount, totals.service_fee, totals.tax, totals.total],
+    );
+    return totals;
 };
 
 // ---------------------------------------------------------------------------

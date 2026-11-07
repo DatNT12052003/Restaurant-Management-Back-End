@@ -63,6 +63,22 @@ export const checkPermission = (requiredPermission: string) => {
     };
 };
 
+/** Như `checkPermission` nhưng chỉ cần có MỘT trong các quyền. */
+export const checkAnyPermission = (requiredPermissions: string[]) => {
+    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            if (!(await loadContext(req, res))) return;
+            if (!requiredPermissions.some((p) => req.permissions!.includes(p))) {
+                authorizationErrorResponse(res, req.t("common:forbidden"));
+                return;
+            }
+            next();
+        } catch (error) {
+            serverErrorResponse(res);
+        }
+    };
+};
+
 /**
  * Cho phép thao tác trên chính mình, hoặc trên người có cấp thấp hơn (cùng nhà hàng nếu không phải admin).
  * Dùng cho các route `/:id`. Phải chạy sau `checkPermission`.

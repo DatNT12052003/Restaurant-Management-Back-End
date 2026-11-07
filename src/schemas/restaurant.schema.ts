@@ -16,14 +16,32 @@ const address = z
 
 const status = z.enum(RestaurantStatusEnum, { message: "validation:restaurant.status.invalid" });
 
+/** Phí dịch vụ / thuế (%), 0 – 100 */
+const percent = z.coerce
+    .number({ message: "validation:restaurant.percent.invalid" })
+    .min(0, { message: "validation:restaurant.percent.invalid" })
+    .max(100, { message: "validation:restaurant.percent.invalid" });
+
 export const createRestaurantSchema = z.object({
-    body: z.object({ name, address, status: status.optional() }),
+    body: z.object({
+        name,
+        address,
+        status: status.optional(),
+        service_fee_percent: percent.optional(),
+        tax_percent: percent.optional(),
+    }),
 });
 
 export const updateRestaurantSchema = z.object({
     params: idParamSchema,
     body: z
-        .object({ name: name.optional(), address: address.optional(), status: status.optional() })
+        .object({
+            name: name.optional(),
+            address: address.optional(),
+            status: status.optional(),
+            service_fee_percent: percent.optional(),
+            tax_percent: percent.optional(),
+        })
         .refine((b) => Object.values(b).some((v) => v !== undefined), { message: "validation:common.empty_update" }),
 });
 

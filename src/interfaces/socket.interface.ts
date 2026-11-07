@@ -1,4 +1,4 @@
-import { KitchenStationEnum, OrderItemStatusEnum, OrderStatusEnum, UsageStatusEnum } from "~/common/enum";
+import { KitchenStationEnum, OrderItemStatusEnum, OrderStatusEnum, PaymentStatusEnum, UsageStatusEnum } from "~/common/enum";
 
 /**
  * Sự kiện realtime (giai đoạn 4). Payload chỉ mang định danh và trạng thái mới;
@@ -40,6 +40,13 @@ export interface ITableStatusPayload {
     status: UsageStatusEnum;
 }
 
+export interface IPaymentEventPayload {
+    restaurant_id: number;
+    order_id: number;
+    payment_id: number;
+    status: PaymentStatusEnum;
+}
+
 export interface IReservationEventPayload {
     restaurant_id: number;
     reservation_id: number;
@@ -54,6 +61,8 @@ export interface ServerToClientEvents {
     "order_item:status_changed": (data: IOrderItemStatusPayload) => void;
     "table:status_changed": (data: ITableStatusPayload) => void;
     "reservation:changed": (data: IReservationEventPayload) => void;
+    /** Thu tiền, xác nhận / hủy giao dịch chờ, hoàn tiền */
+    "payment:changed": (data: IPaymentEventPayload) => void;
     "restaurant:subscribed": (restaurantId: number | null) => void;
 }
 

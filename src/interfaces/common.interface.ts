@@ -54,6 +54,8 @@ export interface ISelectQuery extends Omit<IGetQuery, "currentPage"> {
      * Ví dụ: `NOT EXISTS (...)` để lọc theo vai trò.
      */
     conditions?: string[];
+    /** Bảng không có cột `deleted_at` */
+    noSoftDelete?: boolean;
 }
 
 export interface ISendEmail {

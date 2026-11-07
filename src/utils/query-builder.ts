@@ -46,13 +46,15 @@ export const buildSelectAllQuery = (baseTable: string, allowedFields: string[], 
         joins = [],
         returning = ["*"],
         conditions: extraConditions = [],
+        noSoftDelete = false,
     } = params;
 
     const values: any[] = [];
     const conditions: string[] = [];
 
     const tableAlias = baseTable.trim().split(/\s+/)[1] || baseTable.trim();
-    conditions.push(`${tableAlias}.deleted_at IS NULL`);
+    // Bảng không có cột deleted_at (ví dụ payments) thì bỏ điều kiện xóa mềm
+    if (!noSoftDelete) conditions.push(`${tableAlias}.deleted_at IS NULL`);
     conditions.push(...extraConditions);
 
     const joinClause = joins.map((j) => `${j.type || "INNER"} JOIN ${j.table} ON ${j.on}`).join(" ");

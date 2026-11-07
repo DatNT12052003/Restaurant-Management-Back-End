@@ -13,3 +13,5 @@ export { default as restaurantMenuRouter } from "./restaurant-menu.route";
 export { default as imageRouter } from "./image.route";
 export { default as reservationRouter } from "./reservation.route";
 export { default as orderRouter } from "./order.route";
+export { default as discountRouter } from "./discount.route";
+export { default as paymentRouter } from "./payment.route";
