@@ -84,6 +84,22 @@ export enum ReservationPermissionEnum {
     DELETE = "reservation.delete",
 }
 
+export enum OrderPermissionEnum {
+    CREATE = "order.create",
+    VIEW = "order.view",
+    /** Gọi món, chuyển / thêm bàn, sửa thông tin, hoàn tất order */
+    UPDATE = "order.update",
+    /** Hủy order, hủy món đã bắt đầu chế biến */
+    CANCEL = "order.cancel",
+}
+
+export enum OrderItemPermissionEnum {
+    /** Bếp / pha chế: xác nhận, đang làm, xong */
+    PREPARE = "order_item.prepare",
+    /** Phục vụ: mang món ra cho khách */
+    SERVE = "order_item.serve",
+}
+
 /** Toàn bộ permission của hệ thống, dùng cho seed và kiểm tra. */
 export const ALL_PERMISSIONS: string[] = [
     UserPermissionEnum,
@@ -98,4 +114,6 @@ export const ALL_PERMISSIONS: string[] = [
     DishPermissionEnum,
     ComboPermissionEnum,
     ReservationPermissionEnum,
+    OrderPermissionEnum,
+    OrderItemPermissionEnum,
 ].flatMap((group) => Object.values(group) as string[]);

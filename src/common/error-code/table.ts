@@ -11,4 +11,6 @@ export const TABLE_ERROR = {
     IN_USE: 5,
     /** Bàn còn reservation chưa kết thúc */
     HAS_RESERVATIONS: 6,
+    /** Bàn đang thuộc order chưa đóng */
+    HAS_OPEN_ORDER: 7,
 };

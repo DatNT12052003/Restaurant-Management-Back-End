@@ -22,5 +22,6 @@
     "no_show_too_early": "The reservation has not started yet, so it cannot be marked as a no-show",
     "tables_occupied": "Some tables are occupied by other guests; change tables before checking in",
     "cannot_delete": "Cannot delete a reservation while the guests are seated",
-    "invalid_time": "The end time must be after the start time, and a reservation can last at most 12 hours"
+    "invalid_time": "The end time must be after the start time, and a reservation can last at most 12 hours",
+    "order_open": "This reservation's order is still open; complete the order first"
 }

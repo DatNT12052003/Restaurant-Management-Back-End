@@ -21,4 +21,6 @@ export const RESERVATION_ERROR = {
     CANNOT_DELETE: 14,
     /** Giờ kết thúc không sau giờ bắt đầu (khi chỉ sửa một đầu) */
     INVALID_TIME: 15,
+    /** Hoàn tất reservation khi order vẫn đang mở */
+    ORDER_OPEN: 16,
 };

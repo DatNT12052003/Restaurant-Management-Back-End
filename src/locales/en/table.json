@@ -12,5 +12,6 @@
     "room_full": "This private room already has the maximum of 5 tables",
     "update_failed": "Failed to update table",
     "updated_successfully": "Table updated successfully",
-    "has_reservations": "Cannot delete a table with upcoming reservations"
+    "has_reservations": "Cannot delete a table with upcoming reservations",
+    "has_open_order": "The table belongs to an open order"
 }

@@ -12,5 +12,6 @@
     "room_full": "Phòng riêng đã đủ tối đa 5 bàn",
     "update_failed": "Cập nhật bàn thất bại",
     "updated_successfully": "Cập nhật bàn thành công",
-    "has_reservations": "Không thể xóa bàn đang có lịch đặt sắp tới"
+    "has_reservations": "Không thể xóa bàn đang có lịch đặt sắp tới",
+    "has_open_order": "Bàn đang thuộc một order chưa đóng"
 }
