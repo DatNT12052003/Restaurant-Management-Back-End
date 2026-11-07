@@ -1,3 +1,7 @@
 export * from "./account.schema";
 export * from "./user.schema";
 export * from "./auth.schema";
+export * from "./common.schema";
+export * from "./permission.schema";
+export * from "./restaurant.schema";
+export * from "./room.schema";

@@ -17,6 +17,8 @@ export const getMeResource = (me: IMe) => {
             created_at: me.user.created_at,
             account_id: me.user.account_id,
             restaurant_id: me.user.restaurant_id,
+            salary: me.user.salary,
+            guest_status: me.user.guest_status,
         },
         roles: me.roles,
         permissions: me.permissions,

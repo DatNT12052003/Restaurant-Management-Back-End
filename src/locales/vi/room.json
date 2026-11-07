@@ -1,4 +1,15 @@
 {
     "error_getting_rooms": "Lấy danh sách phòng thất bại",
-    "get_rooms_successfully": "Lấy danh sách phòng thành công"
+    "get_rooms_successfully": "Lấy danh sách phòng thành công",
+    "create_failed": "Tạo phòng thất bại",
+    "created_successfully": "Tạo phòng thành công",
+    "delete_failed": "Xóa phòng thất bại",
+    "deleted_successfully": "Xóa phòng thành công",
+    "get_room_successfully": "Lấy thông tin phòng thành công",
+    "in_use": "Phòng còn bàn đang có khách hoặc đã được đặt",
+    "not_found": "Không tìm thấy phòng",
+    "restaurant_required": "Vui lòng chọn nhà hàng",
+    "too_many_tables": "Phòng riêng chỉ được có tối đa 5 bàn",
+    "update_failed": "Cập nhật phòng thất bại",
+    "updated_successfully": "Cập nhật phòng thành công"
 }

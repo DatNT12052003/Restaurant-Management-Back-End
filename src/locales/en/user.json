@@ -34,5 +34,13 @@
     "guests_fetched_successfully": "Guests fetched successfully",
     "guest_not_found": "Guest not found",
     "error_deleting_guest": "Failed to delete guest",
-    "guest_deleted_successfully": "Guest deleted successfully"
+    "guest_deleted_successfully": "Guest deleted successfully",
+    "cannot_delete_self": "You cannot delete your own account",
+    "cannot_manage_higher_role": "You cannot manage a user at or above your level",
+    "email_exists": "This email is already in use",
+    "error_creating_account": "Failed to create account",
+    "invalid_roles": "Invalid roles",
+    "phone_exists": "This phone number is already in use",
+    "role_not_assignable": "You can only assign roles below your own level",
+    "username_exists": "This username is already taken"
 }

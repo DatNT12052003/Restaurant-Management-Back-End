@@ -1,0 +1,12 @@
+{
+    "admin_role_locked": "The admin role always has all permissions and cannot be changed",
+    "get_failed": "Failed to load permissions",
+    "get_permissions_successfully": "Permissions loaded successfully",
+    "get_roles_successfully": "Roles loaded successfully",
+    "invalid_permissions": "Some permissions do not exist",
+    "permission_not_grantable": "You can only grant or revoke permissions you have yourself",
+    "role_not_found": "Role not found",
+    "role_not_manageable": "You cannot change permissions of a role at or above your level",
+    "update_failed": "Failed to update permissions",
+    "update_successfully": "Permissions updated successfully"
+}

@@ -10,6 +10,11 @@ declare global {
             user?: IUser;
             /** Được gán bởi `checkPermission`. */
             roles?: string[];
+            /** Được gán bởi `checkPermission` / `loadUserContext`. */
+            permissions?: string[];
+            /** Được gán bởi `canManageTargetUser`. */
+            targetUser?: IUser;
+            targetRoles?: string[];
             /**
              * Được gán bởi `restrictToRestaurant`.
              * `null` = được xem mọi nhà hàng (admin); số = chỉ được thao tác trên nhà hàng này.

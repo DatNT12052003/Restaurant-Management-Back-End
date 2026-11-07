@@ -1,4 +1,13 @@
 {
     "error_getting_restaurants": "Error getting restaurants",
-    "get_restaurants_successfully": "Restaurants retrieved successfully"
+    "get_restaurants_successfully": "Restaurants retrieved successfully",
+    "create_failed": "Failed to create restaurant",
+    "created_successfully": "Restaurant created successfully",
+    "delete_failed": "Failed to delete restaurant",
+    "deleted_successfully": "Restaurant deleted successfully",
+    "get_restaurant_successfully": "Restaurant loaded successfully",
+    "has_dependencies": "Cannot delete a restaurant that still has rooms or employees",
+    "not_found": "Restaurant not found",
+    "update_failed": "Failed to update restaurant",
+    "updated_successfully": "Restaurant updated successfully"
 }

@@ -1,57 +1,108 @@
 import { Request, Response } from "express";
-import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
-import { PAGINATION } from "~/common/constant";
-import { FilterOperatorEnum, JoinTypeEnum, RolesEnum } from "~/common/enum";
+import { RolesEnum } from "~/common/enum";
 import {
     CREATE_EMPLOYEE,
     CREATE_GUEST,
     CREATE_USER_WITH_ACCOUNT,
+    DELETE_USER,
     UPDATE_EMPLOYEE,
     UPDATE_GUEST,
     UPDATE_USER,
+    USER_DUPLICATE,
+    USER_ROLE_ERROR,
 } from "~/common/error-code/user";
-import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
-import { createSuccessResponse } from "~/common/responses/success";
+import {
+    authorizationErrorResponse,
+    badRequestResponse,
+    createErrorResponse,
+    notFoundResponse,
+    serverErrorResponse,
+} from "~/common/responses/error";
+import { createSuccessResponse, getSuccessResponse, successResponse } from "~/common/responses/success";
 import {
     IAccount,
-    IUser,
-    IResponse,
+    ICreateEmployeeBody,
+    ICreateGuestBody,
     ICreateUserBody,
     ICreateUserWithAccountBody,
-    IUserWithAccount,
     IGetQuery,
-    ISelectQuery,
-    IGetEmployees,
-    IUpdateUserBody,
-    ICreateEmployeeBody,
     IUpdateEmployeeBody,
-    ICreateGuestBody,
     IUpdateGuestBody,
-    IGetGuests,
+    IUpdateUserBody,
+    IUser,
 } from "~/interfaces";
-import { createEmployeeResource, createGuestResource, updateEmployeeResource, updateGuestResource } from "~/resources";
+import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
+import {
+    createEmployeeResource,
+    createGuestResource,
+    getUserResource,
+    updateEmployeeResource,
+    updateGuestResource,
+} from "~/resources";
 import { userService } from "~/services";
 import { uploadToCloudinary } from "~/utils/cloudinary";
+import { buildListParams } from "~/utils/pagination";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Mã lỗi dùng chung (trùng dữ liệu, vai trò) -> key i18n; undefined nếu không phải mã chung. */
+const commonErrorKey = (code: number): string | undefined => {
+    switch (code) {
+        case USER_DUPLICATE.USERNAME_EXISTS:
+            return "user:username_exists";
+        case USER_DUPLICATE.EMAIL_EXISTS:
+            return "user:email_exists";
+        case USER_DUPLICATE.PHONE_EXISTS:
+            return "user:phone_exists";
+        case USER_ROLE_ERROR.INVALID_ROLES:
+            return "user:invalid_roles";
+        case USER_ROLE_ERROR.ROLE_NOT_ASSIGNABLE:
+            return "user:role_not_assignable";
+        default:
+            return undefined;
+    }
+};
+
+const respondError = (req: Request, res: Response, code: number, specific: Record<number, string>, fallback: string) => {
+    if (code === USER_ROLE_ERROR.ROLE_NOT_ASSIGNABLE) {
+        return authorizationErrorResponse(res, req.t("user:role_not_assignable"));
+    }
+    const key = commonErrorKey(code) ?? specific[code] ?? fallback;
+    return createErrorResponse(res, req.t(key));
+};
+
+/** Upload avatar nếu có file. Không có file thì KHÔNG đụng tới avatar hiện tại. */
+const applyAvatar = async (req: Request, target: { avatar_url?: string | null }) => {
+    if (req.file) {
+        const result = await uploadToCloudinary(req.file.buffer);
+        target.avatar_url = result.secure_url;
+    } else {
+        delete target.avatar_url;
+    }
+};
+
+const isRole = (value: unknown): value is RolesEnum =>
+    typeof value === "string" && (Object.values(RolesEnum) as string[]).includes(value);
+
+// ---------------------------------------------------------------------------
+// User
+// ---------------------------------------------------------------------------
 
 export const createUser = async (req: Request, res: Response) => {
     try {
         const body: ICreateUserBody = req.body;
-
         if (!body.full_name) {
             return badRequestResponse(res, req.t("user:full_name_required"));
         }
-
-        if (!req.file) {
-            body.avatar_url = null;
-        }
+        await applyAvatar(req, body);
 
         const newUser: IUser | number = await userService.createUser(body);
-
         if (typeof newUser === "number") {
-            return createErrorResponse(res, req.t("user:error_creating_user"));
+            return respondError(req, res, newUser, {}, "user:error_creating_user");
         }
-
-        return createSuccessResponse(res, req.t("user:user_created_successfully"), newUser);
+        return createSuccessResponse(res, req.t("user:user_created_successfully"), getUserResource(newUser));
     } catch (error) {
         return serverErrorResponse(res);
     }
@@ -60,109 +111,106 @@ export const createUser = async (req: Request, res: Response) => {
 export const createUserWithAccount = async (req: Request, res: Response) => {
     try {
         const body: ICreateUserWithAccountBody = req.body;
-
-        if (!body.user.full_name) {
+        if (!body.user?.full_name) {
             return badRequestResponse(res, req.t("user:full_name_required"));
         }
+        await applyAvatar(req, body.user);
 
-        if (req.file) {
-            const result = await uploadToCloudinary(req.file.buffer);
-            body.user.avatar_url = result.secure_url;
-        } else {
-            body.user.avatar_url = null;
+        const result = await userService.createUserWithAccount(body);
+        if (typeof result === "number") {
+            return respondError(
+                req,
+                res,
+                result,
+                {
+                    [CREATE_USER_WITH_ACCOUNT.CREATE_ACCOUNT_FAILED]: "user:error_creating_account",
+                    [CREATE_USER_WITH_ACCOUNT.CREATE_USER_FAILED]: "user:error_creating_user",
+                },
+                "user:error_creating_user_with_account",
+            );
         }
-
-        const newUserWithAccount: { user: IUser; account: IAccount } | number =
-            await userService.createUserWithAccount(body);
-
-        if (typeof newUserWithAccount === "number") {
-            switch (newUserWithAccount) {
-                case CREATE_USER_WITH_ACCOUNT.CREATE_ACCOUNT_FAILED:
-                    return createErrorResponse(res, req.t("user:error_creating_account"));
-                case CREATE_USER_WITH_ACCOUNT.CREATE_USER_FAILED:
-                    return createErrorResponse(res, req.t("user:error_creating_user"));
-                default:
-                    return createErrorResponse(res, req.t("user:error_creating_user_with_account"));
-            }
-        }
-
-        return createSuccessResponse(res, req.t("user:user_with_account_created_successfully"), newUserWithAccount);
+        return createSuccessResponse(
+            res,
+            req.t("user:user_with_account_created_successfully"),
+            createGuestResource(result),
+        );
     } catch (error) {
         return serverErrorResponse(res);
     }
 };
 
+/** PATCH /users/:id: cập nhật hồ sơ cá nhân (của mình, hoặc người cấp dưới). */
 export const updateUser = async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
         const body: IUpdateUserBody = req.body;
-        if (req.file) {
-            const result = await uploadToCloudinary(req.file.buffer);
-            body.avatar_url = result.secure_url;
-        } else {
-            body.avatar_url = null;
-        }
-        if (isNaN(id)) {
-            return badRequestResponse(res, req.t("user:invalid_user_id"));
-        }
-        const updatedUser: IUser | number = await userService.updateUser(body, id);
+        await applyAvatar(req, body);
+
+        const updatedUser = await userService.updateUser(body, id);
         if (typeof updatedUser === "number") {
-            switch (updatedUser) {
-                case UPDATE_USER.NOT_FOUND:
-                    return createErrorResponse(res, req.t("user:user_not_found"));
-                default:
-                    return createErrorResponse(res, req.t("user:error_updating_user"));
+            if (updatedUser === UPDATE_USER.NOT_FOUND) {
+                return notFoundResponse(res, req.t("user:user_not_found"));
             }
+            return respondError(req, res, updatedUser, {}, "user:error_updating_user");
         }
-        return createSuccessResponse(res, req.t("user:user_updated_successfully"), updatedUser);
+        return successResponse(res, req.t("user:user_updated_successfully"), getUserResource(updatedUser));
     } catch (error) {
         return serverErrorResponse(res);
     }
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
+const deleteUserById = async (req: Request, res: Response, notFoundKey: string, failKey: string, okKey: string) => {
     try {
         const id = Number(req.params.id);
-        if (isNaN(id)) {
-            return badRequestResponse(res, req.t("user:invalid_user_id"));
+        if (req.user?.id === id) {
+            return badRequestResponse(res, req.t("user:cannot_delete_self"));
         }
-        const deletedUser: IUser | number = await userService.deleteUser(id);
+        const deletedUser = await userService.deleteUser(id);
         if (typeof deletedUser === "number") {
             switch (deletedUser) {
-                case 1:
-                    return createErrorResponse(res, req.t("user:user_not_found"));
-                case 2:
-                    return createErrorResponse(res, req.t("user:account_not_found"));
+                case DELETE_USER.USER_NOT_FOUND:
+                    return notFoundResponse(res, req.t(notFoundKey));
+                case DELETE_USER.ACCOUNT_NOT_FOUND:
+                    return notFoundResponse(res, req.t("user:account_not_found"));
                 default:
-                    return createErrorResponse(res, req.t("user:error_deleting_user"));
+                    return createErrorResponse(res, req.t(failKey));
             }
         }
-        return createSuccessResponse(res, req.t("user:user_deleted_successfully"), deletedUser);
+        return successResponse(res, req.t(okKey), getUserResource(deletedUser));
     } catch (error) {
         return serverErrorResponse(res);
     }
 };
+
+export const deleteUser = (req: Request, res: Response) =>
+    deleteUserById(req, res, "user:user_not_found", "user:error_deleting_user", "user:user_deleted_successfully");
+
+// ---------------------------------------------------------------------------
+// Employee
+// ---------------------------------------------------------------------------
 
 export const getEmployees = async (req: Request, res: Response) => {
     try {
         const query: IGetQuery = req.query;
-        const currentPage = query.currentPage || PAGINATION.DEFAULT_PAGE;
-        const limit = query.limit || PAGINATION.DEFAULT_LIMIT;
-        const offset = (currentPage - 1) * limit;
+        const allFilters = Array.isArray(query.filters) ? query.filters : [];
 
-        const params: ISelectQuery = {
-            search: query.search,
-            filters: withRestaurantScope(query.filters, "restaurant_id", req.restaurantScope),
-            orderBy: query.orderBy,
-            limit,
-            offset,
-            returning: ["u.*", "a.username"],
-        };
-        const users: IGetEmployees | number = await userService.getEmployees(params);
-        if (typeof users === "number") {
+        // "role" không phải cột của users -> tách ra và lọc bằng EXISTS ở service
+        const roleFilter = allFilters.find((f) => f.field === "role")?.value;
+        if (roleFilter !== undefined && !isRole(roleFilter)) {
+            return badRequestResponse(res, req.t("user:invalid_roles"));
+        }
+        const filters = withRestaurantScope(
+            allFilters.filter((f) => f.field !== "role"),
+            "restaurant_id",
+            req.restaurantScope,
+        );
+
+        const params = buildListParams({ ...query, filters });
+        const employees = await userService.getEmployees(params, roleFilter);
+        if (typeof employees === "number") {
             return createErrorResponse(res, req.t("user:error_fetching_users"));
         }
-        return createSuccessResponse(res, req.t("user:users_fetched_successfully"), users);
+        return getSuccessResponse(res, req.t("user:users_fetched_successfully"), employees);
     } catch (error) {
         return serverErrorResponse(res);
     }
@@ -171,32 +219,26 @@ export const getEmployees = async (req: Request, res: Response) => {
 export const createEmployee = async (req: Request, res: Response) => {
     try {
         const body: ICreateEmployeeBody = req.body;
-        if (!body.user.full_name) {
-            return badRequestResponse(res, req.t("user:full_name_required"));
+        // Người bị giới hạn nhà hàng (manager...) chỉ tạo được nhân viên cho nhà hàng của mình
+        if (req.restaurantScope) {
+            body.user.restaurant_id = req.restaurantScope;
         }
-        if (req.file) {
-            const result = await uploadToCloudinary(req.file.buffer);
-            body.user.avatar_url = result.secure_url;
-        } else {
-            body.user.avatar_url = null;
+        await applyAvatar(req, body.user);
+
+        const result = await userService.createEmployee(body, req.roles || []);
+        if (typeof result === "number") {
+            return respondError(
+                req,
+                res,
+                result,
+                {
+                    [CREATE_EMPLOYEE.CREATE_USER_WITH_ACCOUNT_FAILED]: "user:error_creating_user_with_account",
+                    [CREATE_EMPLOYEE.ASSIGN_ROLES_FAILED]: "user:error_assigning_roles",
+                },
+                "user:error_creating_employee",
+            );
         }
-        const newUserWithAccount: { user: IUser; account: IAccount; roles: string[] } | number =
-            await userService.createEmployee(body);
-        if (typeof newUserWithAccount === "number") {
-            switch (newUserWithAccount) {
-                case CREATE_EMPLOYEE.CREATE_USER_WITH_ACCOUNT_FAILED:
-                    return createErrorResponse(res, req.t("user:error_creating_user_with_account"));
-                case CREATE_EMPLOYEE.ASSIGN_ROLES_FAILED:
-                    return createErrorResponse(res, req.t("user:error_assigning_roles"));
-                default:
-                    return createErrorResponse(res, req.t("user:error_creating_employee"));
-            }
-        }
-        return createSuccessResponse(
-            res,
-            req.t("user:employee_created_successfully"),
-            createEmployeeResource(newUserWithAccount),
-        );
+        return createSuccessResponse(res, req.t("user:employee_created_successfully"), createEmployeeResource(result));
     } catch (error) {
         return serverErrorResponse(res);
     }
@@ -205,93 +247,63 @@ export const createEmployee = async (req: Request, res: Response) => {
 export const updateEmployee = async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
-        const body: IUpdateEmployeeBody = req.body;
-        if (req.file) {
-            const result = await uploadToCloudinary(req.file.buffer);
-            body.user.avatar_url = result.secure_url;
-        } else {
-            body.user.avatar_url = null;
-        }
+        const body: IUpdateEmployeeBody = { ...req.body, user: req.body.user || {} };
+        await applyAvatar(req, body.user);
 
-        if (isNaN(id)) {
-            return badRequestResponse(res, req.t("user:invalid_user_id"));
-        }
-        const updatedEmployee = await userService.updateEmployee(body, id);
-        if (typeof updatedEmployee === "number") {
-            switch (updatedEmployee) {
-                case UPDATE_EMPLOYEE.USER_NOT_FOUND:
-                    return createErrorResponse(res, req.t("user:user_not_found"));
-                case UPDATE_EMPLOYEE.ACCOUNT_NOT_FOUND:
-                    return createErrorResponse(res, req.t("user:account_not_found"));
-                case UPDATE_EMPLOYEE.ROLE_NOT_FOUND:
-                    return createErrorResponse(res, req.t("user:role_not_found"));
-                case UPDATE_EMPLOYEE.ADD_ROLES_FAILED:
-                    return createErrorResponse(res, req.t("user:add_roles_failed"));
-                case UPDATE_EMPLOYEE.REMOVE_ROLES_FAILED:
-                    return createErrorResponse(res, req.t("user:remove_roles_failed"));
-                case UPDATE_EMPLOYEE.UPDATE_EMPLOYEE_FAILED:
-                    return createErrorResponse(res, req.t("user:update_employee_failed"));
-                default:
-                    return createErrorResponse(res, req.t("user:error_updating_employee"));
+        const result = await userService.updateEmployee(body, id, req.roles || []);
+        if (typeof result === "number") {
+            if (result === UPDATE_EMPLOYEE.USER_NOT_FOUND) {
+                return notFoundResponse(res, req.t("user:employee_not_found"));
             }
+            return respondError(
+                req,
+                res,
+                result,
+                {
+                    [UPDATE_EMPLOYEE.ACCOUNT_NOT_FOUND]: "user:account_not_found",
+                    [UPDATE_EMPLOYEE.ROLE_NOT_FOUND]: "user:role_not_found",
+                    [UPDATE_EMPLOYEE.ADD_ROLES_FAILED]: "user:add_roles_failed",
+                    [UPDATE_EMPLOYEE.REMOVE_ROLES_FAILED]: "user:remove_roles_failed",
+                },
+                "user:error_updating_employee",
+            );
         }
-        return createSuccessResponse(
-            res,
-            req.t("user:employee_updated_successfully"),
-            updateEmployeeResource(updatedEmployee),
-        );
+        return successResponse(res, req.t("user:employee_updated_successfully"), updateEmployeeResource(result));
     } catch (error) {
         return serverErrorResponse(res);
     }
 };
 
-export const deleteEmployee = async (req: Request, res: Response) => {
-    try {
-        const id = Number(req.params.id);
-        if (isNaN(id)) {
-            return badRequestResponse(res, req.t("user:invalid_user_id"));
-        }
-        const deletedUser: IUser | number = await userService.deleteUser(id);
-        if (typeof deletedUser === "number") {
-            switch (deletedUser) {
-                case 1:
-                    return createErrorResponse(res, req.t("user:employee_not_found"));
-                case 2:
-                    return createErrorResponse(res, req.t("user:account_not_found"));
-                default:
-                    return createErrorResponse(res, req.t("user:error_deleting_employee"));
-            }
-        }
-        return createSuccessResponse(res, req.t("user:employee_deleted_successfully"), deletedUser);
-    } catch (error) {
-        return serverErrorResponse(res);
-    }
-};
+export const deleteEmployee = (req: Request, res: Response) =>
+    deleteUserById(
+        req,
+        res,
+        "user:employee_not_found",
+        "user:error_deleting_employee",
+        "user:employee_deleted_successfully",
+    );
+
+// ---------------------------------------------------------------------------
+// Guest
+// ---------------------------------------------------------------------------
 
 export const createGuest = async (req: Request, res: Response) => {
     try {
         const body: ICreateGuestBody = req.body;
-        if (!body.user.full_name) {
-            return badRequestResponse(res, req.t("user:full_name_required"));
-        }
-        if (req.file) {
-            const result = await uploadToCloudinary(req.file.buffer);
-            body.user.avatar_url = result.secure_url;
-        } else {
-            body.user.avatar_url = null;
-        }
+        await applyAvatar(req, body.user);
+
         const newGuest: { user: IUser; account: IAccount } | number = await userService.createGuest(body);
         if (typeof newGuest === "number") {
-            switch (newGuest) {
-                case CREATE_GUEST.CREATE_USER_WITH_ACCOUNT_FAILED:
-                    return createErrorResponse(res, req.t("user:error_creating_user_with_account"));
-                case CREATE_GUEST.ASSIGN_ROLES_FAILED:
-                    return createErrorResponse(res, req.t("user:error_assigning_roles"));
-                case CREATE_GUEST.CREATE_GUEST_FAILED:
-                    return createErrorResponse(res, req.t("user:error_creating_guest"));
-                default:
-                    return createErrorResponse(res, req.t("user:error_creating_guest"));
-            }
+            return respondError(
+                req,
+                res,
+                newGuest,
+                {
+                    [CREATE_GUEST.CREATE_USER_WITH_ACCOUNT_FAILED]: "user:error_creating_user_with_account",
+                    [CREATE_GUEST.ASSIGN_ROLES_FAILED]: "user:error_assigning_roles",
+                },
+                "user:error_creating_guest",
+            );
         }
         return createSuccessResponse(res, req.t("user:guest_created_successfully"), createGuestResource(newGuest));
     } catch (error) {
@@ -301,43 +313,12 @@ export const createGuest = async (req: Request, res: Response) => {
 
 export const getGuests = async (req: Request, res: Response) => {
     try {
-        const query: IGetQuery = req.query;
-        const currentPage = query.currentPage || PAGINATION.DEFAULT_PAGE;
-        const limit = query.limit || PAGINATION.DEFAULT_LIMIT;
-        const offset = (currentPage - 1) * limit;
-
-        const params: ISelectQuery = {
-            search: query.search,
-            filters: [
-                ...(query.filters || []),
-                {
-                    field: "r.type_name",
-                    operator: FilterOperatorEnum.EQUAL,
-                    value: RolesEnum.GUEST,
-                },
-            ],
-            orderBy: query.orderBy,
-            limit,
-            offset,
-            joins: [
-                {
-                    type: JoinTypeEnum.INNER,
-                    table: "user_roles ur",
-                    on: "ur.user_id = u.id",
-                },
-                {
-                    type: JoinTypeEnum.INNER,
-                    table: "roles r",
-                    on: "r.id = ur.role_id",
-                },
-            ],
-            returning: ["u.*", "a.username"],
-        };
-        const guests: IGetGuests | number = await userService.getGuests(params);
+        const params = buildListParams(req.query as IGetQuery);
+        const guests = await userService.getGuests(params);
         if (typeof guests === "number") {
             return createErrorResponse(res, req.t("user:error_fetching_guests"));
         }
-        return createSuccessResponse(res, req.t("user:guests_fetched_successfully"), guests);
+        return getSuccessResponse(res, req.t("user:guests_fetched_successfully"), guests);
     } catch (error) {
         return serverErrorResponse(res);
     }
@@ -346,54 +327,27 @@ export const getGuests = async (req: Request, res: Response) => {
 export const updateGuest = async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
-        const body: IUpdateGuestBody = req.body;
-        if (req.file) {
-            const result = await uploadToCloudinary(req.file.buffer);
-            body.user.avatar_url = result.secure_url;
-        } else {
-            body.user.avatar_url = null;
-        }
-        if (isNaN(id)) {
-            return badRequestResponse(res, req.t("user:invalid_user_id"));
-        }
+        const body: IUpdateGuestBody = { ...req.body, user: req.body.user || {} };
+        await applyAvatar(req, body.user);
+
         const updatedGuest = await userService.updateGuest(body, id);
         if (typeof updatedGuest === "number") {
-            switch (updatedGuest) {
-                case UPDATE_GUEST.USER_NOT_FOUND:
-                    return createErrorResponse(res, req.t("user:user_not_found"));
-                case UPDATE_GUEST.ACCOUNT_NOT_FOUND:
-                    return createErrorResponse(res, req.t("user:account_not_found"));
-                case UPDATE_GUEST.UPDATE_GUEST_FAILED:
-                    return createErrorResponse(res, req.t("user:update_guest_failed"));
-                default:
-                    return createErrorResponse(res, req.t("user:error_updating_guest"));
+            if (updatedGuest === UPDATE_GUEST.USER_NOT_FOUND) {
+                return notFoundResponse(res, req.t("user:guest_not_found"));
             }
+            return respondError(
+                req,
+                res,
+                updatedGuest,
+                { [UPDATE_GUEST.ACCOUNT_NOT_FOUND]: "user:account_not_found" },
+                "user:error_updating_guest",
+            );
         }
-        return createSuccessResponse(res, req.t("user:guest_updated_successfully"), updateGuestResource(updatedGuest));
+        return successResponse(res, req.t("user:guest_updated_successfully"), updateGuestResource(updatedGuest));
     } catch (error) {
         return serverErrorResponse(res);
     }
 };
 
-export const deleteGuest = async (req: Request, res: Response) => {
-    try {
-        const id = Number(req.params.id);
-        if (isNaN(id)) {
-            return badRequestResponse(res, req.t("user:invalid_user_id"));
-        }
-        const deletedUser: IUser | number = await userService.deleteUser(id);
-        if (typeof deletedUser === "number") {
-            switch (deletedUser) {
-                case 1:
-                    return createErrorResponse(res, req.t("user:guest_not_found"));
-                case 2:
-                    return createErrorResponse(res, req.t("user:account_not_found"));
-                default:
-                    return createErrorResponse(res, req.t("user:error_deleting_guest"));
-            }
-        }
-        return createSuccessResponse(res, req.t("user:guest_deleted_successfully"), deletedUser);
-    } catch (error) {
-        return serverErrorResponse(res);
-    }
-};
+export const deleteGuest = (req: Request, res: Response) =>
+    deleteUserById(req, res, "user:guest_not_found", "user:error_deleting_guest", "user:guest_deleted_successfully");

@@ -1,4 +1,15 @@
 {
     "error_getting_tables": "Error getting tables",
-    "get_tables_successfully": "Get tables successfully"
+    "get_tables_successfully": "Get tables successfully",
+    "create_failed": "Failed to create table",
+    "created_successfully": "Table created successfully",
+    "delete_failed": "Failed to delete table",
+    "deleted_successfully": "Table deleted successfully",
+    "duplicate_name": "A table with this name already exists in the room",
+    "get_table_successfully": "Table loaded successfully",
+    "in_use": "Cannot delete an occupied or reserved table",
+    "not_found": "Table not found",
+    "room_full": "This private room already has the maximum of 5 tables",
+    "update_failed": "Failed to update table",
+    "updated_successfully": "Table updated successfully"
 }

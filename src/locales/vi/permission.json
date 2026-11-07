@@ -1,0 +1,12 @@
+{
+    "admin_role_locked": "Vai trò admin luôn có toàn quyền và không thể chỉnh sửa",
+    "get_failed": "Lấy dữ liệu phân quyền thất bại",
+    "get_permissions_successfully": "Lấy danh sách quyền thành công",
+    "get_roles_successfully": "Lấy danh sách vai trò thành công",
+    "invalid_permissions": "Có quyền không tồn tại",
+    "permission_not_grantable": "Bạn chỉ được cấp hoặc gỡ những quyền mà bạn đang có",
+    "role_not_found": "Không tìm thấy vai trò",
+    "role_not_manageable": "Bạn không thể sửa quyền của vai trò ngang hoặc cao hơn mình",
+    "update_failed": "Cập nhật phân quyền thất bại",
+    "update_successfully": "Cập nhật phân quyền thành công"
+}

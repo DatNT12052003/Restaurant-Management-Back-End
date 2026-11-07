@@ -1,4 +1,15 @@
 {
     "error_getting_tables": "Lấy danh sách bàn thất bại",
-    "get_tables_successfully": "Lấy danh sách bàn thành công"
+    "get_tables_successfully": "Lấy danh sách bàn thành công",
+    "create_failed": "Tạo bàn thất bại",
+    "created_successfully": "Tạo bàn thành công",
+    "delete_failed": "Xóa bàn thất bại",
+    "deleted_successfully": "Xóa bàn thành công",
+    "duplicate_name": "Phòng đã có bàn trùng tên",
+    "get_table_successfully": "Lấy thông tin bàn thành công",
+    "in_use": "Không thể xóa bàn đang có khách hoặc đã được đặt",
+    "not_found": "Không tìm thấy bàn",
+    "room_full": "Phòng riêng đã đủ tối đa 5 bàn",
+    "update_failed": "Cập nhật bàn thất bại",
+    "updated_successfully": "Cập nhật bàn thành công"
 }
