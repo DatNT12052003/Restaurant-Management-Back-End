@@ -76,5 +76,31 @@
         "name": {
             "required": "Tên bàn là bắt buộc"
         }
+    },
+    "menu": {
+        "name": {
+            "required": "Tên là bắt buộc"
+        },
+        "price": {
+            "invalid": "Giá phải là số không âm"
+        },
+        "status": {
+            "invalid": "Trạng thái không hợp lệ"
+        },
+        "category": {
+            "invalid": "Loại món không hợp lệ"
+        },
+        "quantity": {
+            "invalid": "Số lượng phải là số nguyên từ 1 đến 99"
+        },
+        "items": {
+            "required": "Combo phải có ít nhất một món",
+            "duplicate": "Một món bị lặp trong combo"
+        }
+    },
+    "image": {
+        "entity_type": {
+            "invalid": "Loại đối tượng của ảnh không hợp lệ"
+        }
     }
 }

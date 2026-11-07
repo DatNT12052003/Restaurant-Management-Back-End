@@ -59,6 +59,23 @@ export enum PermissionManagementEnum {
     ASSIGN = "permission.assign",
 }
 
+/** Thực đơn chung của chuỗi. Thẻ món (tag) dùng chung nhóm quyền này. */
+export enum DishPermissionEnum {
+    CREATE = "dish.create",
+    VIEW = "dish.view",
+    UPDATE = "dish.update",
+    DELETE = "dish.delete",
+    /** Bật/tắt món, combo và đặt giá riêng cho nhà hàng của mình */
+    AVAILABILITY = "dish.availability",
+}
+
+export enum ComboPermissionEnum {
+    CREATE = "combo.create",
+    VIEW = "combo.view",
+    UPDATE = "combo.update",
+    DELETE = "combo.delete",
+}
+
 /** Toàn bộ permission của hệ thống, dùng cho seed và kiểm tra. */
 export const ALL_PERMISSIONS: string[] = [
     UserPermissionEnum,
@@ -70,4 +87,6 @@ export const ALL_PERMISSIONS: string[] = [
     RoomPermissionEnum,
     TablePermissionEnum,
     PermissionManagementEnum,
+    DishPermissionEnum,
+    ComboPermissionEnum,
 ].flatMap((group) => Object.values(group) as string[]);

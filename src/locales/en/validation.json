@@ -76,5 +76,31 @@
         "name": {
             "required": "Table name is required"
         }
+    },
+    "menu": {
+        "name": {
+            "required": "Name is required"
+        },
+        "price": {
+            "invalid": "Price must be a non-negative number"
+        },
+        "status": {
+            "invalid": "Invalid status"
+        },
+        "category": {
+            "invalid": "Invalid category"
+        },
+        "quantity": {
+            "invalid": "Quantity must be a whole number from 1 to 99"
+        },
+        "items": {
+            "required": "A combo must contain at least one dish",
+            "duplicate": "A dish appears more than once in the combo"
+        }
+    },
+    "image": {
+        "entity_type": {
+            "invalid": "Invalid image target"
+        }
     }
 }

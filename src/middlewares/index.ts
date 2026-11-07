@@ -7,3 +7,4 @@ export * from "./auth.middleware";
 export * from "./checkPermission.middleware";
 export * from "./restaurantScope.middleware";
 export * from "./userAccess.middleware";
+export * from "./imageAccess.middleware";

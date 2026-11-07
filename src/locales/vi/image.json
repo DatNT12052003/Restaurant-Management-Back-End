@@ -1,0 +1,14 @@
+{
+    "not_found": "Không tìm thấy ảnh",
+    "entity_not_found": "Không tìm thấy đối tượng của ảnh",
+    "file_too_large": "Mỗi ảnh tối đa {{size}} MB",
+    "invalid_files": "Chỉ tải lên tối đa {{max}} file ảnh mỗi lần",
+    "upload_failed": "Tải ảnh lên thất bại",
+    "no_files": "Chọn ít nhất một ảnh",
+    "failed": "Thao tác với ảnh thất bại",
+    "get_successfully": "Lấy danh sách ảnh thành công",
+    "upload_successfully": "Tải ảnh lên thành công",
+    "primary_successfully": "Đã đặt ảnh đại diện",
+    "delete_successfully": "Xóa ảnh thành công",
+    "invalid_type": "Chỉ chấp nhận file ảnh"
+}

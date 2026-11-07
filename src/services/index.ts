@@ -9,3 +9,5 @@ export * as restaurantService from "./restaurant.service";
 export * as roomService from "./room.service";
 export * as tableService from "./table.service";
 export * as permissionService from "./permission.service";
+export * as menuService from "./menu.service";
+export * as imageService from "./image.service";

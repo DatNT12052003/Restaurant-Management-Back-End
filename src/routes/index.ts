@@ -6,3 +6,8 @@ export { default as roomRouter } from "./room.route";
 export { default as tableRouter } from "./table.route";
 export { default as roleRouter } from "./role.route";
 export { default as permissionRouter } from "./permission.route";
+export { default as tagRouter } from "./tag.route";
+export { default as dishRouter } from "./dish.route";
+export { default as comboRouter } from "./combo.route";
+export { default as restaurantMenuRouter } from "./restaurant-menu.route";
+export { default as imageRouter } from "./image.route";
