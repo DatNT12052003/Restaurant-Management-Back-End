@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
 import { PAGINATION } from "~/common/constant";
 import { FilterOperatorEnum, JoinTypeEnum, RolesEnum } from "~/common/enum";
 import {
@@ -142,9 +143,8 @@ export const deleteUser = async (req: Request, res: Response) => {
     }
 };
 
-export const getEmployeesByRestaurantId = async (req: Request, res: Response) => {
+export const getEmployees = async (req: Request, res: Response) => {
     try {
-        const restaurant_id = Number(req.params.restaurant_id);
         const query: IGetQuery = req.query;
         const currentPage = query.currentPage || PAGINATION.DEFAULT_PAGE;
         const limit = query.limit || PAGINATION.DEFAULT_LIMIT;
@@ -152,13 +152,13 @@ export const getEmployeesByRestaurantId = async (req: Request, res: Response) =>
 
         const params: ISelectQuery = {
             search: query.search,
-            filters: query.filters,
+            filters: withRestaurantScope(query.filters, "restaurant_id", req.restaurantScope),
             orderBy: query.orderBy,
             limit,
             offset,
             returning: ["u.*", "a.username"],
         };
-        const users: IGetEmployees | number = await userService.getEmployeesByRestaurantId(params, restaurant_id);
+        const users: IGetEmployees | number = await userService.getEmployees(params);
         if (typeof users === "number") {
             return createErrorResponse(res, req.t("user:error_fetching_users"));
         }

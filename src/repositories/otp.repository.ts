@@ -1,4 +1,4 @@
-import { pool } from "~/config/db";
+import { db } from "~/config/db";
 import { ICreateOtpPayload, IGetActiveOtp, IOtp } from "~/interfaces";
 import { buildInsertQuery } from "~/utils/query-builder";
 
@@ -6,7 +6,7 @@ export const createOtp = async (data: ICreateOtpPayload): Promise<IOtp> => {
     const allowedFields = ["hash_code", "type", "expires_at", "account_id"];
     const returning = ["*"];
     const { query, values } = buildInsertQuery("otps", data, allowedFields, returning);
-    const result = await pool.query(query, values);
+    const result = await db().query(query, values);
     return result.rows[0];
 };
 
@@ -19,7 +19,7 @@ export const getActiveOtpByAccountIdAndType = async ({ account_id, type }: IGetA
         LIMIT 1
     `;
     const values = [account_id, type];
-    const result = await pool.query(query, values);
+    const result = await db().query(query, values);
     return result.rows[0];
 };
 
@@ -30,5 +30,5 @@ export const markOtpAsUsed = async (id: number): Promise<void> => {
         WHERE id = $1 AND deleted_at IS NULL
     `;
     const values = [id];
-    await pool.query(query, values);
+    await db().query(query, values);
 };

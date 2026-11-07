@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { authenticationErrorResponse, authorizationErrorResponse } from "~/common/responses/error";
+import { authenticationErrorResponse } from "~/common/responses/error";
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
@@ -14,6 +14,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
         req.account = payload;
         next();
     } catch {
-        return authorizationErrorResponse(res, req.t("common:invalid_or_expired_token"));
+        return authenticationErrorResponse(res, req.t("common:invalid_or_expired_token"));
     }
 };

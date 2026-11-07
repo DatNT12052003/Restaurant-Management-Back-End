@@ -65,7 +65,21 @@ export enum RolesEnum {
     HEAD_CHEF = "head_chef",
     SOUS_CHEF = "sous_chef",
     COMMIS_CHEF = "commis_chef",
-    CLEANER_STAFF = "cleaner_staff",
+    CLEANER_STAFF = "clean_staff",
     GUARD = "guard",
     GUEST = "guest",
+}
+
+export enum RoomTypeEnum {
+    PUBLIC = "public",
+    PRIVATE = "private",
+    PRIVATE_PRO = "private_pro",
+}
+
+/** Trạng thái sử dụng của phòng/bàn. Trạng thái khóa/mở được tách riêng thành cột `is_active`. */
+export enum UsageStatusEnum {
+    AVAILABLE = "available",
+    RESERVED = "reserved",
+    OCCUPIED = "occupied",
+    CLEANING = "cleaning",
 }

@@ -5,6 +5,11 @@ import { getPermissionsByUserId } from "~/repositories/permission.repository";
 import { getRolesByUserId } from "~/repositories/role.repository";
 import { getUserByAccountId } from "~/repositories/user.repository";
 
+/**
+ * Yêu cầu chạy sau `authMiddleware`.
+ * Kiểm tra user có permission `requiredPermission` (gộp từ role + quyền cấp trực tiếp),
+ * đồng thời gán `req.user` và `req.roles` cho các middleware/controller phía sau.
+ */
 export const checkPermission = (requiredPermission: string) => {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
@@ -16,15 +21,23 @@ export const checkPermission = (requiredPermission: string) => {
             }
 
             const user = await getUserByAccountId(accountId);
-            const userPermissions = await getPermissionsByUserId(user.id);
-            const hasPermission = userPermissions.includes(requiredPermission);
+            if (!user) {
+                authenticationErrorResponse(res, req.t("common:authentication_required"));
+                return;
+            }
 
-            if (!hasPermission) {
+            const [userPermissions, roles] = await Promise.all([
+                getPermissionsByUserId(user.id),
+                getRolesByUserId(user.id),
+            ]);
+
+            if (!userPermissions.includes(requiredPermission)) {
                 authorizationErrorResponse(res, req.t("common:forbidden"));
                 return;
             }
 
             req.user = user;
+            req.roles = roles;
             next();
         } catch (error) {
             serverErrorResponse(res);
@@ -52,11 +65,13 @@ export const isSelfOrAdminOrManager = async (req: Request, res: Response, next: 
         return next();
     }
 
-    const roles = await getRolesByUserId(user.id);
-    if (roles.includes(RolesEnum.ADMIN) || roles.includes(RolesEnum.MANAGER)) {
-        return next();
-    } else {
+    try {
+        const roles = req.roles ?? (await getRolesByUserId(user.id));
+        if (roles.includes(RolesEnum.ADMIN) || roles.includes(RolesEnum.MANAGER)) {
+            return next();
+        }
         authorizationErrorResponse(res, req.t("common:forbidden"));
-        return;
+    } catch (error) {
+        serverErrorResponse(res);
     }
 };

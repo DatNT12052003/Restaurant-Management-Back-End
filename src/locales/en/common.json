@@ -4,5 +4,7 @@
     "authorization_header_missing": "Authorization header missing",
     "invalid_or_expired_token": "Invalid or expired token",
     "authentication_required": "Authentication required",
-    "forbidden": "Forbidden"
+    "forbidden": "Forbidden",
+    "restaurant_not_assigned": "You have not been assigned to any restaurant",
+    "restaurant_forbidden": "You do not have access to this restaurant"
 }

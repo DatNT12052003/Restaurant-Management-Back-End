@@ -5,6 +5,7 @@ import {
     authMiddleware,
     checkPermission,
     isSelfOrAdminOrManager,
+    restrictToRestaurant,
     uploadAvatar,
     validate,
     validateCreate,
@@ -13,9 +14,19 @@ import { createUserSchema, createUserWithAccountSchema } from "~/schemas";
 
 const router = Router();
 
-router.post("/", uploadAvatar, validateCreate, validate(createUserSchema), userController.createUser);
+router.post(
+    "/",
+    authMiddleware,
+    checkPermission(UserPermissionEnum.CREATE),
+    uploadAvatar,
+    validateCreate,
+    validate(createUserSchema),
+    userController.createUser,
+);
 router.post(
     "/with-account",
+    authMiddleware,
+    checkPermission(UserPermissionEnum.CREATE),
     uploadAvatar,
     validateCreate,
     validate(createUserWithAccountSchema),
@@ -36,7 +47,13 @@ router.patch(
     isSelfOrAdminOrManager,
     userController.deleteUser,
 );
-router.get("/employees/:restaurant_id", userController.getEmployeesByRestaurantId);
+router.get(
+    "/employees",
+    authMiddleware,
+    checkPermission(EmployeePermissionEnum.VIEW),
+    restrictToRestaurant,
+    userController.getEmployees,
+);
 
 router.post(
     "/employee",
@@ -45,6 +62,7 @@ router.post(
     isSelfOrAdminOrManager,
     // validate(createUserWithAccountSchema),
     uploadAvatar,
+    restrictToRestaurant,
     userController.createEmployee,
 );
 
@@ -55,6 +73,7 @@ router.patch(
     isSelfOrAdminOrManager,
     // validate(createUserWithAccountSchema),
     uploadAvatar,
+    restrictToRestaurant,
     userController.updateEmployee,
 );
 

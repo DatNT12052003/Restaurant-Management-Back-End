@@ -4,5 +4,7 @@
     "authorization_header_missing": "Thiếu header Authorization",
     "invalid_or_expired_token": "Token không hợp lệ hoặc đã hết hạn",
     "authentication_required": "Yêu cầu xác thực",
-    "forbidden": "Truy cập bị cấm"
+    "forbidden": "Truy cập bị cấm",
+    "restaurant_not_assigned": "Bạn chưa được phân công vào nhà hàng nào",
+    "restaurant_forbidden": "Bạn không có quyền truy cập nhà hàng này"
 }

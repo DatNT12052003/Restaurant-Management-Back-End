@@ -1,5 +1,5 @@
 import { JoinTypeEnum } from "~/common/enum";
-import { pool } from "~/config/db";
+import { db } from "~/config/db";
 import {
     ICreateUserPayload,
     IQueryResult,
@@ -30,19 +30,19 @@ export const createUser = async (payload: ICreateUserPayload): Promise<IUser> =>
     ];
     const returning = ["*"];
     const { query, values }: IQueryResult = buildInsertQuery("users", payload, allowedFields, returning);
-    const result = await pool.query(query, values);
+    const result = await db().query(query, values);
     return result.rows[0];
 };
 
 export const getUserByAccountId = async (account_id: number): Promise<IUser> => {
     const { query, values }: IQueryResult = buildSelectByFieldQuery("users", "account_id", account_id, ["*"]);
-    const result = await pool.query(query, values);
+    const result = await db().query(query, values);
     return result.rows[0];
 };
 
 export const getUserByEmail = async (email: string): Promise<IUser> => {
     const { query, values }: IQueryResult = buildSelectByFieldQuery("users", "email", email, ["*"]);
-    const result = await pool.query(query, values);
+    const result = await db().query(query, values);
     return result.rows[0];
 };
 
@@ -104,7 +104,7 @@ export const getUsersWithAccountInfo = async (
         orderBy: finalOrderByFields,
     });
 
-    const result = await pool.query(query, values);
+    const result = await db().query(query, values);
     const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
     const rows = result.rows.map(({ total_count, ...data }) => data);
     return { rows, totalCount };
@@ -127,7 +127,7 @@ export const updateUser = async ({ payload, id }: { payload: IUpdateUserPayload;
     const returning = ["*"];
 
     const { query, values } = buildUpdateQuery("users", { field: "id", value: id }, payload, allowedFields, returning);
-    const result = await pool.query(query, values);
+    const result = await db().query(query, values);
     return result.rows[0];
 };
 
@@ -139,6 +139,6 @@ export const deleteUser = async (id: number): Promise<IUser> => {
         RETURNING *
     `;
     const values = [id];
-    const result = await pool.query(query, values);
+    const result = await db().query(query, values);
     return result.rows[0];
 };

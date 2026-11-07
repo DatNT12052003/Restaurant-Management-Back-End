@@ -32,3 +32,42 @@ export enum RestaurantPermissionEnum {
     UPDATE = "restaurant.update",
     DELETE = "restaurant.delete",
 }
+
+export enum AccountPermissionEnum {
+    CREATE = "account.create",
+    VIEW = "account.view",
+    UPDATE = "account.update",
+    DELETE = "account.delete",
+}
+
+export enum RoomPermissionEnum {
+    CREATE = "room.create",
+    VIEW = "room.view",
+    UPDATE = "room.update",
+    DELETE = "room.delete",
+}
+
+export enum TablePermissionEnum {
+    CREATE = "table.create",
+    VIEW = "table.view",
+    UPDATE = "table.update",
+    DELETE = "table.delete",
+}
+
+export enum PermissionManagementEnum {
+    VIEW = "permission.view",
+    ASSIGN = "permission.assign",
+}
+
+/** Toàn bộ permission của hệ thống, dùng cho seed và kiểm tra. */
+export const ALL_PERMISSIONS: string[] = [
+    UserPermissionEnum,
+    EmployeePermissionEnum,
+    GuestPermissionEnum,
+    RolePermissionEnum,
+    RestaurantPermissionEnum,
+    AccountPermissionEnum,
+    RoomPermissionEnum,
+    TablePermissionEnum,
+    PermissionManagementEnum,
+].flatMap((group) => Object.values(group) as string[]);

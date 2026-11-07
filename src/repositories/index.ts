@@ -6,3 +6,5 @@ export * as tokenRepository from "./token.repository";
 export * as otpRepository from "./otp.repository";
 export * as restaurantRepository from "./restaurant.repository";
 export * as userRoleRepository from "./user-role.repository";
+export * as roomRepository from "./room.repository";
+export * as tableRepository from "./table.repository";
