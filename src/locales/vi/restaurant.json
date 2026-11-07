@@ -1,4 +1,13 @@
 {
     "error_getting_restaurants": "Lấy danh sách nhà hàng thất bại",
-    "get_restaurants_successfully": "Danh sách nhà hàng đã được lấy thành công"
+    "get_restaurants_successfully": "Danh sách nhà hàng đã được lấy thành công",
+    "create_failed": "Tạo nhà hàng thất bại",
+    "created_successfully": "Tạo nhà hàng thành công",
+    "delete_failed": "Xóa nhà hàng thất bại",
+    "deleted_successfully": "Xóa nhà hàng thành công",
+    "get_restaurant_successfully": "Lấy thông tin nhà hàng thành công",
+    "has_dependencies": "Không thể xóa nhà hàng còn phòng hoặc nhân viên",
+    "not_found": "Không tìm thấy nhà hàng",
+    "update_failed": "Cập nhật nhà hàng thất bại",
+    "updated_successfully": "Cập nhật nhà hàng thành công"
 }

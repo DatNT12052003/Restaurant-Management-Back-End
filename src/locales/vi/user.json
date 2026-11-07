@@ -34,5 +34,13 @@
     "employee_updated_successfully": "Nhân viên đã được cập nhật thành công",
     "guest_not_found": "Không tìm thấy khách hàng",
     "error_deleting_guest": "Xóa khách hàng thất bại",
-    "guest_deleted_successfully": "Khách hàng đã được xóa thành công"
+    "guest_deleted_successfully": "Khách hàng đã được xóa thành công",
+    "cannot_delete_self": "Bạn không thể tự xóa tài khoản của mình",
+    "cannot_manage_higher_role": "Bạn không thể thao tác với người dùng ngang hoặc cao hơn cấp của mình",
+    "email_exists": "Email đã được sử dụng",
+    "error_creating_account": "Tạo tài khoản thất bại",
+    "invalid_roles": "Vai trò không hợp lệ",
+    "phone_exists": "Số điện thoại đã được sử dụng",
+    "role_not_assignable": "Bạn chỉ được gán vai trò thấp hơn cấp của mình",
+    "username_exists": "Tên đăng nhập đã tồn tại"
 }

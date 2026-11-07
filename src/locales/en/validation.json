@@ -6,13 +6,75 @@
         },
         "password": {
             "invalid": "Password must be at least 6 characters",
-            "required": "Password is required"
-        }
+            "required": "Password is required",
+            "confirm_not_match": "Confirm password does not match"
+        },
+        "required": "Account information is required"
     },
     "user": {
         "full_name": {
             "invalid": "Full name must be at least 2 words",
             "required": "Full name is required"
+        },
+        "date_of_birth": {
+            "invalid": "Date of birth must be in YYYY-MM-DD format"
+        },
+        "email": {
+            "invalid": "Invalid email"
+        },
+        "gender": {
+            "invalid": "Invalid gender"
+        },
+        "guest_status": {
+            "invalid": "Invalid guest status"
+        },
+        "phone_number": {
+            "invalid": "Invalid phone number"
+        },
+        "required": "User information is required",
+        "roles": {
+            "required": "Select at least one role"
+        },
+        "salary": {
+            "invalid": "Salary must be a non-negative number"
+        },
+        "status": {
+            "invalid": "Invalid status"
+        }
+    },
+    "common": {
+        "empty_update": "Nothing to update",
+        "invalid_boolean": "Must be true or false",
+        "invalid_id": "Invalid ID",
+        "invalid_list": "Invalid list",
+        "too_long": "Value is too long",
+        "usage_status_invalid": "Invalid status"
+    },
+    "restaurant": {
+        "address": {
+            "required": "Address is required"
+        },
+        "name": {
+            "required": "Restaurant name is required"
+        },
+        "status": {
+            "invalid": "Invalid restaurant status"
+        }
+    },
+    "room": {
+        "name": {
+            "required": "Room name is required"
+        },
+        "type": {
+            "invalid": "Invalid room type"
+        }
+    },
+    "table": {
+        "capacity": {
+            "invalid": "Seats must be a whole number from 1 to 50"
+        },
+        "name": {
+            "required": "Table name is required"
         }
     }
 }

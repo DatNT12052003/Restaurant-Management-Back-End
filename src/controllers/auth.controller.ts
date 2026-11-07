@@ -1,7 +1,21 @@
 import { Request, Response } from "express";
-import { GET_ME, LOGIN, LOGOUT, LOGOUT_ALL, REFRESH_TOKEN, REGISTER, RESET_PASSWORD } from "~/common/error-code/auth";
+import {
+    CHANGE_PASSWORD,
+    GET_ME,
+    LOGIN,
+    LOGOUT,
+    LOGOUT_ALL,
+    REFRESH_TOKEN,
+    REGISTER,
+    RESET_PASSWORD,
+} from "~/common/error-code/auth";
 import { MARK_OTP_AS_USED } from "~/common/error-code/otp";
-import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
+import {
+    authorizationErrorResponse,
+    badRequestResponse,
+    createErrorResponse,
+    serverErrorResponse,
+} from "~/common/responses/error";
 import {
     createSuccessResponse,
     getSuccessResponse,
@@ -70,6 +84,8 @@ export const login = async (req: Request, res: Response) => {
                     return badRequestResponse(res, req.t("auth:user_not_exist"));
                 case LOGIN.INVALID_USERNAME_PASSWORD:
                     return badRequestResponse(res, req.t("auth:invalid_username_or_password"));
+                case LOGIN.ACCOUNT_DISABLED:
+                    return authorizationErrorResponse(res, req.t("auth:account_disabled"));
                 default:
                     return serverErrorResponse(res, req.t("auth:login_failed"));
             }
@@ -141,6 +157,8 @@ export const refreshToken = async (req: Request, res: Response) => {
                     return badRequestResponse(res, req.t("auth:refresh_token_not_found"));
                 case REFRESH_TOKEN.ACCOUNT_NOT_FOUND:
                     return badRequestResponse(res, req.t("auth:account_not_found"));
+                case REFRESH_TOKEN.ACCOUNT_DISABLED:
+                    return authorizationErrorResponse(res, req.t("auth:account_disabled"));
                 default:
                     return serverErrorResponse(res, req.t("auth:refresh_token_failed"));
             }
@@ -313,5 +331,47 @@ export const resetPassword = async (req: Request, res: Response) => {
         return successResponse(res, req.t("auth:password_reset_successfully"));
     } catch (error) {
         return serverErrorResponse(res);
+    }
+};
+
+/** POST /auth/change-password: đổi mật khẩu, đăng xuất các thiết bị khác, cấp token mới cho phiên hiện tại. */
+export const changePassword = async (req: Request, res: Response) => {
+    try {
+        const accountId = req.account?.account_id;
+        if (!accountId) {
+            return badRequestResponse(res, req.t("auth:invalid_token"));
+        }
+        const authData = await authService.changePassword(accountId, req.body);
+        if (typeof authData === "number") {
+            switch (authData) {
+                case CHANGE_PASSWORD.ACCOUNT_NOT_FOUND:
+                    return badRequestResponse(res, req.t("auth:account_not_found"));
+                case CHANGE_PASSWORD.WRONG_CURRENT_PASSWORD:
+                    return badRequestResponse(res, req.t("auth:wrong_current_password"));
+                case CHANGE_PASSWORD.CONFIRM_NOT_MATCH:
+                    return badRequestResponse(res, req.t("auth:new_password_confirm_password_not_match"));
+                case CHANGE_PASSWORD.SAME_AS_CURRENT:
+                    return badRequestResponse(res, req.t("auth:new_password_same_as_current"));
+                default:
+                    return serverErrorResponse(res, req.t("auth:change_password_failed"));
+            }
+        }
+
+        if (req.headers["x-platform"] === "web") {
+            res.cookie("refresh_token", authData.refresh_token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+            return successResponse(res, req.t("auth:change_password_successfully"), {
+                account_id: authData.account_id,
+                username: authData.username,
+                access_token: authData.access_token,
+            });
+        }
+        return successResponse(res, req.t("auth:change_password_successfully"), authData);
+    } catch (error) {
+        return serverErrorResponse(res, req.t("auth:change_password_failed"));
     }
 };

@@ -27,9 +27,18 @@ export const createUser = async (payload: ICreateUserPayload): Promise<IUser> =>
         "status",
         "account_id",
         "restaurant_id",
+        "salary",
+        "guest_status",
+        "updated_at",
     ];
     const returning = ["*"];
     const { query, values }: IQueryResult = buildInsertQuery("users", payload, allowedFields, returning);
+    const result = await db().query(query, values);
+    return result.rows[0];
+};
+
+export const getUserById = async (id: number): Promise<IUser | undefined> => {
+    const { query, values }: IQueryResult = buildSelectByFieldQuery("users", "id", id, ["*"]);
     const result = await db().query(query, values);
     return result.rows[0];
 };
@@ -60,8 +69,9 @@ export const getUsersWithAccountInfo = async (
         "u.account_id",
         "u.restaurant_id",
         "u.created_at",
+        "u.salary",
+        "u.guest_status",
         "a.username",
-        "r.type_name",
     ];
 
     const fieldMap: Record<string, string> = {
@@ -75,11 +85,12 @@ export const getUsersWithAccountInfo = async (
         account_id: "u.account_id",
         restaurant_id: "u.restaurant_id",
         created_at: "u.created_at",
+        salary: "u.salary",
+        guest_status: "u.guest_status",
         username: "a.username",
-        "r.type_name": "r.type_name",
     };
 
-    const finalSearchFields = params.search?.fields.map((f) => fieldMap[f]).filter(Boolean) || [];
+    const finalSearchFields = params.search?.fields?.map((f) => fieldMap[f]).filter(Boolean) || [];
     const finalFilterFields =
         params.filters?.map((f) => ({ ...f, field: fieldMap[f.field] })).filter((f) => f.field) || [];
     const finalOrderByFields =
@@ -122,6 +133,9 @@ export const updateUser = async ({ payload, id }: { payload: IUpdateUserPayload;
         "status",
         "account_id",
         "restaurant_id",
+        "salary",
+        "guest_status",
+        "updated_at",
     ];
 
     const returning = ["*"];

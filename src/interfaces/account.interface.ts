@@ -36,3 +36,9 @@ export interface IUpdateUsernameBody {
 }
 
 export interface IUpdateUsernamePayload extends IUpdateUsernameBody {}
+
+export interface IChangePasswordBody {
+    current_password: string;
+    new_password: string;
+    confirm_password: string;
+}

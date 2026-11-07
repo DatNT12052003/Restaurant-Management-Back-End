@@ -15,3 +15,11 @@ export interface IGetRestaurants {
     restaurants: Partial<IRestaurant>[];
     pagination: IPagination;
 }
+
+export interface ICreateRestaurantBody {
+    name: string;
+    address: string;
+    status?: RestaurantStatusEnum;
+}
+
+export interface IUpdateRestaurantBody extends Partial<ICreateRestaurantBody> {}

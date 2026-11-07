@@ -21,3 +21,7 @@ export const generateOTP = (length: number = 6): string => {
     }
     return otp;
 };
+
+/** Lỗi PostgreSQL có mã `code` (ví dụ "23505" = vi phạm UNIQUE) */
+export const getPgErrorCode = (error: unknown): string | undefined =>
+    typeof error === "object" && error !== null && "code" in error ? String((error as { code: unknown }).code) : undefined;

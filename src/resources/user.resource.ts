@@ -14,6 +14,9 @@ export const getUserResource = (user: IUser) => {
         status: user.status,
         account_id: user.account_id,
         restaurant_id: user.restaurant_id,
+        salary: user.salary,
+        guest_status: user.guest_status,
+        created_at: user.created_at,
     };
 };
 

@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import {
     IAccount,
     IAuth,
+    IChangePasswordBody,
     ICreateGuestBody,
     IJwtAccountPayload,
     ILoginBody,
@@ -21,7 +22,47 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken, verifyResetPassw
 import { v4 as uuidv4 } from "uuid";
 import { SALT_ROUNDS } from "~/common/constant";
 import { TokenTypeEnum } from "~/common/enum";
-import { GET_ME, LOGIN, LOGOUT, LOGOUT_ALL, REFRESH_TOKEN, REGISTER, RESET_PASSWORD } from "~/common/error-code/auth";
+
+const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Cấp access token + refresh token mới (lưu hash refresh token vào DB). */
+const issueTokens = async (account: Pick<IAccount, "id" | "username">): Promise<IAuth> => {
+    const accessToken = signAccessToken({ account_id: account.id, username: account.username });
+    const jti = uuidv4();
+    const refreshToken = signRefreshToken({ account_id: account.id, username: account.username, jti });
+
+    await tokenRepository.createToken({
+        jti,
+        hash_token: bcrypt.hashSync(refreshToken, 10),
+        expires_at: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+        type: TokenTypeEnum.REFRESH,
+        account_id: account.id,
+    });
+
+    return {
+        account_id: account.id,
+        username: account.username,
+        access_token: accessToken,
+        refresh_token: refreshToken,
+    };
+};
+
+/** Nhân viên đã nghỉ (status = inactive) không được đăng nhập / refresh. */
+const isAccountDisabled = async (accountId: number): Promise<boolean> => {
+    const user = await userRepository.getUserByAccountId(accountId);
+    return !!user && user.status === UserStatusEnum.INACTIVE;
+};
+import {
+    CHANGE_PASSWORD,
+    GET_ME,
+    LOGIN,
+    LOGOUT,
+    LOGOUT_ALL,
+    REFRESH_TOKEN,
+    REGISTER,
+    RESET_PASSWORD,
+} from "~/common/error-code/auth";
+import { UserStatusEnum } from "~/common/enum";
 import { userService } from ".";
 
 export const register = async (body: ICreateGuestBody): Promise<{ user: IUser; account: IAccount } | number> => {
@@ -44,27 +85,11 @@ export const login = async (body: ILoginBody): Promise<IAuth | number> => {
             return LOGIN.INVALID_USERNAME_PASSWORD;
         }
 
-        const accessToken = signAccessToken({ account_id: account.id, username: account.username });
-        const jti = uuidv4();
-        const refreshToken = signRefreshToken({ account_id: account.id, username: account.username, jti: jti });
+        if (await isAccountDisabled(account.id)) {
+            return LOGIN.ACCOUNT_DISABLED;
+        }
 
-        const hashRefreshToken = bcrypt.hashSync(refreshToken, 10);
-
-        await tokenRepository.createToken({
-            jti,
-            hash_token: hashRefreshToken,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            type: TokenTypeEnum.REFRESH,
-            account_id: account.id,
-        });
-
-        const authData: IAuth = {
-            account_id: account.id,
-            username: account.username,
-            access_token: accessToken,
-            refresh_token: refreshToken,
-        };
-        return authData;
+        return await issueTokens(account);
     } catch (error) {
         return LOGIN.LOGIN_FAILED;
     }
@@ -123,28 +148,13 @@ export const refreshToken = async (refreshToken: string): Promise<IAuth | number
         if (!account) {
             return REFRESH_TOKEN.ACCOUNT_NOT_FOUND;
         }
-        const accessToken = signAccessToken({ account_id: account.id, username: account.username });
-        const jti = uuidv4();
-        const newRefreshToken = signRefreshToken({ account_id: account.id, username: account.username, jti: jti });
-
-        const hashRefreshToken = bcrypt.hashSync(newRefreshToken, 10);
+        if (await isAccountDisabled(account.id)) {
+            await tokenRepository.revokeToken(storedToken.id);
+            return REFRESH_TOKEN.ACCOUNT_DISABLED;
+        }
 
         await tokenRepository.revokeToken(storedToken.id);
-        await tokenRepository.createToken({
-            jti,
-            hash_token: hashRefreshToken,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            type: TokenTypeEnum.REFRESH,
-            account_id: account.id,
-        });
-
-        const authData: IAuth = {
-            account_id: account.id,
-            username: account.username,
-            access_token: accessToken,
-            refresh_token: newRefreshToken,
-        };
-        return authData;
+        return await issueTokens(account);
     } catch (error) {
         return REFRESH_TOKEN.REFRESH_TOKEN_FAILED;
     }
@@ -205,5 +215,31 @@ export const resetPassword = async (body: IUpdatePasswordBody): Promise<number> 
         return RESET_PASSWORD.RESET_PASSWORD_SUCCESS;
     } catch (error) {
         return RESET_PASSWORD.RESET_PASSWORD_FAILED;
+    }
+};
+
+/**
+ * Đổi mật khẩu khi đang đăng nhập. Thu hồi mọi refresh token cũ (đăng xuất các thiết bị khác)
+ * và cấp token mới cho phiên hiện tại.
+ */
+export const changePassword = async (accountId: number, body: IChangePasswordBody): Promise<IAuth | number> => {
+    try {
+        const account = await accountRepository.getAccountById(accountId);
+        if (!account) return CHANGE_PASSWORD.ACCOUNT_NOT_FOUND;
+
+        if (!bcrypt.compareSync(body.current_password, account.hash_password)) {
+            return CHANGE_PASSWORD.WRONG_CURRENT_PASSWORD;
+        }
+        if (body.new_password !== body.confirm_password) return CHANGE_PASSWORD.CONFIRM_NOT_MATCH;
+        if (body.new_password === body.current_password) return CHANGE_PASSWORD.SAME_AS_CURRENT;
+
+        await accountRepository.updateAccountPassword({
+            payload: { hash_password: bcrypt.hashSync(body.new_password, SALT_ROUNDS) },
+            id: accountId,
+        });
+        await tokenRepository.revokeAllRefreshTokensByAccountId(accountId);
+        return await issueTokens(account);
+    } catch (error) {
+        return CHANGE_PASSWORD.FAILED;
     }
 };

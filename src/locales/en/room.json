@@ -1,4 +1,15 @@
 {
     "error_getting_rooms": "Error getting rooms",
-    "get_rooms_successfully": "Get rooms successfully"
+    "get_rooms_successfully": "Get rooms successfully",
+    "create_failed": "Failed to create room",
+    "created_successfully": "Room created successfully",
+    "delete_failed": "Failed to delete room",
+    "deleted_successfully": "Room deleted successfully",
+    "get_room_successfully": "Room loaded successfully",
+    "in_use": "The room still has occupied or reserved tables",
+    "not_found": "Room not found",
+    "restaurant_required": "Please select a restaurant",
+    "too_many_tables": "Private rooms can have at most 5 tables",
+    "update_failed": "Failed to update room",
+    "updated_successfully": "Room updated successfully"
 }

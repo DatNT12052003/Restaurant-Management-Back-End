@@ -19,3 +19,12 @@ export interface IGetTables {
     tables: Partial<ITable>[];
     pagination: IPagination;
 }
+
+export interface ICreateTableBody {
+    name: string;
+    capacity?: number;
+    status?: UsageStatusEnum;
+    room_id: number;
+}
+
+export interface IUpdateTableBody extends Partial<ICreateTableBody> {}

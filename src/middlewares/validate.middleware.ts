@@ -4,15 +4,16 @@ import { HTTP_RESPONSE } from "~/common/http-response";
 
 export const validate = (schema: ZodType) => async (req: Request, res: Response, next: NextFunction) => {
     try {
+        // Express 5 để req.body = undefined khi request không có body (ví dụ GET)
         const validatedData = (await schema.parseAsync({
-            body: req.body,
+            body: req.body ?? {},
             query: req.query,
             params: req.params,
         })) as { body: any; query: any; params: any };
 
-        Object.assign(req.body, validatedData.body);
-        Object.assign(req.query, validatedData.query);
-        Object.assign(req.params, validatedData.params);
+        if (validatedData.body !== undefined) req.body = Object.assign(req.body ?? {}, validatedData.body);
+        if (validatedData.query !== undefined) Object.assign(req.query, validatedData.query);
+        if (validatedData.params !== undefined) Object.assign(req.params, validatedData.params);
 
         return next();
     } catch (error) {

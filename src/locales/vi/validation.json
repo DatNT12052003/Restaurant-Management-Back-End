@@ -6,13 +6,75 @@
         },
         "password": {
             "invalid": "Mật khẩu phải có ít nhất 6 ký tự",
-            "required": "Mật khẩu là bắt buộc"
-        }
+            "required": "Mật khẩu là bắt buộc",
+            "confirm_not_match": "Xác nhận mật khẩu không khớp"
+        },
+        "required": "Thông tin tài khoản là bắt buộc"
     },
     "user": {
         "full_name": {
             "invalid": "Họ tên phải có ít nhất 2 từ",
             "required": "Họ tên là bắt buộc"
+        },
+        "date_of_birth": {
+            "invalid": "Ngày sinh phải có dạng YYYY-MM-DD"
+        },
+        "email": {
+            "invalid": "Email không hợp lệ"
+        },
+        "gender": {
+            "invalid": "Giới tính không hợp lệ"
+        },
+        "guest_status": {
+            "invalid": "Trạng thái khách không hợp lệ"
+        },
+        "phone_number": {
+            "invalid": "Số điện thoại không hợp lệ"
+        },
+        "required": "Thông tin người dùng là bắt buộc",
+        "roles": {
+            "required": "Chọn ít nhất một vai trò"
+        },
+        "salary": {
+            "invalid": "Lương phải là số không âm"
+        },
+        "status": {
+            "invalid": "Trạng thái không hợp lệ"
+        }
+    },
+    "common": {
+        "empty_update": "Không có dữ liệu để cập nhật",
+        "invalid_boolean": "Giá trị phải là true hoặc false",
+        "invalid_id": "ID không hợp lệ",
+        "invalid_list": "Danh sách không hợp lệ",
+        "too_long": "Giá trị quá dài",
+        "usage_status_invalid": "Trạng thái không hợp lệ"
+    },
+    "restaurant": {
+        "address": {
+            "required": "Địa chỉ là bắt buộc"
+        },
+        "name": {
+            "required": "Tên nhà hàng là bắt buộc"
+        },
+        "status": {
+            "invalid": "Trạng thái nhà hàng không hợp lệ"
+        }
+    },
+    "room": {
+        "name": {
+            "required": "Tên phòng là bắt buộc"
+        },
+        "type": {
+            "invalid": "Loại phòng không hợp lệ"
+        }
+    },
+    "table": {
+        "capacity": {
+            "invalid": "Số ghế phải là số nguyên từ 1 đến 50"
+        },
+        "name": {
+            "required": "Tên bàn là bắt buộc"
         }
     }
 }

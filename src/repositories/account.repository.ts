@@ -71,6 +71,7 @@ export const deleteAccount = async (id: number): Promise<IAccount> => {
     return result.rows[0];
 };
 
+/** Bỏ qua (trả về tài khoản hiện tại) khi không truyền username mới. */
 export const updateAccountUsername = async ({
     payload,
     id,
@@ -78,6 +79,9 @@ export const updateAccountUsername = async ({
     payload: IUpdateUsernamePayload;
     id: number;
 }): Promise<IAccount> => {
+    if (!payload.username) {
+        return getAccountById(id);
+    }
     const query = `
         UPDATE accounts
         SET username = $1, updated_at = NOW()

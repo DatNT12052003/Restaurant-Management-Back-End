@@ -49,6 +49,11 @@ export interface ISelectQuery extends Omit<IGetQuery, "currentPage"> {
     }[];
     offset?: number;
     returning?: string[];
+    /**
+     * Điều kiện WHERE viết sẵn ở server (KHÔNG được chứa dữ liệu từ client chưa kiểm tra).
+     * Ví dụ: `NOT EXISTS (...)` để lọc theo vai trò.
+     */
+    conditions?: string[];
 }
 
 export interface ISendEmail {

@@ -1,22 +1,41 @@
 import { Router } from "express";
-import { EmployeePermissionEnum, GuestPermissionEnum, UserPermissionEnum } from "~/common/permission-enum";
-import { userController } from "~/controllers";
+import {
+    EmployeePermissionEnum,
+    GuestPermissionEnum,
+    PermissionManagementEnum,
+    UserPermissionEnum,
+} from "~/common/permission-enum";
+import { permissionController, userController } from "~/controllers";
 import {
     authMiddleware,
+    canManageTargetUser,
     checkPermission,
-    isSelfOrAdminOrManager,
     restrictToRestaurant,
     uploadAvatar,
     validate,
     validateCreate,
 } from "~/middlewares";
-import { createUserSchema, createUserWithAccountSchema } from "~/schemas";
+import {
+    createEmployeeSchema,
+    createGuestSchema,
+    createUserSchema,
+    createUserWithAccountSchema,
+    idParamSchema,
+    updateEmployeeSchema,
+    updateGuestSchema,
+    updateProfileSchema,
+    updateUserPermissionsSchema,
+} from "~/schemas";
+import { z } from "zod";
 
 const router = Router();
+const idParams = validate(z.object({ params: idParamSchema }));
 
+router.use(authMiddleware);
+
+// ---- User chung ----
 router.post(
     "/",
-    authMiddleware,
     checkPermission(UserPermissionEnum.CREATE),
     uploadAvatar,
     validateCreate,
@@ -25,93 +44,99 @@ router.post(
 );
 router.post(
     "/with-account",
-    authMiddleware,
     checkPermission(UserPermissionEnum.CREATE),
     uploadAvatar,
     validateCreate,
     validate(createUserWithAccountSchema),
     userController.createUserWithAccount,
 );
+// Hồ sơ cá nhân: của chính mình hoặc của người cấp dưới
 router.patch(
     "/:id",
-    authMiddleware,
     checkPermission(UserPermissionEnum.UPDATE),
-    isSelfOrAdminOrManager,
     uploadAvatar,
+    validate(updateProfileSchema),
+    canManageTargetUser({ allowSelf: true }),
     userController.updateUser,
 );
 router.patch(
     "/delete/:id",
-    authMiddleware,
     checkPermission(UserPermissionEnum.DELETE),
-    isSelfOrAdminOrManager,
+    idParams,
+    canManageTargetUser(),
     userController.deleteUser,
 );
+
+// ---- Quyền cấp trực tiếp cho user ----
+router.get(
+    "/:id/permissions",
+    checkPermission(PermissionManagementEnum.VIEW),
+    idParams,
+    canManageTargetUser({ allowSelf: true }),
+    permissionController.getUserPermissions,
+);
+router.put(
+    "/:id/permissions",
+    checkPermission(PermissionManagementEnum.ASSIGN),
+    validate(updateUserPermissionsSchema),
+    canManageTargetUser(),
+    permissionController.updateUserPermissions,
+);
+
+// ---- Nhân viên ----
 router.get(
     "/employees",
-    authMiddleware,
     checkPermission(EmployeePermissionEnum.VIEW),
     restrictToRestaurant,
     userController.getEmployees,
 );
-
 router.post(
     "/employee",
-    authMiddleware,
     checkPermission(EmployeePermissionEnum.CREATE),
-    isSelfOrAdminOrManager,
-    // validate(createUserWithAccountSchema),
-    uploadAvatar,
+    uploadAvatar, // multipart: req.body chỉ có sau multer
+    validate(createEmployeeSchema),
     restrictToRestaurant,
     userController.createEmployee,
 );
-
 router.patch(
     "/employee/:id",
-    authMiddleware,
     checkPermission(EmployeePermissionEnum.UPDATE),
-    isSelfOrAdminOrManager,
-    // validate(createUserWithAccountSchema),
     uploadAvatar,
+    validate(updateEmployeeSchema),
     restrictToRestaurant,
+    canManageTargetUser({ targetKind: "employee" }),
     userController.updateEmployee,
 );
-
 router.patch(
     "/employee/delete/:id",
-    authMiddleware,
     checkPermission(EmployeePermissionEnum.DELETE),
-    isSelfOrAdminOrManager,
+    idParams,
+    canManageTargetUser({ targetKind: "employee" }),
     userController.deleteEmployee,
 );
 
+// ---- Khách hàng ----
+router.get("/guests", checkPermission(GuestPermissionEnum.VIEW), userController.getGuests);
 router.post(
     "/guest",
-    authMiddleware,
     checkPermission(GuestPermissionEnum.CREATE),
-    isSelfOrAdminOrManager,
-    // validate(createUserWithAccountSchema),
     uploadAvatar,
+    validate(createGuestSchema),
     userController.createGuest,
 );
-
-router.get("/guests", authMiddleware, checkPermission(GuestPermissionEnum.VIEW), userController.getGuests);
-
 router.patch(
     "/guest/:id",
-    authMiddleware,
     checkPermission(GuestPermissionEnum.UPDATE),
-    isSelfOrAdminOrManager,
-    // validate(createUserWithAccountSchema),
     uploadAvatar,
+    validate(updateGuestSchema),
+    canManageTargetUser({ targetKind: "guest" }),
     userController.updateGuest,
 );
-
 router.patch(
     "/guest/delete/:id",
-    authMiddleware,
     checkPermission(GuestPermissionEnum.DELETE),
-    isSelfOrAdminOrManager,
+    idParams,
+    canManageTargetUser({ targetKind: "guest" }),
     userController.deleteGuest,
 );
 

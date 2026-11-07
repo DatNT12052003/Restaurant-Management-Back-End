@@ -10,7 +10,16 @@ import corsOptions from "~/config/cors";
 
 import { errorHandler, requestLogger } from "./middlewares";
 
-import { accountRouter, authRouter, restaurantRouter, roomRouter, tableRouter, userRouter } from "~/routes";
+import {
+    accountRouter,
+    authRouter,
+    permissionRouter,
+    restaurantRouter,
+    roleRouter,
+    roomRouter,
+    tableRouter,
+    userRouter,
+} from "~/routes";
 
 const app = express();
 
@@ -36,6 +45,8 @@ app.use("/api/users", userRouter);
 app.use("/api/restaurants", restaurantRouter);
 app.use("/api/rooms", roomRouter);
 app.use("/api/tables", tableRouter);
+app.use("/api/roles", roleRouter);
+app.use("/api/permissions", permissionRouter);
 
 app.use(errorHandler);
 

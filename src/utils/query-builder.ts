@@ -37,13 +37,23 @@ export const buildInsertQuery = (
 };
 
 export const buildSelectAllQuery = (baseTable: string, allowedFields: string[], params: ISelectQuery): IQueryResult => {
-    const { search, filters = [], orderBy = [], offset, limit, joins = [], returning = ["*"] } = params;
+    const {
+        search,
+        filters = [],
+        orderBy = [],
+        offset,
+        limit,
+        joins = [],
+        returning = ["*"],
+        conditions: extraConditions = [],
+    } = params;
 
     const values: any[] = [];
     const conditions: string[] = [];
 
     const tableAlias = baseTable.trim().split(/\s+/)[1] || baseTable.trim();
     conditions.push(`${tableAlias}.deleted_at IS NULL`);
+    conditions.push(...extraConditions);
 
     const joinClause = joins.map((j) => `${j.type || "INNER"} JOIN ${j.table} ON ${j.on}`).join(" ");
 
@@ -162,6 +172,8 @@ export const buildUpdateQuery = (
     payload: Record<string, any>,
     allowedFields: string[],
     returning: string[] = ["*"],
+    /** true: chỉ cập nhật bản ghi chưa bị xóa mềm */
+    onlyActive = false,
 ): IQueryResult => {
     const setClauses: string[] = [];
     const values: any[] = [];
@@ -184,7 +196,7 @@ export const buildUpdateQuery = (
     const query = `
         UPDATE ${table}
         SET ${setClauses.join(", ")}
-        WHERE ${where.field} = ${wherePlaceholder}
+        WHERE ${where.field} = ${wherePlaceholder}${onlyActive ? " AND deleted_at IS NULL" : ""}
         RETURNING ${returning.join(", ")}
     `.trim();
 

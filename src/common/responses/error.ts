@@ -40,3 +40,11 @@ export const createErrorResponse = (res: Response, message?: string) => {
         message: message || HTTP_RESPONSE.BAD_REQUEST.message,
     });
 };
+
+export const notFoundResponse = (res: Response, message?: string) => {
+    return res.status(HTTP_RESPONSE.NOT_FOUND.statusCode).json({
+        success: false,
+        statusCode: HTTP_RESPONSE.NOT_FOUND.statusCode,
+        message: message || HTTP_RESPONSE.NOT_FOUND.message,
+    });
+};

@@ -67,3 +67,16 @@ export const GET_GUESTS = {
 export const GET_INFO_EMPLOYEE_BY_USER_ID = {
     GET_INFO_EMPLOYEE_BY_USER_ID_FAILED: 0,
 };
+
+/** Mã lỗi trùng dữ liệu, dùng chung cho mọi thao tác tạo/sửa user (khác các mã 0-9 ở trên) */
+export const USER_DUPLICATE = {
+    USERNAME_EXISTS: 101,
+    EMAIL_EXISTS: 102,
+    PHONE_EXISTS: 103,
+};
+
+/** Mã lỗi khi gán vai trò */
+export const USER_ROLE_ERROR = {
+    INVALID_ROLES: 201,
+    ROLE_NOT_ASSIGNABLE: 202,
+};
