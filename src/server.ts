@@ -12,7 +12,7 @@ const server = http.createServer(app);
 
 const startServer = async () => {
     try {
-        await pool.connect();
+        await pool.query("SELECT 1");
         console.log("Connected to PostgreSQL");
 
         initSocket(server);

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
 import { PAGINATION } from "~/common/constant";
 import { createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { getSuccessResponse } from "~/common/responses/success";
@@ -7,7 +8,7 @@ import { roomService } from "~/services";
 
 export const getAllRooms = async (req: Request, res: Response) => {
     try {
-        const rooms: IRoom[] | number = await roomService.getAllRooms();
+        const rooms: IRoom[] | number = await roomService.getAllRooms(req.restaurantScope);
         if (typeof rooms === "number") {
             return createErrorResponse(res, req.t("room:error_getting_rooms"));
         }
@@ -26,7 +27,7 @@ export const getRooms = async (req: Request, res: Response) => {
 
         const params: ISelectQuery = {
             search: query.search,
-            filters: query.filters,
+            filters: withRestaurantScope(query.filters, "restaurant_id", req.restaurantScope),
             orderBy: query.orderBy,
             limit,
             offset,

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
 import { PAGINATION } from "~/common/constant";
 import { createErrorResponse, serverErrorResponse } from "~/common/responses/error";
 import { getSuccessResponse } from "~/common/responses/success";
@@ -7,7 +8,7 @@ import { tableService } from "~/services";
 
 export const getAllTables = async (req: Request, res: Response) => {
     try {
-        const tables: ITable[] | number = await tableService.getAllTables();
+        const tables: ITable[] | number = await tableService.getAllTables(req.restaurantScope);
         if (typeof tables === "number") {
             return createErrorResponse(res, req.t("table:error_getting_tables"));
         }
@@ -26,11 +27,11 @@ export const getTables = async (req: Request, res: Response) => {
 
         const params: ISelectQuery = {
             search: query.search,
-            filters: query.filters,
+            filters: withRestaurantScope(query.filters, "restaurant_id", req.restaurantScope),
             orderBy: query.orderBy,
             limit,
             offset,
-            returning: ["*"],
+            returning: ["t.*", "r.restaurant_id"],
         };
 
         const tables: IGetTables | number = await tableService.getTables(params);

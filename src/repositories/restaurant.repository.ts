@@ -1,4 +1,4 @@
-import { pool } from "~/config/db";
+import { db } from "~/config/db";
 import { IRestaurant, ISelectQuery } from "~/interfaces";
 import { buildSelectAllQuery } from "~/utils/query-builder";
 
@@ -7,7 +7,7 @@ export const getRestaurants = async (params: ISelectQuery): Promise<{ rows: IRes
     const baseTable = "restaurants";
 
     const { query, values } = buildSelectAllQuery(baseTable, allowedFields, params);
-    const result = await pool.query(query, values);
+    const result = await db().query(query, values);
     const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
     const rows = result.rows.map(({ total_count, ...data }) => data);
 
@@ -16,6 +16,6 @@ export const getRestaurants = async (params: ISelectQuery): Promise<{ rows: IRes
 
 export const getAllRestaurants = async (): Promise<IRestaurant[]> => {
     const query = "SELECT * FROM restaurants WHERE deleted_at IS NULL";
-    const result = await pool.query(query);
+    const result = await db().query(query);
     return result.rows;
 };

@@ -5,3 +5,4 @@ export * from "./validate.middleware";
 export * from "./upload.middleware";
 export * from "./auth.middleware";
 export * from "./checkPermission.middleware";
+export * from "./restaurantScope.middleware";

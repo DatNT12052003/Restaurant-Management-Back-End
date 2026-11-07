@@ -1,4 +1,7 @@
+import { FilterOperatorEnum } from "~/common/enum";
 import { IQueryResult, ISelectQuery } from "~/interfaces";
+
+const ALLOWED_OPERATORS: string[] = Object.values(FilterOperatorEnum);
 
 export const buildInsertQuery = (
     table: string,
@@ -60,7 +63,9 @@ export const buildSelectAllQuery = (baseTable: string, allowedFields: string[], 
     filters.forEach((f) => {
         if (!allowedFields.includes(f.field)) return;
 
-        const operator = f.operator || "=";
+        // operator do client gửi lên được nối thẳng vào SQL -> chỉ chấp nhận các giá trị trong whitelist
+        const operator = String(f.operator || FilterOperatorEnum.EQUAL).toLowerCase();
+        if (!ALLOWED_OPERATORS.includes(operator)) return;
 
         if (operator === "in" && Array.isArray(f.value)) {
             const placeholders = f.value.map((v) => {

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
 import { PAGINATION } from "~/common/constant";
 import { FilterOperatorEnum, JoinTypeEnum, RolesEnum } from "~/common/enum";
 import {
@@ -151,7 +152,7 @@ export const getEmployees = async (req: Request, res: Response) => {
 
         const params: ISelectQuery = {
             search: query.search,
-            filters: query.filters,
+            filters: withRestaurantScope(query.filters, "restaurant_id", req.restaurantScope),
             orderBy: query.orderBy,
             limit,
             offset,

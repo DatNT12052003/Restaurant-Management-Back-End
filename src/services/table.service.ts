@@ -2,9 +2,9 @@ import { GET_ALL_TABLES } from "~/common/error-code/table";
 import { IGetTables, ISelectQuery, ITable } from "~/interfaces";
 import { tableRepository } from "~/repositories";
 
-export const getAllTables = async (): Promise<ITable[] | number> => {
+export const getAllTables = async (restaurantId?: number | null): Promise<ITable[] | number> => {
     try {
-        const tables = await tableRepository.getAllTables();
+        const tables = await tableRepository.getAllTables(restaurantId);
         return tables;
     } catch (error) {
         return GET_ALL_TABLES.GET_ALL_TABLES_FAILED;

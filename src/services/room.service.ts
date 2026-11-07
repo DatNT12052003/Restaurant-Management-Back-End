@@ -2,9 +2,9 @@ import { GET_ALL_ROOMS } from "~/common/error-code/room";
 import { IGetRooms, IRoom, ISelectQuery } from "~/interfaces";
 import { roomRepository } from "~/repositories";
 
-export const getAllRooms = async (): Promise<IRoom[] | number> => {
+export const getAllRooms = async (restaurantId?: number | null): Promise<IRoom[] | number> => {
     try {
-        const rooms = await roomRepository.getAllRooms();
+        const rooms = await roomRepository.getAllRooms(restaurantId);
         return rooms;
     } catch (error) {
         return GET_ALL_ROOMS.GET_ALL_ROOMS_FAILED;
