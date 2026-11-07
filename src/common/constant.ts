@@ -17,3 +17,7 @@ export const PG_ERROR = {
     FOREIGN_KEY_VIOLATION: "23503",
     CHECK_VIOLATION: "23514",
 };
+
+/** Tối đa số ảnh trong một lần tải lên */
+export const MAX_IMAGES_PER_UPLOAD = 10;
+export const MAX_IMAGE_SIZE = 5 * 1024 * 1024;

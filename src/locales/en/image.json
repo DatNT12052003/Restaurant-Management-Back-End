@@ -1,0 +1,14 @@
+{
+    "not_found": "Image not found",
+    "entity_not_found": "The item for this image was not found",
+    "file_too_large": "Each image must be at most {{size}} MB",
+    "invalid_files": "Upload at most {{max}} image files at a time",
+    "upload_failed": "Failed to upload images",
+    "no_files": "Select at least one image",
+    "failed": "Image operation failed",
+    "get_successfully": "Images loaded successfully",
+    "upload_successfully": "Images uploaded successfully",
+    "primary_successfully": "Cover image updated",
+    "delete_successfully": "Image deleted successfully",
+    "invalid_type": "Only image files are allowed"
+}

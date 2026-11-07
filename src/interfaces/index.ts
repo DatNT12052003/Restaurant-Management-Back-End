@@ -12,3 +12,4 @@ export * from "./restaurant.interface";
 export * from "./room.interface";
 export * from "./table.interface";
 export * from "./socket.interface";
+export * from "./menu.interface";

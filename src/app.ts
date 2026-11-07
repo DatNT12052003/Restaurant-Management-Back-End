@@ -13,6 +13,11 @@ import { errorHandler, requestLogger } from "./middlewares";
 import {
     accountRouter,
     authRouter,
+    comboRouter,
+    dishRouter,
+    imageRouter,
+    restaurantMenuRouter,
+    tagRouter,
     permissionRouter,
     restaurantRouter,
     roleRouter,
@@ -47,6 +52,11 @@ app.use("/api/rooms", roomRouter);
 app.use("/api/tables", tableRouter);
 app.use("/api/roles", roleRouter);
 app.use("/api/permissions", permissionRouter);
+app.use("/api/tags", tagRouter);
+app.use("/api/dishes", dishRouter);
+app.use("/api/combos", comboRouter);
+app.use("/api/restaurant-menus", restaurantMenuRouter);
+app.use("/api/images", imageRouter);
 
 app.use(errorHandler);
 

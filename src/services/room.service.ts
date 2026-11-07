@@ -1,9 +1,10 @@
 import { MAX_TABLES_PER_PRIVATE_ROOM } from "~/common/constant";
-import { RoomTypeEnum } from "~/common/enum";
+import { ImageEntityEnum, RoomTypeEnum } from "~/common/enum";
+import { destroyImage } from "~/utils/cloudinary";
 import { GET_ALL_ROOMS, ROOM_ERROR } from "~/common/error-code/room";
 import { rollback, withTransaction } from "~/config/db";
 import { ICreateRoomBody, IGetRooms, IRoom, ISelectQuery, IUpdateRoomBody } from "~/interfaces";
-import { restaurantRepository, roomRepository } from "~/repositories";
+import { imageRepository, restaurantRepository, roomRepository } from "~/repositories";
 import { buildPagination } from "~/utils/pagination";
 
 /** `scope`: null = mọi nhà hàng (admin); số = chỉ nhà hàng này. */
@@ -84,15 +85,20 @@ export const updateRoom = async (id: number, body: IUpdateRoomBody, scope: Scope
 /** Xóa phòng và các bàn trong phòng; không cho xóa khi còn bàn đang có khách / đã đặt. */
 export const deleteRoom = async (id: number, scope: Scope): Promise<{ id: number } | number> => {
     try {
-        return await withTransaction(async () => {
+        let publicIds: string[] = [];
+        const result = await withTransaction(async () => {
             const room = await roomRepository.getRoomById(id, true);
             if (!room || !inScope(room.restaurant_id, scope)) return rollback(ROOM_ERROR.NOT_FOUND);
 
             if ((await roomRepository.countBusyTables(id)) > 0) return rollback(ROOM_ERROR.IN_USE);
 
             const deleted = await roomRepository.deleteRoomWithTables(id);
-            return deleted ?? rollback(ROOM_ERROR.NOT_FOUND);
+            if (!deleted) return rollback(ROOM_ERROR.NOT_FOUND);
+            publicIds = await imageRepository.deleteImagesOf(ImageEntityEnum.ROOM, id);
+            return deleted;
         });
+        if (typeof result !== "number") await Promise.all(publicIds.map(destroyImage));
+        return result;
     } catch (error) {
         return ROOM_ERROR.FAILED;
     }

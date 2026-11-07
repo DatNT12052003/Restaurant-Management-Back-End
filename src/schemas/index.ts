@@ -5,3 +5,4 @@ export * from "./common.schema";
 export * from "./permission.schema";
 export * from "./restaurant.schema";
 export * from "./room.schema";
+export * from "./menu.schema";

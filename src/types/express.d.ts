@@ -1,5 +1,5 @@
 import { JwtPayload } from "jsonwebtoken";
-import { IJwtAccountPayload, IJwtResetPasswordPayload, IUser } from "~/interfaces";
+import { IImage, IJwtAccountPayload, IJwtResetPasswordPayload, IUser } from "~/interfaces";
 
 declare global {
     namespace Express {
@@ -15,6 +15,8 @@ declare global {
             /** Được gán bởi `canManageTargetUser`. */
             targetUser?: IUser;
             targetRoles?: string[];
+            /** Được gán bởi `authorizeImageAccess` với route /images/:id */
+            image?: IImage;
             /**
              * Được gán bởi `restrictToRestaurant`.
              * `null` = được xem mọi nhà hàng (admin); số = chỉ được thao tác trên nhà hàng này.

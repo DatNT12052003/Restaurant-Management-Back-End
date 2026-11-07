@@ -1,7 +1,9 @@
 import { GET_ALL_RESTAURANTS, GET_RESTAURANTS, RESTAURANT_ERROR } from "~/common/error-code/restaurant";
 import { ICreateRestaurantBody, ISelectQuery, IUpdateRestaurantBody } from "~/interfaces";
 import { IGetRestaurants, IRestaurant } from "~/interfaces/restaurant.interface";
-import { restaurantRepository } from "~/repositories";
+import { imageRepository, restaurantRepository } from "~/repositories";
+import { ImageEntityEnum } from "~/common/enum";
+import { destroyImage } from "~/utils/cloudinary";
 import { getRestaurantsResource } from "~/resources/restaurant.resource";
 import { buildPagination } from "~/utils/pagination";
 
@@ -59,7 +61,11 @@ export const deleteRestaurant = async (id: number): Promise<{ id: number } | num
         const deps = await restaurantRepository.countRestaurantDependencies(id);
         if (deps.rooms > 0 || deps.users > 0) return RESTAURANT_ERROR.HAS_DEPENDENCIES;
 
-        return (await restaurantRepository.deleteRestaurant(id)) ?? RESTAURANT_ERROR.NOT_FOUND;
+        const deleted = await restaurantRepository.deleteRestaurant(id);
+        if (!deleted) return RESTAURANT_ERROR.NOT_FOUND;
+        const publicIds = await imageRepository.deleteImagesOf(ImageEntityEnum.RESTAURANT, id);
+        await Promise.all(publicIds.map(destroyImage));
+        return deleted;
     } catch (error) {
         return RESTAURANT_ERROR.FAILED;
     }

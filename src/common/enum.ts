@@ -83,3 +83,24 @@ export enum UsageStatusEnum {
     OCCUPIED = "occupied",
     CLEANING = "cleaning",
 }
+
+export enum DishCategoryEnum {
+    /** Chuyển cho bếp */
+    FOOD = "food",
+    /** Chuyển cho quầy pha chế */
+    DRINK = "drink",
+}
+
+/** Trạng thái kinh doanh của món / combo */
+export enum MenuItemStatusEnum {
+    ACTIVE = "active",
+    DISCONTINUED = "discontinued",
+}
+
+/** Đối tượng có thể gắn ảnh (bảng images) */
+export enum ImageEntityEnum {
+    RESTAURANT = "restaurant",
+    ROOM = "room",
+    DISH = "dish",
+    COMBO = "combo",
+}
