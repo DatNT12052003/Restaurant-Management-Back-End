@@ -114,3 +114,31 @@ export enum ReservationStatusEnum {
     CANCELLED = "cancelled",
     NO_SHOW = "no_show",
 }
+
+/** Trạng thái order (đặc tả 4.7) */
+export enum OrderStatusEnum {
+    /** Dành cho order khách tự tạo, chờ nhân viên xác nhận (chưa dùng) */
+    PENDING = "pending",
+    /** Đã mở, chưa gửi món nào */
+    CONFIRMED = "confirmed",
+    /** Đã gửi ít nhất một đợt gọi món */
+    SERVING = "serving",
+    COMPLETED = "completed",
+    CANCELLED = "cancelled",
+}
+
+/** Trạng thái món / combo trong order (đặc tả 4.7) */
+export enum OrderItemStatusEnum {
+    PENDING = "pending",
+    CONFIRMED = "confirmed",
+    COOKING = "cooking",
+    READY = "ready",
+    SERVED = "served",
+    CANCELLED = "cancelled",
+}
+
+/** Nơi chế biến món */
+export enum KitchenStationEnum {
+    KITCHEN = "kitchen",
+    BAR = "bar",
+}

@@ -120,5 +120,12 @@
         "status": {
             "invalid": "Trạng thái đặt bàn không hợp lệ"
         }
+    },
+    "order": {
+        "tables_and_guests_required": "Chọn bàn và nhập số khách (hoặc mở từ đặt bàn)",
+        "items_required": "Chọn ít nhất một món hoặc combo",
+        "same_table": "Bàn chuyển đến phải khác bàn hiện tại",
+        "item_status_invalid": "Trạng thái món không hợp lệ",
+        "station_invalid": "Khu chế biến không hợp lệ"
     }
 }

@@ -22,5 +22,6 @@
     "no_show_too_early": "Chưa tới giờ hẹn, chưa thể đánh dấu khách không đến",
     "tables_occupied": "Có bàn đang có khách khác, hãy đổi bàn trước khi nhận khách",
     "cannot_delete": "Không thể xóa đặt bàn khi khách đang ngồi",
-    "invalid_time": "Giờ kết thúc phải sau giờ bắt đầu và mỗi lần đặt tối đa 12 giờ"
+    "invalid_time": "Giờ kết thúc phải sau giờ bắt đầu và mỗi lần đặt tối đa 12 giờ",
+    "order_open": "Order của đặt bàn này vẫn đang mở; hãy hoàn tất order trước"
 }

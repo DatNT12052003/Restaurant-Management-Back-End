@@ -15,7 +15,12 @@ import {
     IUpdateReservationBody,
     IUpdateReservationStatusBody,
 } from "~/interfaces";
-import { reservationRepository, restaurantRepository } from "~/repositories";
+import { orderRepository, reservationRepository, restaurantRepository } from "~/repositories";
+import { OPEN_ORDER_STATUSES } from "~/repositories/order.repository";
+import { emitToRestaurant } from "~/sockets";
+import { ORDER_ERROR } from "~/common/error-code/order";
+import * as orderService from "./order.service";
+import { IOpenedOrder } from "./order.service";
 import { getPgErrorCode } from "~/utils/common";
 import { buildPagination } from "~/utils/pagination";
 import { inScope } from "./room.service";
@@ -218,13 +223,20 @@ export const getAvailableTables = async (
 // Ghi
 // ---------------------------------------------------------------------------
 
+/** Phát sự kiện realtime sau khi commit */
+const emitReservation = (reservation: Pick<IReservation, "id" | "restaurant_id">) =>
+    emitToRestaurant(reservation.restaurant_id, "reservation:changed", {
+        restaurant_id: reservation.restaurant_id,
+        reservation_id: reservation.id,
+    });
+
 export const createReservation = async (
     body: ICreateReservationBody,
     scope: Scope,
     actorId: number | undefined,
 ): Promise<IReservation | number> => {
     try {
-        return await withTransaction(async () => {
+        const result = await withTransaction(async () => {
             const restaurantId = await resolveRestaurant(scope, body.restaurant_id);
             if (isStartInPast(body.start_time)) return rollback(RESERVATION_ERROR.START_IN_PAST);
 
@@ -252,6 +264,8 @@ export const createReservation = async (
             await reservationRepository.addReservationTables(created.id, tableIds);
             return (await reservationRepository.getReservationById(created.id))!;
         });
+        if (typeof result !== "number") emitReservation(result);
+        return result;
     } catch (error) {
         return toReservationError(error);
     }
@@ -263,7 +277,7 @@ export const updateReservation = async (
     scope: Scope,
 ): Promise<IReservation | number> => {
     try {
-        return await withTransaction(async () => {
+        const result = await withTransaction(async () => {
             const current = await loadReservation(id, scope, true);
             if (!EDITABLE_STATUSES.includes(current.status)) return rollback(RESERVATION_ERROR.NOT_EDITABLE);
 
@@ -325,6 +339,8 @@ export const updateReservation = async (
 
             return (await reservationRepository.getReservationById(id))!;
         });
+        if (typeof result !== "number") emitReservation(result);
+        return result;
     } catch (error) {
         return toReservationError(error);
     }
@@ -336,13 +352,27 @@ export const updateReservation = async (
  * - `completed`: bàn đang `occupied` chuyển sang `cleaning`.
  * - `cancelled` / `no_show`: gỡ giữ chỗ (trigger đặt is_active = false); `no_show` chỉ sau giờ bắt đầu.
  */
+/** Mã lỗi khi mở order cho reservation -> mã lỗi reservation */
+const fromOrderError = (code: number): number => {
+    switch (code) {
+        case ORDER_ERROR.TABLE_BUSY:
+            return RESERVATION_ERROR.TABLES_OCCUPIED;
+        case ORDER_ERROR.INVALID_TABLES:
+            return RESERVATION_ERROR.INVALID_TABLES;
+        default:
+            return RESERVATION_ERROR.FAILED;
+    }
+};
+
 export const updateReservationStatus = async (
     id: number,
     body: IUpdateReservationStatusBody,
     scope: Scope,
+    actorId?: number,
 ): Promise<IReservation | number> => {
     try {
-        return await withTransaction(async () => {
+        let opened: IOpenedOrder | null = null;
+        const result = await withTransaction(async () => {
             const current = await loadReservation(id, scope, true);
             if (!TRANSITIONS[current.status].includes(body.status)) {
                 return rollback(RESERVATION_ERROR.INVALID_TRANSITION);
@@ -353,20 +383,23 @@ export const updateReservationStatus = async (
 
             switch (body.status) {
                 case S.ARRIVED: {
-                    const busy = (current.tables || []).some((t) => t.status === UsageStatusEnum.OCCUPIED);
-                    if (busy) return rollback(RESERVATION_ERROR.TABLES_OCCUPIED);
-                    await reservationRepository.setTablesStatus(id, UsageStatusEnum.OCCUPIED, [
-                        UsageStatusEnum.AVAILABLE,
-                        UsageStatusEnum.RESERVED,
-                        UsageStatusEnum.CLEANING,
-                    ]);
+                    // Khách đến -> mở order trên các bàn đã đặt (bàn chuyển sang occupied)
+                    const order = await withTransaction(() => orderService.openOrderForReservation(current, actorId));
+                    if (typeof order === "number") return rollback(fromOrderError(order));
+                    opened = order;
                     row.arrived_at = now;
                     break;
                 }
-                case S.COMPLETED:
-                    await reservationRepository.setTablesStatus(id, UsageStatusEnum.CLEANING, [UsageStatusEnum.OCCUPIED]);
+                case S.COMPLETED: {
+                    // Thường do order hoàn tất tự chuyển; hoàn tất tay chỉ khi không còn order đang mở
+                    const order = await orderRepository.getOrderByReservation(id);
+                    if (order && OPEN_ORDER_STATUSES.includes(order.status)) return rollback(RESERVATION_ERROR.ORDER_OPEN);
+                    if (!order) {
+                        await reservationRepository.setTablesStatus(id, UsageStatusEnum.CLEANING, [UsageStatusEnum.OCCUPIED]);
+                    }
                     row.completed_at = now;
                     break;
+                }
                 case S.NO_SHOW:
                     if (now.getTime() < new Date(current.start_time).getTime()) {
                         return rollback(RESERVATION_ERROR.NO_SHOW_TOO_EARLY);
@@ -384,6 +417,11 @@ export const updateReservationStatus = async (
             if (!updated) return rollback(RESERVATION_ERROR.NOT_FOUND);
             return (await reservationRepository.getReservationById(id))!;
         });
+        if (typeof result !== "number") {
+            emitReservation(result);
+            if (opened) orderService.emitOrderOpened(opened);
+        }
+        return result;
     } catch (error) {
         return toReservationError(error);
     }
@@ -392,11 +430,15 @@ export const updateReservationStatus = async (
 /** Xóa mềm; không xóa khi khách đang ngồi (hãy chuyển sang `completed` trước). */
 export const deleteReservation = async (id: number, scope: Scope): Promise<{ id: number } | number> => {
     try {
-        return await withTransaction(async () => {
+        let restaurantId = 0;
+        const result = await withTransaction(async () => {
             const current = await loadReservation(id, scope, true);
             if (current.status === S.ARRIVED) return rollback(RESERVATION_ERROR.CANNOT_DELETE);
+            restaurantId = current.restaurant_id;
             return (await reservationRepository.deleteReservation(id)) ?? rollback(RESERVATION_ERROR.NOT_FOUND);
         });
+        if (typeof result !== "number") emitReservation({ id, restaurant_id: restaurantId });
+        return result;
     } catch (error) {
         return RESERVATION_ERROR.FAILED;
     }

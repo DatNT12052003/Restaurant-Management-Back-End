@@ -25,6 +25,7 @@ const ERROR_MESSAGES: Record<number, [typeof badRequestResponse, string]> = {
     [RESERVATION_ERROR.NO_SHOW_TOO_EARLY]: [badRequestResponse, "reservation:no_show_too_early"],
     [RESERVATION_ERROR.TABLES_OCCUPIED]: [badRequestResponse, "reservation:tables_occupied"],
     [RESERVATION_ERROR.CANNOT_DELETE]: [badRequestResponse, "reservation:cannot_delete"],
+    [RESERVATION_ERROR.ORDER_OPEN]: [badRequestResponse, "reservation:order_open"],
     [RESERVATION_ERROR.INVALID_TIME]: [badRequestResponse, "reservation:invalid_time"],
 };
 
@@ -96,7 +97,7 @@ export const updateReservation = (req: Request, res: Response) =>
 
 export const updateReservationStatus = (req: Request, res: Response) =>
     handle(req, res, "status", () =>
-        reservationService.updateReservationStatus(id(req), req.body, req.restaurantScope),
+        reservationService.updateReservationStatus(id(req), req.body, req.restaurantScope, req.user?.id),
     );
 
 export const deleteReservation = (req: Request, res: Response) =>

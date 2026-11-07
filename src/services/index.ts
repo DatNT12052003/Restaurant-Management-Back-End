@@ -12,3 +12,4 @@ export * as permissionService from "./permission.service";
 export * as menuService from "./menu.service";
 export * as imageService from "./image.service";
 export * as reservationService from "./reservation.service";
+export * as orderService from "./order.service";

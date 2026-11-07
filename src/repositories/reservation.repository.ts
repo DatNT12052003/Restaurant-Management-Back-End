@@ -49,7 +49,14 @@ const GUEST_SUBQUERY = `(
 
 const CREATED_BY_SUBQUERY = `(SELECT cb.full_name FROM users cb WHERE cb.id = rs.created_by) AS created_by_name`;
 
-const RETURNING = ["rs.*", TABLES_SUBQUERY, GUEST_SUBQUERY, CREATED_BY_SUBQUERY];
+/** Order mở từ reservation (giai đoạn 4) */
+const ORDER_SUBQUERY = `(
+    SELECT json_build_object('id', o.id, 'code', o.code, 'status', o.status)
+    FROM orders o WHERE o.reservation_id = rs.id AND o.deleted_at IS NULL
+    ORDER BY o.id DESC LIMIT 1
+) AS "order"`;
+
+const RETURNING = ["rs.*", TABLES_SUBQUERY, GUEST_SUBQUERY, CREATED_BY_SUBQUERY, ORDER_SUBQUERY];
 
 // ---------------------------------------------------------------------------
 // Đọc

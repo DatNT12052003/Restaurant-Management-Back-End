@@ -8,3 +8,4 @@ export * as permissionController from "./permission.controller";
 export * as menuController from "./menu.controller";
 export * as imageController from "./image.controller";
 export * as reservationController from "./reservation.controller";
+export * as orderController from "./order.controller";

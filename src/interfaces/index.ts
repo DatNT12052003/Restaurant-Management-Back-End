@@ -14,3 +14,4 @@ export * from "./table.interface";
 export * from "./socket.interface";
 export * from "./menu.interface";
 export * from "./reservation.interface";
+export * from "./order.interface";

@@ -3,7 +3,8 @@ import { RoomTypeEnum, UsageStatusEnum } from "~/common/enum";
 import { GET_ALL_TABLES, TABLE_ERROR } from "~/common/error-code/table";
 import { rollback, withTransaction } from "~/config/db";
 import { ICreateTableBody, IGetTables, ISelectQuery, ITable, IUpdateTableBody } from "~/interfaces";
-import { reservationRepository, roomRepository, tableRepository } from "~/repositories";
+import { orderRepository, reservationRepository, roomRepository, tableRepository } from "~/repositories";
+import { emitToRestaurant } from "~/sockets";
 import { getPgErrorCode } from "~/utils/common";
 import { buildPagination } from "~/utils/pagination";
 import { inScope } from "./room.service";
@@ -68,7 +69,7 @@ export const createTable = async (body: ICreateTableBody, scope: Scope): Promise
 
 export const updateTable = async (id: number, body: IUpdateTableBody, scope: Scope): Promise<ITable | number> => {
     try {
-        return await withTransaction(async () => {
+        const result = await withTransaction(async () => {
             const table = await tableRepository.getTableById(id);
             if (!table || !inScope(table.restaurant_id!, scope)) return rollback(TABLE_ERROR.NOT_FOUND);
 
@@ -77,9 +78,27 @@ export const updateTable = async (id: number, body: IUpdateTableBody, scope: Sco
                 if (capacityError !== undefined) return rollback(capacityError);
             }
 
+            // Bàn đang thuộc order mở: không cho đổi trạng thái khác "có khách" hoặc chuyển phòng
+            const leavesOccupied = body.status !== undefined && body.status !== UsageStatusEnum.OCCUPIED;
+            const movesRoom = body.room_id !== undefined && body.room_id !== table.room_id;
+            if ((leavesOccupied || movesRoom) && (await orderRepository.countOpenOrdersByTable(id)) > 0) {
+                return rollback(TABLE_ERROR.HAS_OPEN_ORDER);
+            }
+
             const updated = await tableRepository.updateTable(id, body);
             return updated ?? rollback(TABLE_ERROR.NOT_FOUND);
         });
+        if (typeof result !== "number" && body.status) {
+            const restaurantId = (await tableRepository.getTableById(id))?.restaurant_id;
+            if (restaurantId) {
+                emitToRestaurant(restaurantId, "table:status_changed", {
+                    restaurant_id: restaurantId,
+                    table_ids: [id],
+                    status: body.status,
+                });
+            }
+        }
+        return result;
     } catch (error) {
         return isDuplicateName(error) ? TABLE_ERROR.DUPLICATE_NAME : TABLE_ERROR.FAILED;
     }
@@ -91,6 +110,7 @@ export const deleteTable = async (id: number, scope: Scope): Promise<{ id: numbe
         if (!table || !inScope(table.restaurant_id!, scope)) return TABLE_ERROR.NOT_FOUND;
         if (BUSY_STATUSES.includes(table.status)) return TABLE_ERROR.IN_USE;
         if ((await reservationRepository.countUpcomingByTables([id])) > 0) return TABLE_ERROR.HAS_RESERVATIONS;
+        if ((await orderRepository.countOpenOrdersByTable(id)) > 0) return TABLE_ERROR.HAS_OPEN_ORDER;
         return (await tableRepository.deleteTable(id)) ?? TABLE_ERROR.NOT_FOUND;
     } catch (error) {
         return TABLE_ERROR.FAILED;

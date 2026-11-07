@@ -120,5 +120,12 @@
         "status": {
             "invalid": "Invalid reservation status"
         }
+    },
+    "order": {
+        "tables_and_guests_required": "Select tables and enter the guest count (or open from a reservation)",
+        "items_required": "Select at least one dish or combo",
+        "same_table": "The target table must differ from the current table",
+        "item_status_invalid": "Invalid item status",
+        "station_invalid": "Invalid station"
     }
 }
