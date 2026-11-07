@@ -11,5 +11,6 @@
     "restaurant_required": "Please select a restaurant",
     "too_many_tables": "Private rooms can have at most 5 tables",
     "update_failed": "Failed to update room",
-    "updated_successfully": "Room updated successfully"
+    "updated_successfully": "Room updated successfully",
+    "has_reservations": "Cannot delete a room whose tables have upcoming reservations"
 }

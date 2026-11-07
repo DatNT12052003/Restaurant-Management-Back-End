@@ -102,5 +102,23 @@
         "entity_type": {
             "invalid": "Loại đối tượng của ảnh không hợp lệ"
         }
+    },
+    "reservation": {
+        "time": {
+            "invalid": "Thời gian không hợp lệ",
+            "end_before_start": "Giờ kết thúc phải sau giờ bắt đầu",
+            "too_long": "Mỗi lần đặt tối đa 12 giờ",
+            "range_too_long": "Chỉ xem tối đa 31 ngày mỗi lần"
+        },
+        "guest_count": {
+            "invalid": "Số khách phải là số nguyên từ 1 đến 500"
+        },
+        "tables": {
+            "required": "Chọn ít nhất một bàn",
+            "duplicate": "Một bàn bị chọn lặp"
+        },
+        "status": {
+            "invalid": "Trạng thái đặt bàn không hợp lệ"
+        }
     }
 }

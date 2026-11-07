@@ -102,5 +102,23 @@
         "entity_type": {
             "invalid": "Invalid image target"
         }
+    },
+    "reservation": {
+        "time": {
+            "invalid": "Invalid date/time",
+            "end_before_start": "The end time must be after the start time",
+            "too_long": "A reservation can last at most 12 hours",
+            "range_too_long": "You can view at most 31 days at a time"
+        },
+        "guest_count": {
+            "invalid": "Guest count must be an integer from 1 to 500"
+        },
+        "tables": {
+            "required": "Select at least one table",
+            "duplicate": "A table was selected more than once"
+        },
+        "status": {
+            "invalid": "Invalid reservation status"
+        }
     }
 }

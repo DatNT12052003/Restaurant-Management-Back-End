@@ -19,6 +19,8 @@ const respondError = (req: Request, res: Response, code: number, fallback: strin
             return badRequestResponse(res, req.t("room:too_many_tables"));
         case ROOM_ERROR.IN_USE:
             return badRequestResponse(res, req.t("room:in_use"));
+        case ROOM_ERROR.HAS_RESERVATIONS:
+            return badRequestResponse(res, req.t("room:has_reservations"));
         default:
             return createErrorResponse(res, req.t(fallback));
     }

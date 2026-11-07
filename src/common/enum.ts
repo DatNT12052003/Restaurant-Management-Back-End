@@ -104,3 +104,13 @@ export enum ImageEntityEnum {
     DISH = "dish",
     COMBO = "combo",
 }
+
+/** Trạng thái đặt bàn (đặc tả 8.4) */
+export enum ReservationStatusEnum {
+    PENDING = "pending",
+    CONFIRMED = "confirmed",
+    ARRIVED = "arrived",
+    COMPLETED = "completed",
+    CANCELLED = "cancelled",
+    NO_SHOW = "no_show",
+}

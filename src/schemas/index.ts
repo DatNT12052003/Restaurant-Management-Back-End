@@ -6,3 +6,4 @@ export * from "./permission.schema";
 export * from "./restaurant.schema";
 export * from "./room.schema";
 export * from "./menu.schema";
+export * from "./reservation.schema";

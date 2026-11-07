@@ -4,7 +4,7 @@ import { destroyImage } from "~/utils/cloudinary";
 import { GET_ALL_ROOMS, ROOM_ERROR } from "~/common/error-code/room";
 import { rollback, withTransaction } from "~/config/db";
 import { ICreateRoomBody, IGetRooms, IRoom, ISelectQuery, IUpdateRoomBody } from "~/interfaces";
-import { imageRepository, restaurantRepository, roomRepository } from "~/repositories";
+import { imageRepository, reservationRepository, restaurantRepository, roomRepository } from "~/repositories";
 import { buildPagination } from "~/utils/pagination";
 
 /** `scope`: null = mọi nhà hàng (admin); số = chỉ nhà hàng này. */
@@ -91,6 +91,7 @@ export const deleteRoom = async (id: number, scope: Scope): Promise<{ id: number
             if (!room || !inScope(room.restaurant_id, scope)) return rollback(ROOM_ERROR.NOT_FOUND);
 
             if ((await roomRepository.countBusyTables(id)) > 0) return rollback(ROOM_ERROR.IN_USE);
+            if ((await reservationRepository.countUpcomingByRoom(id)) > 0) return rollback(ROOM_ERROR.HAS_RESERVATIONS);
 
             const deleted = await roomRepository.deleteRoomWithTables(id);
             if (!deleted) return rollback(ROOM_ERROR.NOT_FOUND);
