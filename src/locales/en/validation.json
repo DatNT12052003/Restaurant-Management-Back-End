@@ -65,6 +65,9 @@
         },
         "time": {
             "invalid": "Invalid time (HH:mm)"
+        },
+        "minutes": {
+            "invalid": "Minutes must be a whole number from 0 to 240"
         }
     },
     "room": {
@@ -132,7 +135,12 @@
         "items_required": "Select at least one dish or combo",
         "same_table": "The target table must differ from the current table",
         "item_status_invalid": "Invalid item status",
-        "station_invalid": "Invalid station"
+        "station_invalid": "Invalid station",
+        "line_kind_invalid": "Invalid item type",
+        "duplicate_lines": "The list contains duplicate items",
+        "lines_or_round": "Choose items or one round (not both)",
+        "split_lines_required": "Choose at least one item to move",
+        "split_target_required": "Choose a target order or tables for a new order (not both)"
     },
     "discount": {
         "code": {
@@ -173,6 +181,9 @@
         },
         "reason": {
             "required": "A reason is required"
+        },
+        "tip": {
+            "invalid": "Invalid tip amount"
         }
     },
     "inventory": {

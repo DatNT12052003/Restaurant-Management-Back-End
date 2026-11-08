@@ -125,6 +125,8 @@ export enum OrderStatusEnum {
     SERVING = "serving",
     COMPLETED = "completed",
     CANCELLED = "cancelled",
+    /** Đã gộp vào order khác (`merged_into_order_id`); mọi món và bàn đã chuyển sang order đó */
+    MERGED = "merged",
 }
 
 /** Trạng thái món / combo trong order (đặc tả 4.7) */

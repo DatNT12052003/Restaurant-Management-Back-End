@@ -69,6 +69,15 @@ export const updateRoom = async (id: number, body: IUpdateRoomBody, scope: Scope
                 return rollback(ROOM_ERROR.TOO_MANY_TABLES);
             }
 
+            // Tạm khóa phòng còn lịch đặt bàn chưa kết thúc: cảnh báo, người dùng xác nhận thì gửi lại kèm `force`
+            const { force, ...changes } = body;
+            body = changes;
+            if (body.is_active === false && room.is_active && !force) {
+                if ((await reservationRepository.countUpcomingByRoom(id)) > 0) {
+                    return rollback(ROOM_ERROR.HAS_UPCOMING_RESERVATIONS);
+                }
+            }
+
             if (body.restaurant_id && body.restaurant_id !== room.restaurant_id) {
                 const restaurant = await restaurantRepository.getRestaurantById(body.restaurant_id);
                 if (!restaurant) return rollback(ROOM_ERROR.RESTAURANT_NOT_FOUND);

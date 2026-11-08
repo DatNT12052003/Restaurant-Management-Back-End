@@ -126,6 +126,15 @@ export const createPaymentSchema = z.object({
         reference: optionalString(100),
         note: optionalString(1000),
         confirm: optionalBoolean(),
+        tip_amount: z.preprocess(
+            blankToUndefined,
+            z.coerce
+                .number({ message: "validation:payment.tip.invalid" })
+                .min(0, { message: "validation:payment.tip.invalid" })
+                .max(MAX_MONEY, { message: "validation:payment.tip.invalid" })
+                .optional(),
+        ),
+        tip_staff_id: z.preprocess(blankToNull, z.coerce.number().int().positive().nullable().optional()),
     }),
 });
 

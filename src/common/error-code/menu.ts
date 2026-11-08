@@ -14,4 +14,6 @@ export const IMAGE_ERROR = {
     ENTITY_NOT_FOUND: 2,
     UPLOAD_FAILED: 3,
     NO_FILES: 4,
+    /** Danh sách sắp xếp không khớp với ảnh hiện có của đối tượng */
+    INVALID_ORDER: 5,
 };

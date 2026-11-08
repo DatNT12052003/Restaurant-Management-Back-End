@@ -28,6 +28,13 @@ const time = z
     .trim()
     .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, { message: "validation:restaurant.time.invalid" });
 
+/** Số phút giữ bàn / chờ khách trễ, 0 – 240 (0 = tắt) */
+const minutes = z.coerce
+    .number({ message: "validation:restaurant.minutes.invalid" })
+    .int({ message: "validation:restaurant.minutes.invalid" })
+    .min(0, { message: "validation:restaurant.minutes.invalid" })
+    .max(240, { message: "validation:restaurant.minutes.invalid" });
+
 export const createRestaurantSchema = z.object({
     body: z.object({
         name,
@@ -37,6 +44,8 @@ export const createRestaurantSchema = z.object({
         tax_percent: percent.optional(),
         open_time: time.optional(),
         close_time: time.optional(),
+        reservation_hold_minutes: minutes.optional(),
+        no_show_after_minutes: minutes.optional(),
     }),
 });
 
@@ -51,6 +60,8 @@ export const updateRestaurantSchema = z.object({
             tax_percent: percent.optional(),
             open_time: time.optional(),
             close_time: time.optional(),
+            reservation_hold_minutes: minutes.optional(),
+            no_show_after_minutes: minutes.optional(),
         })
         .refine((b) => Object.values(b).some((v) => v !== undefined), { message: "validation:common.empty_update" }),
 });

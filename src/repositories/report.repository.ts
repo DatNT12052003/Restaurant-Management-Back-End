@@ -311,6 +311,36 @@ export const getTopImportedIngredients = async (r: IReportRange, limit: number) 
     return result.rows;
 };
 
+// ---------------------------------------------------------------------------
+// Tiền tip (giai đoạn 9): theo thời điểm thanh toán, chỉ payment đã thu. Hoàn tiền không trừ tip.
+// ---------------------------------------------------------------------------
+
+const TIPPED = `p.type = 'payment' AND p.status IN ('paid', 'refunded') AND p.tip_amount > 0`;
+
+export const getTipsByStaff = async (r: IReportRange) => {
+    const result = await db().query(
+        `SELECT p.tip_staff_id AS staff_id, u.full_name, u.restaurant_id,
+            SUM(p.tip_amount) AS tip_total, COUNT(*)::int AS payments, COUNT(DISTINCT p.order_id)::int AS orders
+        FROM payments p LEFT JOIN users u ON u.id = p.tip_staff_id
+        WHERE ${TIPPED} AND ${inRange("p.paid_at")} AND ${ofRestaurant("p.restaurant_id")}
+        GROUP BY p.tip_staff_id, u.full_name, u.restaurant_id
+        ORDER BY tip_total DESC, p.tip_staff_id NULLS LAST`,
+        args(r),
+    );
+    return result.rows;
+};
+
+export const getTipsByPeriod = async (r: IReportRange, groupBy: ReportGroupBy) => {
+    const result = await db().query(
+        `SELECT to_char(date_trunc($4::text, ${local("p.paid_at")}), 'YYYY-MM-DD') AS period, SUM(p.tip_amount) AS tip_total
+        FROM payments p
+        WHERE ${TIPPED} AND ${inRange("p.paid_at")} AND ${ofRestaurant("p.restaurant_id")}
+        GROUP BY 1`,
+        [...args(r), groupBy],
+    );
+    return result.rows as { period: string; tip_total: string }[];
+};
+
 export const getImportsBySupplier = async (r: IReportRange, limit: number) => {
     const result = await db().query(
         `SELECT NULLIF(TRIM(supplier), '') AS supplier, SUM(total_value) AS value, COUNT(*)::int AS receipts

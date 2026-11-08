@@ -16,6 +16,7 @@ reportRouter.get("/revenue", VIEW, query, restrictToRestaurant, reportController
 reportRouter.get("/top-items", VIEW, query, restrictToRestaurant, reportController.getTopItems);
 reportRouter.get("/table-occupancy", VIEW, query, restrictToRestaurant, reportController.getTableOccupancy);
 reportRouter.get("/inventory", VIEW, query, restrictToRestaurant, reportController.getInventoryReport);
+reportRouter.get("/tips", VIEW, query, restrictToRestaurant, reportController.getTipsReport);
 
 /** Nhật ký hoạt động (đặc tả 4.11): chỉ đọc, không có API sửa / xóa */
 export const auditLogRouter = Router();

@@ -12,5 +12,6 @@
     "too_many_tables": "Phòng riêng chỉ được có tối đa 5 bàn",
     "update_failed": "Cập nhật phòng thất bại",
     "updated_successfully": "Cập nhật phòng thành công",
-    "has_reservations": "Không thể xóa phòng có bàn đang có lịch đặt sắp tới"
+    "has_reservations": "Không thể xóa phòng có bàn đang có lịch đặt sắp tới",
+    "has_upcoming_reservations": "Phòng còn lịch đặt bàn chưa kết thúc. Xác nhận để vẫn tạm khóa (các lịch đặt cần được chuyển bàn hoặc hủy)."
 }

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { imageController } from "~/controllers";
 import { auditRoute, authMiddleware, authorizeImageAccess, loadUserContext, uploadImages, validate } from "~/middlewares";
 import { AUDIT_BEFORE } from "~/utils/audit-loaders";
-import { getImagesSchema, imageIdSchema, uploadImagesSchema } from "~/schemas";
+import { getImagesSchema, imageIdSchema, reorderImagesSchema, uploadImagesSchema } from "~/schemas";
 
 /** Ảnh của món, combo, nhà hàng, phòng. Quyền cần có tùy loại đối tượng (xem imageAccess.middleware.ts). */
 const router = Router();
@@ -18,6 +18,14 @@ router.post(
     // Ghi vào đối tượng sở hữu ảnh (món, combo, nhà hàng, phòng)
     auditRoute("image.upload", (req) => String(req.body.entity_type), { entityId: (req) => req.body.entity_id }),
     imageController.uploadImages,
+);
+// Kéo thả sắp xếp ảnh
+router.put(
+    "/order",
+    validate(reorderImagesSchema),
+    authorizeImageAccess("update"),
+    auditRoute("image.reorder", (req) => String(req.body.entity_type), { entityId: (req) => req.body.entity_id }),
+    imageController.reorderImages,
 );
 router.patch(
     "/:id/primary",

@@ -65,6 +65,9 @@
         },
         "time": {
             "invalid": "Giờ không hợp lệ (HH:mm)"
+        },
+        "minutes": {
+            "invalid": "Số phút phải là số nguyên từ 0 đến 240"
         }
     },
     "room": {
@@ -132,7 +135,12 @@
         "items_required": "Chọn ít nhất một món hoặc combo",
         "same_table": "Bàn chuyển đến phải khác bàn hiện tại",
         "item_status_invalid": "Trạng thái món không hợp lệ",
-        "station_invalid": "Khu chế biến không hợp lệ"
+        "station_invalid": "Khu chế biến không hợp lệ",
+        "line_kind_invalid": "Loại món không hợp lệ",
+        "duplicate_lines": "Danh sách có món bị trùng",
+        "lines_or_round": "Chọn các món hoặc một đợt gọi món (không chọn cả hai)",
+        "split_lines_required": "Chọn ít nhất một món để tách",
+        "split_target_required": "Chọn order đích hoặc bàn cho order mới (không chọn cả hai)"
     },
     "discount": {
         "code": {
@@ -173,6 +181,9 @@
         },
         "reason": {
             "required": "Lý do là bắt buộc"
+        },
+        "tip": {
+            "invalid": "Tiền tip không hợp lệ"
         }
     },
     "inventory": {

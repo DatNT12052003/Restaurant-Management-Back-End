@@ -112,6 +112,59 @@ export const updateLineStatusSchema = z.object({
     }),
 });
 
+const lineKind = z.enum(["dish", "combo"], { message: "validation:order.line_kind_invalid" });
+
+/** Không trùng dòng (cùng loại, cùng id) */
+const uniqueLines = (lines: { kind: string; id: number }[]) =>
+    new Set(lines.map((l) => `${l.kind}:${l.id}`)).size === lines.length;
+
+/** PATCH /orders/lines/status: đổi trạng thái nhiều dòng (`lines`) hoặc cả một đợt gọi món (`round_id`) */
+export const batchLineStatusSchema = z.object({
+    body: z
+        .object({
+            status: z.enum(OrderItemStatusEnum, { message: "validation:order.item_status_invalid" }),
+            cancel_reason: optionalString(500),
+            lines: z
+                .array(z.object({ kind: lineKind, id: positiveInt() }), { message: "validation:common.invalid_list" })
+                .min(1, { message: "validation:common.invalid_list" })
+                .max(200, { message: "validation:common.invalid_list" })
+                .refine(uniqueLines, { message: "validation:order.duplicate_lines" })
+                .optional(),
+            round_id: optionalPositiveInt(),
+            station: z.preprocess(
+                blankToUndefined,
+                z.enum(KitchenStationEnum, { message: "validation:order.station_invalid" }).optional(),
+            ),
+        })
+        .refine((b) => !!b.lines !== !!b.round_id, { message: "validation:order.lines_or_round", path: ["lines"] }),
+});
+
+export const mergeOrderSchema = z.object({
+    params: idParamSchema,
+    body: z.object({ target_order_id: positiveInt() }),
+});
+
+/** POST /orders/:id/split: tách món sang order có sẵn (`target_order_id`) hoặc order mới trên `table_ids` */
+export const splitOrderSchema = z.object({
+    params: idParamSchema,
+    body: z
+        .object({
+            lines: z
+                .array(z.object({ kind: lineKind, id: positiveInt(), quantity }), { message: "validation:order.split_lines_required" })
+                .min(1, { message: "validation:order.split_lines_required" })
+                .max(100, { message: "validation:common.invalid_list" })
+                .refine(uniqueLines, { message: "validation:order.duplicate_lines" }),
+            target_order_id: optionalPositiveInt(),
+            table_ids: tableIds.optional(),
+            guest_count: guestCount.optional(),
+            note: optionalString(2000),
+        })
+        .refine((b) => !!b.target_order_id !== !!b.table_ids, {
+            message: "validation:order.split_target_required",
+            path: ["target_order_id"],
+        }),
+});
+
 const dateTime = z.coerce.date({ message: "validation:reservation.time.invalid" });
 
 /** GET /orders: tham số riêng ngoài bộ lọc chung */

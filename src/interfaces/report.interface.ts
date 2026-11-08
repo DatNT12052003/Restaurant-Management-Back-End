@@ -101,6 +101,14 @@ export interface IOccupancyReport {
     by_hour: { hour: number; occupied_hours: number; avg_occupancy: number | null }[];
 }
 
+export interface ITipsReport {
+    group_by: ReportGroupBy;
+    total: number;
+    series: { period: string; tip_total: number }[];
+    /** `staff_id` null = tip không gắn nhân viên */
+    by_staff: { staff_id: number | null; full_name: string | null; tip_total: number; payments: number; orders: number }[];
+}
+
 export interface IInventoryReport {
     group_by: ReportGroupBy;
     series: { period: string; import_value: number; export_value: number; adjust_value: number; receipts: number }[];

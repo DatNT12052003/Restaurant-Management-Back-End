@@ -118,6 +118,7 @@ export const getInvoice = async (orderId: number, scope: Scope): Promise<IInvoic
             payments,
             paid: summary.paid,
             remaining: roundVnd(Number(order.total) - summary.paid),
+            tip_total: Number(order.tip_amount ?? 0),
         };
     } catch (error) {
         return PAYMENT_ERROR.FAILED;
@@ -154,12 +155,26 @@ export const createPayment = async (
             const isCash = body.method === PaymentMethodEnum.CASH;
             if (!confirm && isCash) return rollback(PAYMENT_ERROR.PENDING_CASH);
 
+            // Tip: ghi riêng, mặc định cho nhân viên phụ trách order (câu hỏi 5)
+            const tip = roundVnd(body.tip_amount ?? 0);
+            let tipStaffId: number | null = null;
+            if (tip > 0) {
+                tipStaffId = body.tip_staff_id ?? order.assigned_staff_id ?? null;
+                if (tipStaffId) {
+                    const staff = await orderRepository.getStaffById(tipStaffId);
+                    if (!staff || (staff.restaurant_id !== null && staff.restaurant_id !== order.restaurant_id)) {
+                        return rollback(PAYMENT_ERROR.TIP_STAFF_NOT_FOUND);
+                    }
+                }
+            }
+
+            // Tiền mặt: khách đưa phải đủ cả tiền thanh toán và tip
             let received: number | null = null;
             let change: number | null = null;
             if (isCash && body.received_amount !== null && body.received_amount !== undefined) {
                 received = roundVnd(body.received_amount);
-                if (received < amount) return rollback(PAYMENT_ERROR.RECEIVED_TOO_LOW);
-                change = received - amount;
+                if (received < amount + tip) return rollback(PAYMENT_ERROR.RECEIVED_TOO_LOW);
+                change = received - amount - tip;
             }
 
             const status = confirm ? P.PAID : P.PENDING;
@@ -176,6 +191,8 @@ export const createPayment = async (
                 note: body.note ?? null,
                 cashier_id: actorId ?? null,
                 paid_at: confirm ? new Date() : null,
+                tip_amount: tip,
+                tip_staff_id: tipStaffId,
             });
             const closed = confirm ? await orderService.completeIfSettled(order) : null;
             return { order, id: created.id, status, closed };

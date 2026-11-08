@@ -17,5 +17,6 @@
     "received_too_low": "Tiền khách đưa ít hơn số tiền thanh toán",
     "pending_cash": "Tiền mặt phải được xác nhận ngay, không tạo giao dịch chờ",
     "invalid_status": "Không thể thực hiện thao tác với giao dịch ở trạng thái này",
-    "refund_exceeds": "Số tiền hoàn vượt quá số còn có thể hoàn của giao dịch"
+    "refund_exceeds": "Số tiền hoàn vượt quá số còn có thể hoàn của giao dịch",
+    "tip_staff_not_found": "Không tìm thấy nhân viên nhận tip thuộc nhà hàng này"
 }

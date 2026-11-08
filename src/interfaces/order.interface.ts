@@ -71,6 +71,11 @@ export interface IOrder {
     cancelled_by: number | null;
     completed_at: Date | null;
     cancelled_at: Date | null;
+    /** Đã gộp vào order này (trạng thái `merged`) */
+    merged_into_order_id?: number | null;
+    merged_into_code?: string | null;
+    /** Tổng tiền tip đã nhận (không tính vào `total`) */
+    tip_amount?: string;
     created_at: Date;
     updated_at: Date;
     /** Bàn đang thuộc order (có khi đọc qua repository) */
@@ -142,6 +147,21 @@ export interface IUpdateLineStatusBody {
     cancel_reason?: string | null;
 }
 
+export interface IBatchLineStatusBody extends IUpdateLineStatusBody {
+    lines?: { kind: OrderLineKind; id: number }[];
+    round_id?: number;
+    /** Chỉ dùng với `round_id`: chỉ đổi các dòng của bếp hoặc quầy pha chế */
+    station?: KitchenStationEnum;
+}
+
+export interface ISplitOrderBody {
+    lines: { kind: OrderLineKind; id: number; quantity: number }[];
+    target_order_id?: number;
+    table_ids?: number[];
+    guest_count?: number;
+    note?: string | null;
+}
+
 /** Người thao tác: id và quyền (để kiểm tra quyền theo từng bước chuyển trạng thái) */
 export interface IOrderActor {
     id: number;
@@ -177,4 +197,5 @@ export interface IOrderRow {
     /** Tỷ lệ % chụp từ nhà hàng lúc mở order */
     service_fee_rate?: string | number;
     tax_rate?: string | number;
+    merged_into_order_id?: number | null;
 }

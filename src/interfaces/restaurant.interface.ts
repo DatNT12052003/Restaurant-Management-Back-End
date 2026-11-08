@@ -12,6 +12,10 @@ export interface IRestaurant {
     /** Giờ mở / đóng cửa ("HH:mm:ss"), dùng tính tỷ lệ lấp đầy bàn. Đóng <= mở nghĩa là mở qua đêm. */
     open_time: string;
     close_time: string;
+    /** Bàn tự chuyển sang `reserved` trước giờ hẹn bao nhiêu phút (0 = tắt) */
+    reservation_hold_minutes: number;
+    /** Khách trễ quá bao nhiêu phút thì tự đánh dấu không đến (0 = tắt) */
+    no_show_after_minutes: number;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
@@ -30,6 +34,8 @@ export interface ICreateRestaurantBody {
     tax_percent?: number;
     open_time?: string;
     close_time?: string;
+    reservation_hold_minutes?: number;
+    no_show_after_minutes?: number;
 }
 
 export interface IUpdateRestaurantBody extends Partial<ICreateRestaurantBody> {}

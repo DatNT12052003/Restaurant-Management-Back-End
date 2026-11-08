@@ -12,5 +12,6 @@
     "too_many_tables": "Private rooms can have at most 5 tables",
     "update_failed": "Failed to update room",
     "updated_successfully": "Room updated successfully",
-    "has_reservations": "Cannot delete a room whose tables have upcoming reservations"
+    "has_reservations": "Cannot delete a room whose tables have upcoming reservations",
+    "has_upcoming_reservations": "This room still has upcoming reservations. Confirm to deactivate it anyway (move or cancel those reservations)."
 }

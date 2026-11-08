@@ -11,4 +11,6 @@ export const ROOM_ERROR = {
     IN_USE: 5,
     /** Có bàn còn reservation chưa kết thúc */
     HAS_RESERVATIONS: 6,
+    /** Tạm khóa phòng còn lịch đặt bàn sắp tới: cần gửi lại với `force: true` */
+    HAS_UPCOMING_RESERVATIONS: 7,
 };
