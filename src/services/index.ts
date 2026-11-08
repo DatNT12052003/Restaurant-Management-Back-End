@@ -15,3 +15,4 @@ export * as reservationService from "./reservation.service";
 export * as orderService from "./order.service";
 export * as discountService from "./discount.service";
 export * as paymentService from "./payment.service";
+export * as inventoryService from "./inventory.service";

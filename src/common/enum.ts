@@ -176,3 +176,25 @@ export enum PaymentTypeEnum {
     PAYMENT = "payment",
     REFUND = "refund",
 }
+
+export enum IngredientStatusEnum {
+    ACTIVE = "active",
+    /** Ngừng dùng: không nhập thêm được, vẫn xuất / kiểm kê được phần còn lại */
+    INACTIVE = "inactive",
+}
+
+/** Loại phiếu kho */
+export enum InventoryReceiptTypeEnum {
+    IMPORT = "import",
+    EXPORT = "export",
+    /** Kiểm kê: nhập số thực tế, hệ thống ghi chênh lệch */
+    ADJUST = "adjust",
+}
+
+/** Loại biến động kho (consume: tự trừ theo định lượng món — chưa dùng) */
+export enum InventoryTransactionTypeEnum {
+    IMPORT = "import",
+    EXPORT = "export",
+    ADJUST = "adjust",
+    CONSUME = "consume",
+}

@@ -171,5 +171,34 @@
         "reason": {
             "required": "Lý do là bắt buộc"
         }
+    },
+    "inventory": {
+        "name": {
+            "required": "Tên nguyên liệu là bắt buộc"
+        },
+        "unit": {
+            "required": "Đơn vị tính là bắt buộc"
+        },
+        "status": {
+            "invalid": "Trạng thái không hợp lệ"
+        },
+        "type": {
+            "invalid": "Loại phiếu không hợp lệ"
+        },
+        "quantity": {
+            "invalid": "Số lượng không hợp lệ",
+            "decimals": "Số lượng tối đa 3 chữ số thập phân"
+        },
+        "unit_price": {
+            "invalid": "Đơn giá không hợp lệ",
+            "required": "Phiếu nhập phải có đơn giá cho từng dòng"
+        },
+        "lines": {
+            "required": "Phiếu phải có ít nhất một dòng",
+            "duplicate": "Một nguyên liệu bị lặp trong phiếu"
+        },
+        "reason": {
+            "required": "Phiếu xuất và phiếu kiểm kê phải có lý do"
+        }
     }
 }
