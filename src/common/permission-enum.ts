@@ -170,6 +170,40 @@ export enum RecipePermissionEnum {
     UPDATE = "recipe.update",
 }
 
+/** Giai đoạn 12: nhân sự */
+export enum HrPermissionEnum {
+    /** Lịch làm của mình, chấm công, xin đổi ca / nghỉ phép */
+    SELF = "hr.self",
+}
+
+export enum ShiftPermissionEnum {
+    VIEW = "shift.view",
+    /** Xếp ca, ca mẫu, duyệt đổi ca */
+    MANAGE = "shift.manage",
+}
+
+export enum AttendancePermissionEnum {
+    VIEW = "attendance.view",
+    /** Sửa chấm công, duyệt tăng ca */
+    MANAGE = "attendance.manage",
+    /** Hiển thị mã QR chấm công của chi nhánh */
+    KIOSK = "attendance.kiosk",
+}
+
+export enum LeavePermissionEnum {
+    APPROVE = "leave.approve",
+}
+
+export enum StaffReviewPermissionEnum {
+    MANAGE = "staff_review.manage",
+}
+
+export enum PayrollPermissionEnum {
+    VIEW = "payroll.view",
+    /** Lương, phụ cấp, thưởng phạt, tính / chốt bảng lương, cấu hình nhân sự */
+    MANAGE = "payroll.manage",
+}
+
 /** Toàn bộ permission của hệ thống, dùng cho seed và kiểm tra. */
 export const ALL_PERMISSIONS: string[] = [
     UserPermissionEnum,
@@ -196,4 +230,10 @@ export const ALL_PERMISSIONS: string[] = [
     SupplierPermissionEnum,
     PurchasePermissionEnum,
     PayablePermissionEnum,
+    HrPermissionEnum,
+    ShiftPermissionEnum,
+    AttendancePermissionEnum,
+    LeavePermissionEnum,
+    StaffReviewPermissionEnum,
+    PayrollPermissionEnum,
 ].flatMap((group) => Object.values(group) as string[]);

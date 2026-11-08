@@ -21,3 +21,4 @@ export * from "./audit.interface";
 export * from "./report.interface";
 export * from "./recipe.interface";
 export * from "./purchasing.interface";
+export * from "./hr.interface";

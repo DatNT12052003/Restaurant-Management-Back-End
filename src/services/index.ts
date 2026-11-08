@@ -22,3 +22,6 @@ export * as recipeService from "./recipe.service";
 export * as closedDayService from "./closed-day.service";
 export * as purchasingService from "./purchasing.service";
 export * as transferService from "./transfer.service";
+export * as hrService from "./hr.service";
+export * as attendanceService from "./attendance.service";
+export * as payrollService from "./payroll.service";

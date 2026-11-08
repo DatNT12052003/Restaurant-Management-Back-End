@@ -121,13 +121,22 @@ export interface IProfitTotals {
     quantity: number;
 }
 
+/** Giai đoạn 12: chi phí nhân công lấy từ bảng lương (chia đều theo ngày trong tháng), không gồm tip */
+export interface ILaborCost {
+    labor_cost: number;
+    /** Lãi gộp trừ chi phí nhân công */
+    net_profit: number;
+}
+
 export interface IProfitReport {
     group_by: ReportGroupBy;
-    totals: IProfitTotals;
-    series: (IProfitTotals & { period: string })[];
+    totals: IProfitTotals & ILaborCost;
+    series: (IProfitTotals & ILaborCost & { period: string })[];
     by_item: (IProfitTotals & { kind: string; item_id: number; name: string; category: string; missing_cost: boolean })[];
     by_category: (IProfitTotals & { category: string })[];
-    by_restaurant: (IProfitTotals & { restaurant_id: number; restaurant_name: string })[];
+    by_restaurant: (IProfitTotals & ILaborCost & { restaurant_id: number; restaurant_name: string })[];
+    /** Bảng lương đã dùng để tính chi phí nhân công (nháp hoặc đã chốt); tháng chưa có bảng lương thì chi phí = 0 */
+    payrolls: { restaurant_id: number; period_month: string; status: string }[];
 }
 
 export interface IVarianceRow {

@@ -257,5 +257,78 @@
         "date": {
             "invalid": "Ngày không hợp lệ"
         }
+    },
+    "hr": {
+        "date": {
+            "invalid": "Ngày không hợp lệ"
+        },
+        "month": {
+            "invalid": "Tháng không hợp lệ (YYYY-MM)"
+        },
+        "time": {
+            "invalid": "Giờ không hợp lệ (HH:MM)",
+            "same": "Giờ kết thúc phải khác giờ bắt đầu",
+            "required": "Chọn ca mẫu hoặc nhập giờ bắt đầu và kết thúc"
+        },
+        "datetime": {
+            "invalid": "Thời điểm không hợp lệ"
+        },
+        "range": {
+            "invalid": "Khoảng ngày không hợp lệ (tối đa 62 ngày)"
+        },
+        "number": {
+            "invalid": "Giá trị số không hợp lệ"
+        },
+        "money": {
+            "invalid": "Số tiền không hợp lệ"
+        },
+        "break": {
+            "invalid": "Giờ nghỉ phải từ 0 đến 480 phút"
+        },
+        "template_name": {
+            "required": "Tên ca là bắt buộc"
+        },
+        "status": {
+            "invalid": "Trạng thái không hợp lệ"
+        },
+        "users": {
+            "required": "Chọn từ 1 đến 100 nhân viên",
+            "duplicate": "Nhân viên bị chọn trùng"
+        },
+        "dates": {
+            "required": "Chọn từ 1 đến 31 ngày",
+            "duplicate": "Ngày bị chọn trùng"
+        },
+        "week": {
+            "same": "Tuần đích phải khác tuần nguồn"
+        },
+        "qr": {
+            "required": "Thiếu mã QR"
+        },
+        "clock": {
+            "order": "Giờ ra phải sau giờ vào",
+            "future": "Không ghi giờ chấm công trong tương lai"
+        },
+        "leave_type": {
+            "invalid": "Loại nghỉ không hợp lệ"
+        },
+        "leave_range": {
+            "invalid": "Ngày nghỉ không hợp lệ (tối đa 60 ngày)"
+        },
+        "rating": {
+            "invalid": "Điểm đánh giá từ 1 đến 5"
+        },
+        "pay_type": {
+            "invalid": "Kiểu lương không hợp lệ"
+        },
+        "allowance_name": {
+            "required": "Tên phụ cấp là bắt buộc"
+        },
+        "adjustment_type": {
+            "invalid": "Loại thưởng / phạt không hợp lệ"
+        },
+        "reason": {
+            "required": "Lý do là bắt buộc"
+        }
     }
 }

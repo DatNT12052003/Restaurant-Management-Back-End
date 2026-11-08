@@ -15,6 +15,7 @@ import {
     authRouter,
     comboRouter,
     dishRouter,
+    hrRouter,
     imageRouter,
     restaurantMenuRouter,
     tagRouter,
@@ -81,6 +82,7 @@ app.use("/api/suppliers", supplierRouter);
 app.use("/api/purchase-orders", purchaseOrderRouter);
 app.use("/api/stock-transfers", stockTransferRouter);
 app.use("/api/payables", payableRouter);
+app.use("/api/hr", hrRouter);
 app.use("/api/reports", reportRouter);
 app.use("/api/audit-logs", auditLogRouter);
 

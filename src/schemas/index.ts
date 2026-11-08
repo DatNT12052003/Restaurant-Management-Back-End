@@ -13,3 +13,4 @@ export * from "./inventory.schema";
 export * from "./report.schema";
 export * from "./recipe.schema";
 export * from "./purchasing.schema";
+export * from "./hr.schema";
