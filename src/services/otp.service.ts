@@ -1,7 +1,6 @@
 import { ICreateOTPBody, ICreateOtpPayload, IGetActiveOtp, IOtp } from "~/interfaces";
 import bcrypt from "bcrypt";
 import { otpRepository } from "~/repositories";
-import { signResetPasswordToken } from "~/utils/jwt";
 import { CREATE_OTP, GET_ACTIVE_OTP, MARK_OTP_AS_USED, VERIFY_OTP } from "~/common/error-code/otp";
 
 export const createOTP = async (body: ICreateOTPBody): Promise<IOtp | number> => {

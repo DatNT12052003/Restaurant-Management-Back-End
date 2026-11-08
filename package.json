@@ -4,14 +4,19 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "vitest run",
         "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/server.ts",
         "build": "tsc",
         "start": "node dist/server.js",
         "migrate": "node-pg-migrate",
         "migrate:up": "tsx node_modules/node-pg-migrate/bin/node-pg-migrate up",
         "migrate:down": "tsx node_modules/node-pg-migrate/bin/node-pg-migrate down",
-        "migrate:create": "tsx node_modules/node-pg-migrate/bin/node-pg-migrate create --migration-file-language ts"
+        "migrate:create": "tsx node_modules/node-pg-migrate/bin/node-pg-migrate create --migration-file-language ts",
+        "test:watch": "vitest",
+        "typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.test.json",
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
     },
     "keywords": [],
     "author": "",
@@ -24,6 +29,7 @@
         "cors": "^2.8.6",
         "dotenv": "^17.4.1",
         "express": "^5.2.1",
+        "express-rate-limit": "^7.5.1",
         "i18next": "^26.0.5",
         "i18next-fs-backend": "^2.6.3",
         "i18next-http-middleware": "^3.9.2",
@@ -43,6 +49,7 @@
         "zod": "^4.3.6"
     },
     "devDependencies": {
+        "@eslint/js": "^10.0.1",
         "@types/bcrypt": "^6.0.0",
         "@types/cookie-parser": "^1.4.10",
         "@types/cors": "^2.8.19",
@@ -55,9 +62,16 @@
         "@types/pg": "^8.20.0",
         "@types/socket.io": "^3.0.1",
         "@types/streamifier": "^0.1.2",
+        "@types/supertest": "^6.0.3",
         "@types/uuid": "^10.0.0",
+        "eslint": "^10.2.1",
+        "globals": "^17.5.0",
+        "prettier": "^3.6.2",
+        "supertest": "^7.1.4",
         "ts-node-dev": "^2.0.0",
         "tsx": "^4.21.0",
-        "typescript": "^6.0.2"
+        "typescript": "^6.0.2",
+        "typescript-eslint": "^8.58.2",
+        "vitest": "^3.2.4"
     }
 }

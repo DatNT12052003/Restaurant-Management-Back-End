@@ -1,5 +1,5 @@
 import { UserStatusEnum, GenderEnum, GuestStatusEnum } from "../common/enum";
-import { ICreateAccountBody, ICreateAccountPayload, IUpdateUsernameBody } from "./account.interface";
+import { ICreateAccountBody, IUpdateUsernameBody } from "./account.interface";
 import { IPagination } from "./common.interface";
 
 export interface IUser {

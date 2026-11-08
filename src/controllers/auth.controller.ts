@@ -6,7 +6,6 @@ import {
     LOGOUT,
     LOGOUT_ALL,
     REFRESH_TOKEN,
-    REGISTER,
     RESET_PASSWORD,
 } from "~/common/error-code/auth";
 import { MARK_OTP_AS_USED } from "~/common/error-code/otp";
@@ -34,7 +33,6 @@ import {
 import { createGuestResource, getMeResource } from "~/resources";
 import { authService, mailService, otpService, tokenService, userService } from "~/services";
 import { generateOTP } from "~/utils/common";
-import { createGuest } from "./user.controller";
 import { uploadToCloudinary } from "~/utils/cloudinary";
 import { CREATE_GUEST } from "~/common/error-code/user";
 import { auditContext } from "~/utils/audit";
@@ -87,6 +85,11 @@ export const login = async (req: Request, res: Response) => {
                     return badRequestResponse(res, req.t("auth:invalid_username_or_password"));
                 case LOGIN.ACCOUNT_DISABLED:
                     return authorizationErrorResponse(res, req.t("auth:account_disabled"));
+                case LOGIN.ACCOUNT_LOCKED:
+                    return authorizationErrorResponse(
+                        res,
+                        req.t("auth:account_locked", { minutes: await authService.getLockRemainingMinutes(body.username) }),
+                    );
                 default:
                     return serverErrorResponse(res, req.t("auth:login_failed"));
             }

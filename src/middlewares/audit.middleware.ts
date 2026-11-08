@@ -27,7 +27,7 @@ const toId = (v: unknown): number | null => {
  * Thao tác nhạy cảm (phân quyền, hoàn tiền, kho, hủy order, đăng nhập) ghi trong service, cùng transaction.
  */
 export const auditRoute =
-    (action: string, entityType: string, options: IAuditRouteOptions = {}) =>
+    (action: string, entityType: string | ((req: Request) => string), options: IAuditRouteOptions = {}) =>
     async (req: Request, res: Response, next: NextFunction) => {
         let before: Data;
         if (options.before) {
@@ -59,7 +59,7 @@ export const auditRoute =
 
                 void writeAuditSafe(auditContext(req), {
                     action,
-                    entity_type: entityType,
+                    entity_type: typeof entityType === "function" ? entityType(req) : entityType,
                     entity_id: entityId,
                     restaurant_id: restaurantId,
                     ...entry,

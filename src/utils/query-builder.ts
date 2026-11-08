@@ -192,7 +192,7 @@ export const buildUpdateQuery = (
         throw new Error("No valid fields to update");
     }
 
-    const wherePlaceholder = `$${index++}`;
+    const wherePlaceholder = `$${index}`;
     values.push(where.value);
 
     const query = `

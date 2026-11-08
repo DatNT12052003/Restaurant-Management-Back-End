@@ -5,6 +5,6 @@ export const deleteFromCloudinary = async (publicId: string): Promise<any> => {
         return await cloudinary.uploader.destroy(publicId);
     } catch (error) {
         console.error("Cloudinary Delete Error:", error);
-        throw new Error("Không thể xóa file trên Cloudinary");
+        throw new Error("Không thể xóa file trên Cloudinary", { cause: error });
     }
 };

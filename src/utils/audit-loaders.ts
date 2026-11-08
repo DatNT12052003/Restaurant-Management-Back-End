@@ -2,6 +2,7 @@ import { Request } from "express";
 import {
     accountRepository,
     discountRepository,
+    imageRepository,
     inventoryRepository,
     menuRepository,
     paymentRepository,
@@ -52,6 +53,7 @@ export const AUDIT_BEFORE = {
     reservation: byId((id) => reservationRepository.getReservationById(id)),
     ingredient: byId((id) => inventoryRepository.getIngredientById(id)),
     payment: byId((id) => paymentRepository.getPaymentById(id)),
+    image: byId(imageRepository.getImageById),
     account: async (req: Request) => {
         const account = await accountRepository.getAccountById(Number(req.params.id));
         return account ? getAccountResource(account) : undefined;
