@@ -17,6 +17,8 @@ import {
     ReportGroupBy,
 } from "~/interfaces";
 import { reportRepository } from "~/repositories";
+import { addDays, eachDay, monthRange } from "~/utils/hr-time";
+import { getLaborCosts } from "./payroll.service";
 
 const num = (v: unknown): number => {
     const n = Number(v);
@@ -308,21 +310,42 @@ const profitTotals = (row?: { sales: string; cost: string; costed_sales: string;
 /** Giá vốn, lãi gộp và tỷ lệ food cost theo kỳ, theo món, theo nhóm món và theo chi nhánh (giai đoạn 10) */
 export const getProfitReport = async (r: IReportRange, groupBy: ReportGroupBy, limit: number): Promise<IProfitReport | number> => {
     try {
-        const [periods, rows, items, categories, restaurants] = await Promise.all([
+        const [periods, rows, items, categories, restaurants, labor] = await Promise.all([
             reportRepository.getPeriods(r, groupBy),
             reportRepository.getProfitByPeriod(r, groupBy),
             reportRepository.getProfitByItem(r, limit),
             reportRepository.getProfitByCategory(r),
             reportRepository.getProfitByRestaurant(r),
+            getLaborCosts(r.from, r.to, r.restaurantId),
         ]);
         const byPeriod = new Map(rows.map((row) => [row.period, row]));
         const sum = (key: "sales" | "cost" | "costed_sales" | "quantity") =>
             String(categories.reduce((acc, x) => acc + num(x[key]), 0));
         const names = await reportRepository.getRestaurantNames(restaurants.map((x) => x.restaurant_id));
+
+        // Chi phí nhân công trong [from, to] ∩ khoảng báo cáo
+        const days = eachDay(r.from, r.to);
+        const laborIn = (from: string, to: string, restaurantId?: number) =>
+            days.filter((d) => d >= from && d <= to).reduce((acc, d) => acc + labor.dailyCost(d, restaurantId), 0);
+        const periodEnd = (p: string) => (groupBy === "day" ? p : groupBy === "week" ? addDays(p, 6) : monthRange(p).end);
+        const withLabor = <T extends IProfitTotals>(totals: T, cost: number): T & { labor_cost: number; net_profit: number } => ({
+            ...totals,
+            labor_cost: round2(cost),
+            net_profit: round2(totals.gross_profit - cost),
+        });
+        // Chi nhánh chỉ có chi phí nhân công (không bán món nào) vẫn hiện trong bảng theo chi nhánh
+        const restaurantIds = [...new Set([...restaurants.map((x) => x.restaurant_id), ...labor.payrolls.map((p) => p.restaurant_id)])];
+        const missingNames = restaurantIds.filter((id) => !(id in names));
+        const allNames = missingNames.length ? { ...names, ...(await reportRepository.getRestaurantNames(missingNames)) } : names;
+        const salesByRestaurant = new Map(restaurants.map((x) => [x.restaurant_id, x]));
+
         return {
             group_by: groupBy,
-            totals: profitTotals({ sales: sum("sales"), cost: sum("cost"), costed_sales: sum("costed_sales"), quantity: num(sum("quantity")) }),
-            series: periods.map((period) => ({ period, ...profitTotals(byPeriod.get(period)) })),
+            totals: withLabor(
+                profitTotals({ sales: sum("sales"), cost: sum("cost"), costed_sales: sum("costed_sales"), quantity: num(sum("quantity")) }),
+                laborIn(r.from, r.to),
+            ),
+            series: periods.map((period) => ({ period, ...withLabor(profitTotals(byPeriod.get(period)), laborIn(period, periodEnd(period))) })),
             by_item: items.map((x) => ({
                 kind: x.kind,
                 item_id: num(x.item_id),
@@ -332,11 +355,12 @@ export const getProfitReport = async (r: IReportRange, groupBy: ReportGroupBy, l
                 ...profitTotals(x),
             })),
             by_category: categories.map((x) => ({ category: x.category, ...profitTotals(x) })),
-            by_restaurant: restaurants.map((x) => ({
-                restaurant_id: x.restaurant_id,
-                restaurant_name: names[x.restaurant_id] ?? `#${x.restaurant_id}`,
-                ...profitTotals(x),
+            by_restaurant: restaurantIds.map((id) => ({
+                restaurant_id: id,
+                restaurant_name: allNames[id] ?? `#${id}`,
+                ...withLabor(profitTotals(salesByRestaurant.get(id)), laborIn(r.from, r.to, id)),
             })),
+            payrolls: labor.payrolls.map(({ restaurant_id, period_month, status }) => ({ restaurant_id, period_month, status })),
         };
     } catch (error) {
         return REPORT_ERROR.FAILED;

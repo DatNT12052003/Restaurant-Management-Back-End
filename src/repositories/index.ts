@@ -21,3 +21,4 @@ export * as recipeRepository from "./recipe.repository";
 export * as closedDayRepository from "./closed-day.repository";
 export * as lotRepository from "./lot.repository";
 export * as purchasingRepository from "./purchasing.repository";
+export * as hrRepository from "./hr.repository";

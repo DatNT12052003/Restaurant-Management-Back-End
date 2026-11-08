@@ -235,3 +235,53 @@ export enum SupplierBillStatusEnum {
     PARTIAL = "partial",
     PAID = "paid",
 }
+
+/** Giai đoạn 12: nhân sự */
+export enum PayTypeEnum {
+    /** Lương tháng, chia theo ngày công chuẩn */
+    MONTHLY = "monthly",
+    /** Đơn giá theo giờ */
+    HOURLY = "hourly",
+}
+
+export enum ShiftSwapStatusEnum {
+    /** Chờ người nhận đồng ý */
+    PENDING_TARGET = "pending_target",
+    /** Người nhận đã đồng ý, chờ quản lý duyệt */
+    PENDING_APPROVAL = "pending_approval",
+    APPROVED = "approved",
+    /** Quản lý từ chối */
+    REJECTED = "rejected",
+    /** Người nhận từ chối */
+    DECLINED = "declined",
+    CANCELLED = "cancelled",
+}
+
+export enum OvertimeStatusEnum {
+    NONE = "none",
+    PENDING = "pending",
+    APPROVED = "approved",
+    REJECTED = "rejected",
+}
+
+export enum LeaveTypeEnum {
+    PAID = "paid",
+    UNPAID = "unpaid",
+}
+
+export enum LeaveStatusEnum {
+    PENDING = "pending",
+    APPROVED = "approved",
+    REJECTED = "rejected",
+    CANCELLED = "cancelled",
+}
+
+export enum AdjustmentTypeEnum {
+    BONUS = "bonus",
+    PENALTY = "penalty",
+}
+
+export enum PayrollStatusEnum {
+    DRAFT = "draft",
+    FINALIZED = "finalized",
+}

@@ -257,5 +257,78 @@
         "date": {
             "invalid": "Invalid date"
         }
+    },
+    "hr": {
+        "date": {
+            "invalid": "Invalid date"
+        },
+        "month": {
+            "invalid": "Invalid month (YYYY-MM)"
+        },
+        "time": {
+            "invalid": "Invalid time (HH:MM)",
+            "same": "End time must differ from start time",
+            "required": "Choose a template or enter start and end times"
+        },
+        "datetime": {
+            "invalid": "Invalid date and time"
+        },
+        "range": {
+            "invalid": "Invalid date range (at most 62 days)"
+        },
+        "number": {
+            "invalid": "Invalid number"
+        },
+        "money": {
+            "invalid": "Invalid amount"
+        },
+        "break": {
+            "invalid": "Break must be 0 to 480 minutes"
+        },
+        "template_name": {
+            "required": "Shift name is required"
+        },
+        "status": {
+            "invalid": "Invalid status"
+        },
+        "users": {
+            "required": "Choose 1 to 100 staff members",
+            "duplicate": "Duplicate staff members"
+        },
+        "dates": {
+            "required": "Choose 1 to 31 days",
+            "duplicate": "Duplicate dates"
+        },
+        "week": {
+            "same": "Target week must differ from source week"
+        },
+        "qr": {
+            "required": "QR code is required"
+        },
+        "clock": {
+            "order": "Clock-out must be after clock-in",
+            "future": "Attendance time cannot be in the future"
+        },
+        "leave_type": {
+            "invalid": "Invalid leave type"
+        },
+        "leave_range": {
+            "invalid": "Invalid leave dates (at most 60 days)"
+        },
+        "rating": {
+            "invalid": "Rating must be 1 to 5"
+        },
+        "pay_type": {
+            "invalid": "Invalid pay type"
+        },
+        "allowance_name": {
+            "required": "Allowance name is required"
+        },
+        "adjustment_type": {
+            "invalid": "Invalid type"
+        },
+        "reason": {
+            "required": "Reason is required"
+        }
     }
 }

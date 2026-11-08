@@ -19,6 +19,7 @@ import {
 } from "~/common/error-code/user";
 import { canAssignRole } from "~/common/role-level";
 import { rollback, withTransaction } from "~/config/db";
+import { recordSalaryFromProfile } from "./payroll.service";
 import {
     IAccount,
     ICreateAccountPayload,
@@ -312,6 +313,9 @@ export const createEmployee = async (
                 );
             }
 
+            // Giai đoạn 12: mức lương ở hồ sơ là mức đầu tiên trong lịch sử lương
+            await recordSalaryFromProfile(newUserWithAccount.user.id, body.user.salary ?? null, null);
+
             const rolesAssigned = await userRoleRepository.assignRolesToUser(newUserWithAccount.user.id, roleIds);
             if (!rolesAssigned) {
                 return rollback(CREATE_EMPLOYEE.ASSIGN_ROLES_FAILED);
@@ -341,6 +345,10 @@ export const updateEmployee = async (
             const updatedUser = await userRepository.updateUser({ payload: buildUpdatePayload(userBody), id });
             if (!updatedUser) {
                 return rollback(UPDATE_EMPLOYEE.USER_NOT_FOUND);
+            }
+            // Giai đoạn 12: đổi lương ở hồ sơ = thêm một mức lương áp dụng từ hôm nay
+            if (userBody.salary !== undefined && updatedUser.salary !== null) {
+                await recordSalaryFromProfile(id, Number(updatedUser.salary), null);
             }
 
             const updatedAccount = await accountRepository.updateAccountUsername({
