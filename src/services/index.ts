@@ -20,3 +20,5 @@ export * as reportService from "./report.service";
 export * as auditLogService from "./audit-log.service";
 export * as recipeService from "./recipe.service";
 export * as closedDayService from "./closed-day.service";
+export * as purchasingService from "./purchasing.service";
+export * as transferService from "./transfer.service";

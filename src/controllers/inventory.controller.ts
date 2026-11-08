@@ -5,7 +5,7 @@ import { badRequestResponse, createErrorResponse, notFoundResponse, serverErrorR
 import { createSuccessResponse, getSuccessResponse, successResponse } from "~/common/responses/success";
 import { IGetQuery } from "~/interfaces";
 import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
-import { listInventoryTransactionsSchema, listReceiptsSchema, stockSchema } from "~/schemas";
+import { listInventoryTransactionsSchema, listReceiptsSchema, listLotsSchema, stockSchema } from "~/schemas";
 import { inventoryService } from "~/services";
 import { auditContext } from "~/utils/audit";
 import { buildListParams } from "~/utils/pagination";
@@ -17,6 +17,9 @@ const INVENTORY_MESSAGES: Record<number, [typeof badRequestResponse, string]> = 
     [INVENTORY_ERROR.INSUFFICIENT_STOCK]: [badRequestResponse, "inventory:insufficient_stock"],
     [INVENTORY_ERROR.NO_CHANGES]: [badRequestResponse, "inventory:no_changes"],
     [INVENTORY_ERROR.RECEIPT_NOT_FOUND]: [notFoundResponse, "inventory:receipt_not_found"],
+    [INVENTORY_ERROR.EXPIRY_REQUIRED]: [badRequestResponse, "inventory:expiry_required"],
+    [INVENTORY_ERROR.LOT_NOT_FOUND]: [notFoundResponse, "inventory:lot_not_found"],
+    [INVENTORY_ERROR.SUPPLIER_INVALID]: [badRequestResponse, "inventory:supplier_invalid"],
 };
 
 const INGREDIENT_MESSAGES: Record<number, [typeof badRequestResponse, string]> = {
@@ -72,6 +75,11 @@ export const deleteIngredient = (req: Request, res: Response) =>
 export const getStock = (req: Request, res: Response) => {
     const q = stockSchema.shape.query.parse(req.query);
     return handle(req, res, "get", "get", INVENTORY_MESSAGES, () => inventoryService.getStock(req.restaurantScope, q));
+};
+
+export const getLots = (req: Request, res: Response) => {
+    const q = listLotsSchema.shape.query.parse(req.query);
+    return handle(req, res, "get", "get", INVENTORY_MESSAGES, () => inventoryService.getLots(req.restaurantScope, q));
 };
 
 export const setMinQuantity = (req: Request, res: Response) =>

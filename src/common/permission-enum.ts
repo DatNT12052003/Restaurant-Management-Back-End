@@ -122,6 +122,29 @@ export enum InventoryPermissionEnum {
     EXPORT = "inventory.export",
     /** Kiểm kê và đặt ngưỡng tồn tối thiểu */
     ADJUST = "inventory.adjust",
+    /** Chuyển kho giữa các chi nhánh (giai đoạn 11) */
+    TRANSFER = "inventory.transfer",
+    /** Hủy hàng hết hạn / hỏng */
+    DISPOSE = "inventory.dispose",
+}
+
+/** Nhà cung cấp và bảng giá (danh mục dùng chung cả chuỗi) */
+export enum SupplierPermissionEnum {
+    VIEW = "supplier.view",
+    MANAGE = "supplier.manage",
+}
+
+/** Đơn đặt hàng nguyên liệu */
+export enum PurchasePermissionEnum {
+    VIEW = "purchase.view",
+    CREATE = "purchase.create",
+    RECEIVE = "purchase.receive",
+}
+
+/** Công nợ nhà cung cấp */
+export enum PayablePermissionEnum {
+    VIEW = "payable.view",
+    PAY = "payable.pay",
 }
 
 /** Danh mục nguyên liệu (xem danh mục dùng quyền inventory.view) */
@@ -170,4 +193,7 @@ export const ALL_PERMISSIONS: string[] = [
     ReportPermissionEnum,
     AuditLogPermissionEnum,
     RecipePermissionEnum,
+    SupplierPermissionEnum,
+    PurchasePermissionEnum,
+    PayablePermissionEnum,
 ].flatMap((group) => Object.values(group) as string[]);

@@ -216,6 +216,12 @@
         },
         "reason": {
             "required": "Phiếu xuất và phiếu kiểm kê phải có lý do"
+        },
+        "shelf_life": {
+            "invalid": "Hạn dùng gợi ý phải từ 1 đến 3650 ngày"
+        },
+        "expiry": {
+            "invalid": "Hạn dùng không hợp lệ (YYYY-MM-DD)"
         }
     },
     "report": {
@@ -234,5 +240,22 @@
             "invalid": "Định lượng phải lớn hơn 0, tối đa 3 chữ số thập phân"
         },
         "duplicate_ingredient": "Mỗi nguyên liệu chỉ xuất hiện một lần trong định lượng"
+    },
+    "purchasing": {
+        "supplier_name": {
+            "required": "Tên nhà cung cấp là bắt buộc"
+        },
+        "email": {
+            "invalid": "Email không hợp lệ"
+        },
+        "terms": {
+            "invalid": "Số ngày được trả chậm phải từ 0 đến 365"
+        },
+        "status": {
+            "invalid": "Trạng thái không hợp lệ"
+        },
+        "date": {
+            "invalid": "Ngày không hợp lệ"
+        }
     }
 }

@@ -39,8 +39,26 @@ const unit = z
 
 const ingredientStatus = z.enum(IngredientStatusEnum, { message: "validation:inventory.status.invalid" });
 
+const shelfLife = z.preprocess(
+    (v) => (v === "" ? null : v),
+    z.coerce
+        .number({ message: "validation:inventory.shelf_life.invalid" })
+        .int({ message: "validation:inventory.shelf_life.invalid" })
+        .min(1, { message: "validation:inventory.shelf_life.invalid" })
+        .max(3650, { message: "validation:inventory.shelf_life.invalid" })
+        .nullable()
+        .optional(),
+);
+
 export const createIngredientSchema = z.object({
-    body: z.object({ name, unit, description: optionalString(2000), status: ingredientStatus.optional() }),
+    body: z.object({
+        name,
+        unit,
+        description: optionalString(2000),
+        status: ingredientStatus.optional(),
+        track_expiry: optionalBoolean(),
+        shelf_life_days: shelfLife,
+    }),
 });
 
 export const updateIngredientSchema = z.object({
@@ -51,6 +69,8 @@ export const updateIngredientSchema = z.object({
             unit: unit.optional(),
             description: optionalString(2000),
             status: ingredientStatus.optional(),
+            track_expiry: optionalBoolean(),
+            shelf_life_days: shelfLife,
         })
         .refine((b) => Object.values(b).some((v) => v !== undefined), { message: "validation:common.empty_update" }),
 });
@@ -77,6 +97,12 @@ export const updateStockSettingSchema = z.object({
 
 // ---- Phiếu kho ----
 
+/** Hạn dùng của lô: YYYY-MM-DD */
+export const expiryDate = z
+    .string({ message: "validation:inventory.expiry.invalid" })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "validation:inventory.expiry.invalid" })
+    .refine((v) => !Number.isNaN(Date.parse(`${v}T00:00:00Z`)), { message: "validation:inventory.expiry.invalid" });
+
 const lines = z
     .array(
         z.object({
@@ -84,6 +110,9 @@ const lines = z
             quantity: quantity("nonnegative"),
             unit_price: z.preprocess(blankToUndefined, unitPrice.optional()),
             note: optionalString(500),
+            expiry_date: z.preprocess((v) => (v === "" ? null : v), expiryDate.nullable().optional()),
+            lot_code: optionalString(60),
+            lot_id: optionalPositiveInt(),
         }),
         { message: "validation:inventory.lines.required" },
     )
@@ -99,6 +128,7 @@ export const createReceiptSchema = z.object({
             restaurant_id: optionalPositiveInt(),
             type: z.enum(InventoryReceiptTypeEnum, { message: "validation:inventory.type.invalid" }),
             supplier: optionalString(255),
+            supplier_id: optionalPositiveInt(),
             reason: optionalString(1000),
             note: optionalString(2000),
             lines,
@@ -120,6 +150,15 @@ export const createReceiptSchema = z.object({
 });
 
 export const receiptIdSchema = z.object({ params: idParamSchema });
+
+/** GET /inventory/lots: lô còn hàng; `expiring_days`: chỉ lô hết hạn trong số ngày tới (gồm cả lô đã hết hạn) */
+export const listLotsSchema = z.object({
+    query: z.object({
+        restaurant_id: optionalPositiveInt(),
+        ingredient_id: optionalPositiveInt(),
+        expiring_days: z.preprocess(blankToUndefined, z.coerce.number().int().min(0).max(365).optional()),
+    }),
+});
 
 const dateTime = z.coerce.date({ message: "validation:reservation.time.invalid" });
 

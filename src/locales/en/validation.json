@@ -216,6 +216,12 @@
         },
         "reason": {
             "required": "Stock issues and stocktakes need a reason"
+        },
+        "shelf_life": {
+            "invalid": "Shelf life must be 1 to 3650 days"
+        },
+        "expiry": {
+            "invalid": "Invalid expiry date (YYYY-MM-DD)"
         }
     },
     "report": {
@@ -234,5 +240,22 @@
             "invalid": "Quantity must be greater than 0 with at most 3 decimal places"
         },
         "duplicate_ingredient": "Each ingredient may appear only once in a recipe"
+    },
+    "purchasing": {
+        "supplier_name": {
+            "required": "Supplier name is required"
+        },
+        "email": {
+            "invalid": "Invalid email"
+        },
+        "terms": {
+            "invalid": "Payment terms must be 0 to 365 days"
+        },
+        "status": {
+            "invalid": "Invalid status"
+        },
+        "date": {
+            "invalid": "Invalid date"
+        }
     }
 }

@@ -30,6 +30,10 @@ import {
     paymentRouter,
     inventoryRouter,
     recipeRouter,
+    supplierRouter,
+    purchaseOrderRouter,
+    stockTransferRouter,
+    payableRouter,
     ingredientRouter,
     reportRouter,
     auditLogRouter,
@@ -73,6 +77,10 @@ app.use("/api/payments", paymentRouter);
 app.use("/api/inventory", inventoryRouter);
 app.use("/api/ingredients", ingredientRouter);
 app.use("/api/recipes", recipeRouter);
+app.use("/api/suppliers", supplierRouter);
+app.use("/api/purchase-orders", purchaseOrderRouter);
+app.use("/api/stock-transfers", stockTransferRouter);
+app.use("/api/payables", payableRouter);
 app.use("/api/reports", reportRouter);
 app.use("/api/audit-logs", auditLogRouter);
 

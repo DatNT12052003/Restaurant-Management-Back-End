@@ -14,3 +14,4 @@ export * as paymentController from "./payment.controller";
 export * as inventoryController from "./inventory.controller";
 export * as reportController from "./report.controller";
 export * as recipeController from "./recipe.controller";
+export * as purchasingController from "./purchasing.controller";

@@ -24,5 +24,8 @@
     "ingredient_duplicate": "An ingredient with this name already exists",
     "ingredient_in_stock": "The ingredient still has stock; issue or count it down to 0, or mark it inactive",
     "unit_locked": "The ingredient already has stock movements, so its unit cannot change",
-    "ingredient_in_recipe": "This ingredient is used in a dish recipe; remove it from the recipe or mark it inactive instead"
+    "ingredient_in_recipe": "This ingredient is used in a dish recipe; remove it from the recipe or mark it inactive instead",
+    "expiry_required": "Ingredients with expiry tracking need an expiry date",
+    "lot_not_found": "Lot not found for this ingredient at this branch",
+    "supplier_invalid": "Supplier not found"
 }
