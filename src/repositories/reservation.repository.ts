@@ -226,6 +226,96 @@ export const setTablesStatus = async (
     return result.rows.map((r) => r.id);
 };
 
+// ---------------------------------------------------------------------------
+// Tự giữ bàn trước giờ hẹn và tự đánh dấu không đến (giai đoạn 9, câu hỏi 8)
+// Cấu hình theo nhà hàng: reservation_hold_minutes, no_show_after_minutes (0 = tắt).
+// ---------------------------------------------------------------------------
+
+/** Reservation đang trong khoảng giữ bàn: chưa đến, từ (giờ hẹn - số phút giữ) tới trước giờ kết thúc */
+const HOLDING = `rs.deleted_at IS NULL AND rs.status IN ('pending', 'confirmed') AND r.reservation_hold_minutes > 0
+    AND NOW() >= rs.start_time - make_interval(mins => r.reservation_hold_minutes) AND NOW() < rs.end_time`;
+
+/** Chỉ một tiến trình đồng bộ giữ bàn chạy tại một thời điểm (job định kỳ và các lần gọi sau khi sửa đặt bàn) */
+export const lockHoldSync = async (): Promise<void> => {
+    await db().query("SELECT pg_advisory_xact_lock(hashtext('reservation_holds'))");
+};
+
+/** Khách trễ quá `no_show_after_minutes`: chuyển sang `no_show` (trigger tự nhả bàn trên lịch) */
+export const markOverdueNoShows = async (
+    restaurantId: number | null,
+): Promise<{ id: number; restaurant_id: number; old_status: string; minutes: number }[]> => {
+    const result = await db().query(
+        `WITH due AS (
+            SELECT rs.id, rs.status AS old_status, r.no_show_after_minutes AS minutes
+            FROM reservations rs JOIN restaurants r ON r.id = rs.restaurant_id
+            WHERE rs.deleted_at IS NULL AND rs.status IN ('pending', 'confirmed') AND r.no_show_after_minutes > 0
+                AND rs.start_time + make_interval(mins => r.no_show_after_minutes) <= NOW()
+                AND ($1::int IS NULL OR rs.restaurant_id = $1::int)
+            FOR UPDATE OF rs SKIP LOCKED
+        )
+        UPDATE reservations rs SET status = 'no_show', cancelled_at = NOW(), updated_at = NOW()
+        FROM due WHERE rs.id = due.id
+        RETURNING rs.id, rs.restaurant_id, due.old_status, due.minutes`,
+        [restaurantId],
+    );
+    return result.rows;
+};
+
+/**
+ * Trả lại các bàn job đã giữ mà reservation không còn giữ nữa (khách đã đến, hủy, không đến, đổi giờ / đổi bàn, bị xóa).
+ * Bàn còn `reserved` thì về `available`; bàn đã chuyển trạng thái khác (vd. có khách) thì chỉ bỏ liên kết.
+ */
+export const releaseStaleHolds = async (
+    restaurantId: number | null,
+): Promise<{ id: number; restaurant_id: number; freed: boolean }[]> => {
+    const result = await db().query(
+        `WITH stale AS (
+            SELECT t.id, rm.restaurant_id, t.status = 'reserved' AS freed
+            FROM tables t JOIN rooms rm ON rm.id = t.room_id
+            WHERE t.held_reservation_id IS NOT NULL AND ($1::int IS NULL OR rm.restaurant_id = $1::int)
+                AND NOT EXISTS (
+                    SELECT 1 FROM reservations rs
+                    JOIN restaurants r ON r.id = rs.restaurant_id
+                    JOIN reservation_tables rt ON rt.reservation_id = rs.id AND rt.table_id = t.id AND rt.is_active
+                    WHERE rs.id = t.held_reservation_id AND ${HOLDING}
+                )
+            FOR UPDATE OF t
+        )
+        UPDATE tables t SET held_reservation_id = NULL, updated_at = NOW(),
+            status = CASE WHEN stale.freed THEN 'available' ELSE t.status END
+        FROM stale WHERE t.id = stale.id
+        RETURNING t.id, stale.restaurant_id, stale.freed`,
+        [restaurantId],
+    );
+    return result.rows;
+};
+
+/**
+ * Giữ bàn cho reservation sắp tới: bàn đang `available`, không thuộc order đang mở -> `reserved`.
+ * Một bàn có nhiều lượt trong khoảng giữ thì giữ cho lượt sớm nhất.
+ */
+export const holdUpcomingTables = async (restaurantId: number | null): Promise<{ id: number; restaurant_id: number }[]> => {
+    const result = await db().query(
+        `WITH due AS (
+            SELECT DISTINCT ON (t.id) t.id AS table_id, rs.id AS reservation_id, rs.restaurant_id
+            FROM reservation_tables rt
+            JOIN reservations rs ON rs.id = rt.reservation_id
+            JOIN restaurants r ON r.id = rs.restaurant_id
+            JOIN tables t ON t.id = rt.table_id AND t.deleted_at IS NULL
+            WHERE rt.is_active AND ${HOLDING}
+                AND t.status = 'available' AND t.held_reservation_id IS NULL
+                AND ($1::int IS NULL OR rs.restaurant_id = $1::int)
+                AND NOT EXISTS (SELECT 1 FROM order_tables ot WHERE ot.table_id = t.id AND ot.released_at IS NULL)
+            ORDER BY t.id, rs.start_time
+        )
+        UPDATE tables t SET status = 'reserved', held_reservation_id = due.reservation_id, updated_at = NOW()
+        FROM due WHERE t.id = due.table_id AND t.status = 'available'
+        RETURNING t.id, due.restaurant_id`,
+        [restaurantId],
+    );
+    return result.rows;
+};
+
 /** Số reservation còn hiệu lực, chưa kết thúc, đang giữ các bàn này */
 export const countUpcomingByTables = async (tableIds: number[]): Promise<number> => {
     if (tableIds.length === 0) return 0;

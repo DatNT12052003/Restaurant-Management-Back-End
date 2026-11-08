@@ -33,8 +33,12 @@ export const updateRoomSchema = z.object({
             status: status.optional(),
             is_active: optionalBoolean(),
             restaurant_id: optionalPositiveInt(),
+            // Vẫn tạm khóa dù phòng còn lịch đặt bàn sắp tới (người dùng đã xác nhận cảnh báo)
+            force: optionalBoolean(),
         })
-        .refine((b) => Object.values(b).some((v) => v !== undefined), { message: "validation:common.empty_update" }),
+        .refine((b) => Object.entries(b).some(([k, v]) => k !== "force" && v !== undefined), {
+            message: "validation:common.empty_update",
+        }),
 });
 
 export const roomIdSchema = z.object({ params: idParamSchema });

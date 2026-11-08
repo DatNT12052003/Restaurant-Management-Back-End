@@ -40,9 +40,14 @@ const ERROR_MESSAGES: Record<number, [typeof badRequestResponse, string]> = {
     [ORDER_ERROR.NOT_FULLY_PAID]: [badRequestResponse, "order:not_fully_paid"],
     [ORDER_ERROR.PENDING_PAYMENTS]: [badRequestResponse, "order:pending_payments"],
     [ORDER_ERROR.HAS_PAYMENTS]: [badRequestResponse, "order:has_payments"],
+    [ORDER_ERROR.SAME_ORDER]: [badRequestResponse, "order:same_order"],
+    [ORDER_ERROR.SOURCE_HAS_PAYMENTS]: [badRequestResponse, "order:source_has_payments"],
+    [ORDER_ERROR.TARGET_NOT_FOUND]: [notFoundResponse, "order:target_not_found"],
+    [ORDER_ERROR.INVALID_SPLIT_LINES]: [badRequestResponse, "order:invalid_split_lines"],
+    [ORDER_ERROR.NO_LINES_TO_UPDATE]: [badRequestResponse, "order:no_lines_to_update"],
 };
 
-type Action = "get" | "create" | "update" | "round" | "table" | "item" | "complete" | "cancel";
+type Action = "get" | "create" | "update" | "round" | "table" | "item" | "complete" | "cancel" | "merge" | "split";
 
 const handle = async (req: Request, res: Response, action: Action, run: () => Promise<unknown>) => {
     try {
@@ -122,6 +127,23 @@ const updateLine = (kind: OrderLineKind) => (req: Request, res: Response) =>
             audit: auditContext(req),
         }),
     );
+
+const actorOf = (req: Request) => ({
+    id: req.user!.id,
+    permissions: req.permissions || [],
+    audit: auditContext(req),
+});
+
+export const updateLinesStatus = (req: Request, res: Response) =>
+    handle(req, res, "item", () => orderService.updateLinesStatus(req.body, req.restaurantScope, actorOf(req)));
+
+export const mergeOrder = (req: Request, res: Response) =>
+    handle(req, res, "merge", () =>
+        orderService.mergeOrder(id(req), req.body.target_order_id, req.restaurantScope, auditContext(req)),
+    );
+
+export const splitOrder = (req: Request, res: Response) =>
+    handle(req, res, "split", () => orderService.splitOrder(id(req), req.body, req.restaurantScope, auditContext(req)));
 
 export const updateDishLineStatus = updateLine("dish");
 export const updateComboLineStatus = updateLine("combo");

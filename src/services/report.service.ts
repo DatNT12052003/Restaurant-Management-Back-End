@@ -8,6 +8,7 @@ import {
     IReportTotals,
     IRevenuePoint,
     IRevenueReport,
+    ITipsReport,
     ITopItemsReport,
     ReportGroupBy,
 } from "~/interfaces";
@@ -262,6 +263,32 @@ export const getTableOccupancy = async (r: IReportRange): Promise<IOccupancyRepo
                     avg_occupancy: slots > 0 ? Math.round((occupied / slots) * 10000) / 10000 : null,
                 };
             }),
+        };
+    } catch (error) {
+        return REPORT_ERROR.FAILED;
+    }
+};
+
+/** Tiền tip theo kỳ và theo nhân viên nhận (không tính vào doanh thu) */
+export const getTipsReport = async (r: IReportRange, groupBy: ReportGroupBy): Promise<ITipsReport | number> => {
+    try {
+        const [periods, rows, staff] = await Promise.all([
+            reportRepository.getPeriods(r, groupBy),
+            reportRepository.getTipsByPeriod(r, groupBy),
+            reportRepository.getTipsByStaff(r),
+        ]);
+        const byPeriod = new Map(rows.map((row) => [row.period, num(row.tip_total)]));
+        return {
+            group_by: groupBy,
+            total: round2(staff.reduce((acc, x) => acc + num(x.tip_total), 0)),
+            series: periods.map((period) => ({ period, tip_total: round2(byPeriod.get(period) ?? 0) })),
+            by_staff: staff.map((row) => ({
+                staff_id: row.staff_id ?? null,
+                full_name: row.full_name ?? null,
+                tip_total: round2(num(row.tip_total)),
+                payments: num(row.payments),
+                orders: num(row.orders),
+            })),
         };
     } catch (error) {
         return REPORT_ERROR.FAILED;

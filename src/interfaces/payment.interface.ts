@@ -83,13 +83,17 @@ export interface IPayment {
     order_code?: string;
     /** Payment gốc: đã hoàn bao nhiêu */
     refunded_amount?: string;
+    /** Tiền tip kèm lần thanh toán này (không nằm trong `amount`, không tính vào doanh thu) */
+    tip_amount: string;
+    tip_staff_id: number | null;
+    tip_staff_name?: string | null;
 }
 
 export interface IGetPayments {
     payments: IPayment[];
     pagination: IPagination;
     /** Tổng tiền theo bộ lọc hiện tại: thu, hoàn, ròng */
-    summary: { collected: string; refunded: string; net: string };
+    summary: { collected: string; refunded: string; net: string; tips: string };
 }
 
 export interface ICreatePaymentBody {
@@ -101,6 +105,10 @@ export interface ICreatePaymentBody {
     note?: string | null;
     /** false = tạo giao dịch chờ xác nhận (thẻ / chuyển khoản) */
     confirm?: boolean;
+    /** Tiền tip thêm ngoài số tiền thanh toán */
+    tip_amount?: number;
+    /** Nhân viên nhận tip (mặc định nhân viên phụ trách order) */
+    tip_staff_id?: number | null;
 }
 
 export interface IRefundBody {
@@ -123,6 +131,8 @@ export interface IPaymentRow {
     refund_of_payment_id?: number | null;
     cashier_id?: number | null;
     paid_at?: Date | null;
+    tip_amount?: number;
+    tip_staff_id?: number | null;
 }
 
 /** Tiền đã thu (trừ hoàn) và đang chờ của một order */
@@ -170,4 +180,6 @@ export interface IInvoice {
     paid: number;
     /** Còn phải thu (âm = thu thừa, cần hoàn) */
     remaining: number;
+    /** Tổng tip đã nhận (ngoài hóa đơn) */
+    tip_total: number;
 }

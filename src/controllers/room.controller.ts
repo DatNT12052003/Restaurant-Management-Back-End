@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
 import { ROOM_ERROR } from "~/common/error-code/room";
-import { badRequestResponse, createErrorResponse, notFoundResponse, serverErrorResponse } from "~/common/responses/error";
+import {
+    badRequestResponse,
+    conflictResponse,
+    createErrorResponse,
+    notFoundResponse,
+    serverErrorResponse,
+} from "~/common/responses/error";
 import { createSuccessResponse, getSuccessResponse, successResponse } from "~/common/responses/success";
 import { IGetQuery } from "~/interfaces";
 import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
@@ -21,6 +27,8 @@ const respondError = (req: Request, res: Response, code: number, fallback: strin
             return badRequestResponse(res, req.t("room:in_use"));
         case ROOM_ERROR.HAS_RESERVATIONS:
             return badRequestResponse(res, req.t("room:has_reservations"));
+        case ROOM_ERROR.HAS_UPCOMING_RESERVATIONS:
+            return conflictResponse(res, req.t("room:has_upcoming_reservations"));
         default:
             return createErrorResponse(res, req.t(fallback));
     }

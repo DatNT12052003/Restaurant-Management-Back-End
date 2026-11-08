@@ -20,6 +20,7 @@ const ERROR_MESSAGES: Record<number, [typeof badRequestResponse, string]> = {
     [PAYMENT_ERROR.PENDING_CASH]: [badRequestResponse, "payment:pending_cash"],
     [PAYMENT_ERROR.INVALID_STATUS]: [badRequestResponse, "payment:invalid_status"],
     [PAYMENT_ERROR.REFUND_EXCEEDS]: [badRequestResponse, "payment:refund_exceeds"],
+    [PAYMENT_ERROR.TIP_STAFF_NOT_FOUND]: [notFoundResponse, "payment:tip_staff_not_found"],
 };
 
 type Action = "get" | "create" | "confirm" | "cancel" | "fail" | "refund";

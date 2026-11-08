@@ -49,6 +49,15 @@ export const notFoundResponse = (res: Response, message?: string) => {
     });
 };
 
+/** 409: thao tác cần người dùng xác nhận lại (ví dụ tạm khóa phòng còn lịch đặt bàn) */
+export const conflictResponse = (res: Response, message?: string) => {
+    return res.status(409).json({
+        success: false,
+        statusCode: 409,
+        message: message || "Conflict",
+    });
+};
+
 export const tooManyRequestsResponse = (res: Response, message?: string) => {
     return res.status(429).json({
         success: false,

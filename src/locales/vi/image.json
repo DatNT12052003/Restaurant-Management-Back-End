@@ -10,5 +10,7 @@
     "upload_successfully": "Tải ảnh lên thành công",
     "primary_successfully": "Đã đặt ảnh đại diện",
     "delete_successfully": "Xóa ảnh thành công",
-    "invalid_type": "Chỉ chấp nhận file ảnh"
+    "invalid_type": "Chỉ chấp nhận file ảnh",
+    "reorder_successfully": "Đã lưu thứ tự ảnh",
+    "invalid_order": "Danh sách sắp xếp không khớp với ảnh hiện có; hãy tải lại"
 }

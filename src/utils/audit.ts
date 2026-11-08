@@ -19,6 +19,9 @@ export const AUDIT_ACTION = {
     ROLE_PERMISSIONS: "role.permissions_update",
     USER_PERMISSIONS: "user.permissions_update",
     ORDER_CANCEL: "order.cancel",
+    ORDER_MERGE: "order.merge",
+    ORDER_SPLIT: "order.split",
+    RESERVATION_AUTO_NO_SHOW: "reservation.auto_no_show",
     ORDER_ITEM_CANCEL: "order_item.cancel",
     PAYMENT_REFUND: "payment.refund",
 } as const;

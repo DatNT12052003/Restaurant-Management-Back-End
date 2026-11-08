@@ -11,6 +11,8 @@ const respondError = (req: Request, res: Response, code: number) => {
             return notFoundResponse(res, req.t("image:not_found"));
         case IMAGE_ERROR.NO_FILES:
             return badRequestResponse(res, req.t("image:no_files"));
+        case IMAGE_ERROR.INVALID_ORDER:
+            return badRequestResponse(res, req.t("image:invalid_order"));
         case IMAGE_ERROR.UPLOAD_FAILED:
             return createErrorResponse(res, req.t("image:upload_failed"));
         default:
@@ -37,6 +39,16 @@ export const uploadImages = async (req: Request, res: Response) => {
         const result = await imageService.uploadImages(req.body.entity_type, Number(req.body.entity_id), files);
         if (typeof result === "number") return respondError(req, res, result);
         return createSuccessResponse(res, req.t("image:upload_successfully"), result);
+    } catch (error) {
+        return serverErrorResponse(res);
+    }
+};
+
+export const reorderImages = async (req: Request, res: Response) => {
+    try {
+        const result = await imageService.reorderImages(req.body.entity_type, Number(req.body.entity_id), req.body.image_ids);
+        if (typeof result === "number") return respondError(req, res, result);
+        return successResponse(res, req.t("image:reorder_successfully"), result);
     } catch (error) {
         return serverErrorResponse(res);
     }

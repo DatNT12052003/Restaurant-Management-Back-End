@@ -12,6 +12,9 @@ import {
 import {
     activeOrdersSchema,
     addOrderTablesSchema,
+    batchLineStatusSchema,
+    mergeOrderSchema,
+    splitOrderSchema,
     applyDiscountSchema,
     createPaymentSchema,
     cancelOrderSchema,
@@ -45,6 +48,8 @@ router.get("/kitchen-queue", VIEW, validate(kitchenQueueSchema), restrictToResta
 // Đổi trạng thái món: quyền cụ thể (order_item.prepare / serve, order.update / cancel) được kiểm tra ở service
 router.patch("/dishes/:id/status", VIEW, validate(updateLineStatusSchema), restrictToRestaurant, orderController.updateDishLineStatus);
 router.patch("/combos/:id/status", VIEW, validate(updateLineStatusSchema), restrictToRestaurant, orderController.updateComboLineStatus);
+// Đổi trạng thái hàng loạt (cả đợt gọi món, "phục vụ tất cả"); quyền từng bước vẫn kiểm tra ở service
+router.patch("/lines/status", VIEW, validate(batchLineStatusSchema), restrictToRestaurant, orderController.updateLinesStatus);
 
 router.get("/:id", VIEW, validate(orderIdSchema), restrictToRestaurant, orderController.getOrderById);
 router.post(
@@ -58,6 +63,9 @@ router.patch("/:id", UPDATE, validate(updateOrderSchema), restrictToRestaurant, 
 router.post("/:id/rounds", UPDATE, validate(createRoundSchema), restrictToRestaurant, orderController.addRound);
 router.post("/:id/tables", UPDATE, validate(addOrderTablesSchema), restrictToRestaurant, orderController.addTables);
 router.post("/:id/transfer", UPDATE, validate(transferOrderTableSchema), restrictToRestaurant, orderController.transferTable);
+// Gộp order này vào order khác / tách món sang order khác (câu hỏi 3)
+router.post("/:id/merge", UPDATE, validate(mergeOrderSchema), restrictToRestaurant, orderController.mergeOrder);
+router.post("/:id/split", UPDATE, validate(splitOrderSchema), restrictToRestaurant, orderController.splitOrder);
 router.delete(
     "/:id/tables/:tableId",
     UPDATE,

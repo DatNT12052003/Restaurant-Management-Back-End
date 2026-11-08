@@ -37,6 +37,7 @@ const ORDER_FIELDS = [
     "cancelled_at",
     "service_fee_rate",
     "tax_rate",
+    "merged_into_order_id",
     "updated_at",
 ];
 
@@ -103,6 +104,10 @@ const PEOPLE = [
     `(SELECT json_build_object('id', d.id, 'code', d.code, 'name', d.name, 'type', d.type, 'value', d.value,
             'min_order_value', d.min_order_value, 'amount', od.amount_applied)
         FROM order_discounts od JOIN discounts d ON d.id = od.discount_id WHERE od.order_id = o.id) AS discount`,
+    // Giai đoạn 9: order đã gộp vào order nào; tip đã nhận
+    "(SELECT m.code FROM orders m WHERE m.id = o.merged_into_order_id) AS merged_into_code",
+    `(SELECT COALESCE(SUM(p.tip_amount), 0)::numeric(12,2) FROM payments p
+        WHERE p.order_id = o.id AND p.type = 'payment' AND p.status IN ('paid', 'refunded')) AS tip_amount`,
 ];
 
 const ORDER_RETURNING = ["o.*", LAST_TABLES, LINE_COUNTS, ...PEOPLE];
@@ -121,12 +126,8 @@ const linesQuery = (where: string, extraSelect = "", extraJoin = "") => `
         SELECT 'combo' AS kind, l.id, l.order_id, l.round_id, l.combo_id AS item_id, c.name, l.quantity,
             l.current_price, l.note, l.station, l.status, l.confirmed_at, l.cooking_at, l.ready_at,
             l.served_at, l.cancelled_at, l.cancel_reason,
-            COALESCE((
-                SELECT json_agg(json_build_object('dish_id', ci.dish_id, 'name', dd.name, 'quantity', ci.quantity)
-                    ORDER BY dd.name)
-                FROM combo_items ci JOIN dishes dd ON dd.id = ci.dish_id
-                WHERE ci.combo_id = l.combo_id
-            ), '[]'::json) AS combo_items,
+            -- Thành phần combo theo bản chụp lúc gọi món
+            COALESCE(l.items_snapshot::json, '[]'::json) AS combo_items,
             l.created_at ${extraSelect}
         FROM order_combos l
         JOIN combos c ON c.id = l.combo_id
@@ -427,12 +428,32 @@ export const createRound = async (row: {
     table_id: number | null;
     note: string | null;
     created_by: number | null;
+    /** Giữ giờ gửi của đợt gốc (khi tách order) để món không bị xếp xuống cuối hàng chờ bếp */
+    sent_at?: Date;
 }): Promise<{ id: number; round_no: number }> => {
     const result = await db().query(
-        `INSERT INTO order_rounds (order_id, table_id, note, created_by, round_no)
-        VALUES ($1, $2, $3, $4, (SELECT COALESCE(MAX(round_no), 0) + 1 FROM order_rounds WHERE order_id = $1))
+        `INSERT INTO order_rounds (order_id, table_id, note, created_by, round_no, sent_at)
+        VALUES ($1, $2, $3, $4, (SELECT COALESCE(MAX(round_no), 0) + 1 FROM order_rounds WHERE order_id = $1),
+            COALESCE($5::timestamptz, NOW()))
         RETURNING id, round_no`,
-        [row.order_id, row.table_id, row.note, row.created_by],
+        [row.order_id, row.table_id, row.note, row.created_by, row.sent_at ?? null],
+    );
+    return result.rows[0];
+};
+
+export interface IRoundRow {
+    id: number;
+    order_id: number;
+    round_no: number;
+    note: string | null;
+    created_by: number | null;
+    sent_at: Date;
+}
+
+export const getRoundById = async (id: number): Promise<IRoundRow | undefined> => {
+    const result = await db().query(
+        "SELECT id, order_id, round_no, note, created_by, sent_at FROM order_rounds WHERE id = $1",
+        [id],
     );
     return result.rows[0];
 };
@@ -445,9 +466,19 @@ export const insertLines = async (
 ): Promise<void> => {
     if (lines.length === 0) return;
     const { table, col } = LINE_TABLE[kind];
+    // Combo: chụp lại thành phần tại thời điểm gọi, đổi công thức combo sau này không làm sai lịch sử
+    const isCombo = kind === "combo";
+    const snapshot = isCombo
+        ? `, COALESCE((
+            SELECT jsonb_agg(jsonb_build_object('dish_id', ci.dish_id, 'name', d.name, 'quantity', ci.quantity)
+                ORDER BY d.name)
+            FROM combo_items ci JOIN dishes d ON d.id = ci.dish_id
+            WHERE ci.combo_id = x.item_id
+        ), '[]'::jsonb)`
+        : "";
     await db().query(
-        `INSERT INTO ${table} (order_id, round_id, ${col}, quantity, current_price, note, station)
-        SELECT $1, $2, x.item_id, x.quantity, x.price, x.note, x.station
+        `INSERT INTO ${table} (order_id, round_id, ${col}, quantity, current_price, note, station${isCombo ? ", items_snapshot" : ""})
+        SELECT $1, $2, x.item_id, x.quantity, x.price, x.note, x.station ${snapshot}
         FROM json_to_recordset($3::json) AS x(item_id int, quantity int, price numeric, note text, station text)`,
         [orderId, roundId, JSON.stringify(lines)],
     );
@@ -465,6 +496,7 @@ export const getLineForUpdate = async (
     | {
           id: number;
           order_id: number;
+          round_id: number;
           status: OrderItemStatusEnum;
           station: KitchenStationEnum;
           quantity: number;
@@ -477,7 +509,7 @@ export const getLineForUpdate = async (
 > => {
     const { table } = LINE_TABLE[kind];
     const result = await db().query(
-        `SELECT l.id, l.order_id, l.status, l.station, l.quantity, l.current_price,
+        `SELECT l.id, l.order_id, l.round_id, l.status, l.station, l.quantity, l.current_price,
             o.restaurant_id, o.status AS order_status, o.code AS order_code
         FROM ${table} l JOIN orders o ON o.id = l.order_id AND o.deleted_at IS NULL
         WHERE l.id = $1
@@ -485,6 +517,32 @@ export const getLineForUpdate = async (
         [id],
     );
     return result.rows[0];
+};
+
+/** order_id của các dòng món (không khóa), để khóa order trước theo thứ tự id */
+export const getLineOrderIds = async (lines: { kind: OrderLineKind; id: number }[]): Promise<number[]> => {
+    const ids: number[] = [];
+    for (const kind of ["dish", "combo"] as OrderLineKind[]) {
+        const lineIds = lines.filter((l) => l.kind === kind).map((l) => l.id);
+        if (lineIds.length === 0) continue;
+        const result = await db().query(
+            `SELECT DISTINCT order_id FROM ${LINE_TABLE[kind].table} WHERE id = ANY($1::int[])`,
+            [lineIds],
+        );
+        ids.push(...result.rows.map((r) => r.order_id));
+    }
+    return [...new Set(ids)].sort((a, b) => a - b);
+};
+
+/** Các dòng món của một đợt gọi món */
+export const getRoundLineRefs = async (roundId: number): Promise<{ kind: OrderLineKind; id: number }[]> => {
+    const result = await db().query(
+        `SELECT 'dish' AS kind, id FROM order_items WHERE round_id = $1
+        UNION ALL SELECT 'combo' AS kind, id FROM order_combos WHERE round_id = $1
+        ORDER BY kind DESC, id`,
+        [roundId],
+    );
+    return result.rows;
 };
 
 export const updateLine = async (kind: OrderLineKind, id: number, row: Record<string, unknown>): Promise<void> => {
@@ -502,6 +560,70 @@ export const cancelOpenLines = async (orderId: number, actorId: number | null, r
             [orderId, actorId, reason],
         );
     }
+};
+
+// ---------------------------------------------------------------------------
+// Gộp / tách order (giai đoạn 9)
+// ---------------------------------------------------------------------------
+
+/** Chuyển mọi đợt gọi món và dòng món của `sourceId` sang `targetId`; số đợt được đánh tiếp sau đợt cuối của order đích */
+export const moveAllRoundsAndLines = async (sourceId: number, targetId: number): Promise<void> => {
+    await db().query(
+        `UPDATE order_rounds r SET order_id = $2, round_no = x.new_no
+        FROM (
+            SELECT id, (SELECT COALESCE(MAX(round_no), 0) FROM order_rounds WHERE order_id = $2)
+                + ROW_NUMBER() OVER (ORDER BY round_no) AS new_no
+            FROM order_rounds WHERE order_id = $1
+        ) x
+        WHERE r.id = x.id`,
+        [sourceId, targetId],
+    );
+    for (const { table } of Object.values(LINE_TABLE)) {
+        await db().query(`UPDATE ${table} SET order_id = $2, updated_at = NOW() WHERE order_id = $1`, [sourceId, targetId]);
+    }
+};
+
+/**
+ * Chuyển `quantity` phần của một dòng món sang order khác (đợt `roundId` của order đích).
+ * Chuyển hết thì đổi order của dòng; chuyển một phần thì giảm số lượng dòng cũ và chép sang một dòng mới
+ * (giữ nguyên giá, trạng thái, các mốc thời gian, ghi chú, thành phần combo).
+ */
+export const moveLine = async (
+    kind: OrderLineKind,
+    lineId: number,
+    lineQuantity: number,
+    quantity: number,
+    targetOrderId: number,
+    roundId: number,
+): Promise<void> => {
+    const { table, col } = LINE_TABLE[kind];
+    if (quantity >= lineQuantity) {
+        await db().query(`UPDATE ${table} SET order_id = $2, round_id = $3, updated_at = NOW() WHERE id = $1`, [
+            lineId,
+            targetOrderId,
+            roundId,
+        ]);
+        return;
+    }
+    const extra = kind === "combo" ? ", items_snapshot" : "";
+    const copied = `${col}, current_price, note, station, status, confirmed_at, cooking_at, ready_at, served_at,
+        cancelled_at, cancel_reason, cancelled_by, created_at${extra}`;
+    await db().query(
+        `INSERT INTO ${table} (order_id, round_id, quantity, ${copied})
+        SELECT $2, $3, $4, ${copied} FROM ${table} WHERE id = $1`,
+        [lineId, targetOrderId, roundId, quantity],
+    );
+    await db().query(`UPDATE ${table} SET quantity = quantity - $2, updated_at = NOW() WHERE id = $1`, [lineId, quantity]);
+};
+
+/** Order đang mở có áp mã giảm giá này */
+export const getOpenOrderIdsByDiscount = async (discountId: number): Promise<number[]> => {
+    const result = await db().query(
+        `SELECT o.id FROM orders o JOIN order_discounts od ON od.order_id = o.id
+        WHERE od.discount_id = $1 AND o.deleted_at IS NULL AND o.status = ANY($2) ORDER BY o.id`,
+        [discountId, OPEN_ORDER_STATUSES],
+    );
+    return result.rows.map((r) => r.id);
 };
 
 /** Số lượng món (theo quantity) ở từng trạng thái */

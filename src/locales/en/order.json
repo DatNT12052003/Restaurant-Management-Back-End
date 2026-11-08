@@ -19,7 +19,7 @@
     "restaurant_required": "Please select a restaurant",
     "invalid_tables": "Some tables do not exist, belong to another restaurant, or are in a locked room",
     "table_busy": "Some tables belong to another open order",
-    "order_closed": "The order is already completed or cancelled",
+    "order_closed": "The order is completed, cancelled or merged into another order",
     "table_not_in_order": "The table does not belong to this order",
     "last_table": "An order must keep at least one table",
     "item_unavailable": "Some dishes or combos are discontinued or turned off at this branch",
@@ -33,5 +33,14 @@
     "staff_not_found": "The assigned staff member was not found in this restaurant",
     "not_fully_paid": "The order is not fully paid",
     "pending_payments": "Some payments are still waiting for confirmation",
-    "has_payments": "The order has payments; refund them before cancelling"
+    "has_payments": "The order has payments; refund them before cancelling",
+    "merge_successfully": "Orders merged",
+    "merge_failed": "Failed to merge orders",
+    "split_successfully": "Items moved to the other order",
+    "split_failed": "Failed to split the order",
+    "same_order": "The source and target orders must be different",
+    "source_has_payments": "The order has payments or pending transactions; refund or cancel them before merging or splitting",
+    "target_not_found": "No open target order was found in the same restaurant",
+    "invalid_split_lines": "Some items are not in the order, are cancelled, or the quantity exceeds what was ordered",
+    "no_lines_to_update": "No items can be moved to this status"
 }

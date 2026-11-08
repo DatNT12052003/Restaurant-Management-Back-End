@@ -57,6 +57,7 @@ export const getOverview = withRange(({ range }) => reportService.getOverview(ra
 export const getRevenue = withRange(({ range, groupBy }) => reportService.getRevenue(range, groupBy));
 export const getTopItems = withRange(({ range, limit, category }) => reportService.getTopItems(range, limit, category));
 export const getTableOccupancy = withRange(({ range }) => reportService.getTableOccupancy(range));
+export const getTipsReport = withRange(({ range, groupBy }) => reportService.getTipsReport(range, groupBy));
 export const getInventoryReport = withRange(({ range, groupBy, limit }) => reportService.getInventoryReport(range, groupBy, limit));
 
 // ---------------------------------------------------------------------------

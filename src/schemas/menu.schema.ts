@@ -125,3 +125,14 @@ const entity = {
 export const getImagesSchema = z.object({ query: z.object(entity) });
 export const uploadImagesSchema = z.object({ body: z.object(entity) });
 export const imageIdSchema = z.object({ params: idParamSchema });
+/** PUT /images/order: thứ tự mới của toàn bộ ảnh của đối tượng */
+export const reorderImagesSchema = z.object({
+    body: z.object({
+        ...entity,
+        image_ids: z
+            .array(positiveInt(), { message: "validation:common.invalid_list" })
+            .min(1, { message: "validation:common.invalid_list" })
+            .max(100, { message: "validation:common.invalid_list" })
+            .refine((ids) => new Set(ids).size === ids.length, { message: "validation:common.invalid_list" }),
+    }),
+});

@@ -36,4 +36,14 @@ export const ORDER_ERROR = {
     PENDING_PAYMENTS: 21,
     /** Đã thu tiền: phải hoàn tiền trước khi hủy order */
     HAS_PAYMENTS: 22,
+    /** Gộp / tách: order nguồn và đích trùng nhau */
+    SAME_ORDER: 23,
+    /** Gộp / tách: order nguồn đã thu tiền hoặc có giao dịch chờ */
+    SOURCE_HAS_PAYMENTS: 24,
+    /** Order đích không tồn tại hoặc thuộc nhà hàng khác */
+    TARGET_NOT_FOUND: 25,
+    /** Tách: dòng món không thuộc order nguồn, đã hủy, hoặc số lượng vượt quá */
+    INVALID_SPLIT_LINES: 26,
+    /** Đổi trạng thái hàng loạt: không có dòng nào chuyển được */
+    NO_LINES_TO_UPDATE: 27,
 };

@@ -15,6 +15,8 @@ export const PAYMENT_ERROR = {
     INVALID_STATUS: 8,
     /** Hoàn quá số tiền còn hoàn được */
     REFUND_EXCEEDS: 9,
+    /** Nhân viên nhận tip không thuộc nhà hàng */
+    TIP_STAFF_NOT_FOUND: 10,
 };
 
 export const DISCOUNT_ERROR = {

@@ -85,7 +85,44 @@ export const createDiscount = async (
     }
 };
 
+/** Các trường ảnh hưởng tới số tiền được giảm */
+const AMOUNT_FIELDS: (keyof IDiscountBody)[] = ["type", "value", "min_order_value", "max_discount"];
+
+/**
+ * Tính lại tiền của các order đang mở đã áp mã (sau khi sửa giá trị mã).
+ * Mỗi order một transaction riêng, chạy SAU khi lưu mã: khóa order rồi tính lại, cùng thứ tự khóa với lúc áp mã
+ * (order -> mã) nên không deadlock. Order đã đóng trong lúc chờ thì bỏ qua.
+ */
+export const recomputeOpenOrders = async (discountId: number): Promise<number[]> => {
+    const updated: number[] = [];
+    for (const orderId of await orderRepository.getOpenOrderIdsByDiscount(discountId)) {
+        const order = await withTransaction(async () => {
+            const row = await orderRepository.getOrderRow(orderId, true);
+            if (!row || !OPEN_ORDER_STATUSES.includes(row.status)) return null;
+            await orderRepository.recomputeTotals(orderId);
+            return row;
+        });
+        if (order && typeof order !== "number") {
+            emitOrder(order);
+            updated.push(orderId);
+        }
+    }
+    return updated;
+};
+
 export const updateDiscount = async (id: number, body: IDiscountBody, scope: Scope): Promise<IDiscount | number> => {
+    try {
+        const result = await updateDiscountRow(id, body, scope);
+        if (typeof result !== "number" && AMOUNT_FIELDS.some((f) => body[f] !== undefined)) {
+            await recomputeOpenOrders(id);
+        }
+        return result;
+    } catch (error) {
+        return toDiscountError(error);
+    }
+};
+
+const updateDiscountRow = async (id: number, body: IDiscountBody, scope: Scope): Promise<IDiscount | number> => {
     try {
         return await withTransaction(async () => {
             const current = await loadEditable(id, scope);

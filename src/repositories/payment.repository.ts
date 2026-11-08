@@ -17,6 +17,8 @@ const WRITABLE_FIELDS = [
     "refund_of_payment_id",
     "cashier_id",
     "paid_at",
+    "tip_amount",
+    "tip_staff_id",
     "updated_at",
 ];
 
@@ -27,6 +29,7 @@ const REFUNDED = `(SELECT COALESCE(SUM(rf.amount), 0)::numeric(12,2) FROM paymen
 const RETURNING = [
     "p.*",
     "(SELECT u.full_name FROM users u WHERE u.id = p.cashier_id) AS cashier_name",
+    "(SELECT u.full_name FROM users u WHERE u.id = p.tip_staff_id) AS tip_staff_name",
     "(SELECT o.code FROM orders o WHERE o.id = p.order_id) AS order_code",
     REFUNDED,
 ];
@@ -64,13 +67,13 @@ export const getPayments = async (params: ISelectQuery): Promise<{ rows: IPaymen
 };
 
 /** Tổng thu / hoàn theo cùng bộ lọc với danh sách (không phân trang) */
-export const sumPayments = async (params: ISelectQuery): Promise<{ collected: string; refunded: string }> => {
+export const sumPayments = async (params: ISelectQuery): Promise<{ collected: string; refunded: string; tips: string }> => {
     const mapped = mapParams(params);
     const { query, values } = buildSelectAllQuery("payments p", Object.values(FIELD_MAP), {
         ...mapped,
         noSoftDelete: true,
         orderBy: [],
-        returning: ["p.type", "p.status", "p.amount"],
+        returning: ["p.type", "p.status", "p.amount", "p.tip_amount"],
         limit: 1_000_000_000,
         offset: 0,
     });
@@ -79,7 +82,8 @@ export const sumPayments = async (params: ISelectQuery): Promise<{ collected: st
     const result = await db().query(
         `SELECT
             COALESCE(SUM(amount) FILTER (WHERE type = 'payment' AND status IN ('paid', 'refunded')), 0)::numeric(12,2) AS collected,
-            COALESCE(SUM(amount) FILTER (WHERE type = 'refund' AND status = 'paid'), 0)::numeric(12,2) AS refunded
+            COALESCE(SUM(amount) FILTER (WHERE type = 'refund' AND status = 'paid'), 0)::numeric(12,2) AS refunded,
+            COALESCE(SUM(tip_amount) FILTER (WHERE type = 'payment' AND status IN ('paid', 'refunded')), 0)::numeric(12,2) AS tips
         FROM (${inner}) x`,
         values,
     );

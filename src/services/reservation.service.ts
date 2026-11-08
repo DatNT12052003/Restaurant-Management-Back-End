@@ -22,6 +22,8 @@ import { ORDER_ERROR } from "~/common/error-code/order";
 import * as orderService from "./order.service";
 import { IOpenedOrder } from "./order.service";
 import { getPgErrorCode } from "~/utils/common";
+import logger from "~/config/logger";
+import { AUDIT_ACTION, writeAudit } from "~/utils/audit";
 import { buildPagination } from "~/utils/pagination";
 import { inScope } from "./room.service";
 
@@ -223,6 +225,67 @@ export const getAvailableTables = async (
 // Ghi
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Tự giữ bàn / tự đánh dấu không đến (câu hỏi 8)
+// ---------------------------------------------------------------------------
+
+/** Gom id bàn theo nhà hàng để phát một sự kiện cho mỗi nhà hàng */
+const groupByRestaurant = (rows: { id: number; restaurant_id: number }[]) => {
+    const map = new Map<number, number[]>();
+    rows.forEach((r) => map.set(r.restaurant_id, [...(map.get(r.restaurant_id) || []), r.id]));
+    return map;
+};
+
+/**
+ * Đồng bộ trạng thái bàn với lịch đặt bàn (job mỗi phút, và ngay sau mỗi lần sửa đặt bàn):
+ * 1. Khách trễ quá `no_show_after_minutes` -> reservation `no_show` (ghi nhật ký, người thao tác "system").
+ * 2. Trả các bàn đã giữ mà reservation không còn giữ -> `available`.
+ * 3. Giữ bàn cho reservation trong khoảng `reservation_hold_minutes` trước giờ hẹn -> `reserved`.
+ * `restaurantId` null = mọi nhà hàng. Trả về số thay đổi.
+ */
+export const syncReservationHolds = async (restaurantId: number | null = null) => {
+    const result = await withTransaction(async () => {
+        await reservationRepository.lockHoldSync();
+        const noShows = await reservationRepository.markOverdueNoShows(restaurantId);
+        for (const r of noShows) {
+            await writeAudit(
+                {},
+                {
+                    action: AUDIT_ACTION.RESERVATION_AUTO_NO_SHOW,
+                    entity_type: "reservation",
+                    entity_id: r.id,
+                    restaurant_id: r.restaurant_id,
+                    actor_name: "system",
+                    before: { status: r.old_status },
+                    after: { status: S.NO_SHOW, no_show_after_minutes: r.minutes },
+                },
+            );
+        }
+        const released = await reservationRepository.releaseStaleHolds(restaurantId);
+        const held = await reservationRepository.holdUpcomingTables(restaurantId);
+        return { noShows, released, held };
+    });
+
+    result.noShows.forEach((r) => emitReservation(r));
+    const emitTables = (rows: { id: number; restaurant_id: number }[], status: UsageStatusEnum) => {
+        for (const [rid, tableIds] of groupByRestaurant(rows)) {
+            emitToRestaurant(rid, "table:status_changed", { restaurant_id: rid, table_ids: tableIds, status });
+        }
+    };
+    emitTables(result.released.filter((r) => r.freed), UsageStatusEnum.AVAILABLE);
+    emitTables(result.held, UsageStatusEnum.RESERVED);
+    return { no_show: result.noShows.length, released: result.released.length, held: result.held.length };
+};
+
+/** Gọi sau khi sửa đặt bàn (đã commit): lỗi chỉ ghi log, không làm hỏng thao tác chính */
+const syncAfterWrite = async (restaurantId: number) => {
+    try {
+        await syncReservationHolds(restaurantId);
+    } catch (error) {
+        logger.error("Sync reservation holds failed", { error: (error as Error).message });
+    }
+};
+
 /** Phát sự kiện realtime sau khi commit */
 const emitReservation = (reservation: Pick<IReservation, "id" | "restaurant_id">) =>
     emitToRestaurant(reservation.restaurant_id, "reservation:changed", {
@@ -264,7 +327,10 @@ export const createReservation = async (
             await reservationRepository.addReservationTables(created.id, tableIds);
             return (await reservationRepository.getReservationById(created.id))!;
         });
-        if (typeof result !== "number") emitReservation(result);
+        if (typeof result !== "number") {
+            emitReservation(result);
+            await syncAfterWrite(result.restaurant_id);
+        }
         return result;
     } catch (error) {
         return toReservationError(error);
@@ -339,7 +405,10 @@ export const updateReservation = async (
 
             return (await reservationRepository.getReservationById(id))!;
         });
-        if (typeof result !== "number") emitReservation(result);
+        if (typeof result !== "number") {
+            emitReservation(result);
+            await syncAfterWrite(result.restaurant_id);
+        }
         return result;
     } catch (error) {
         return toReservationError(error);
@@ -420,6 +489,7 @@ export const updateReservationStatus = async (
         if (typeof result !== "number") {
             emitReservation(result);
             if (opened) orderService.emitOrderOpened(opened);
+            await syncAfterWrite(result.restaurant_id);
         }
         return result;
     } catch (error) {
@@ -437,7 +507,10 @@ export const deleteReservation = async (id: number, scope: Scope): Promise<{ id:
             restaurantId = current.restaurant_id;
             return (await reservationRepository.deleteReservation(id)) ?? rollback(RESERVATION_ERROR.NOT_FOUND);
         });
-        if (typeof result !== "number") emitReservation({ id, restaurant_id: restaurantId });
+        if (typeof result !== "number") {
+            emitReservation({ id, restaurant_id: restaurantId });
+            await syncAfterWrite(restaurantId);
+        }
         return result;
     } catch (error) {
         return RESERVATION_ERROR.FAILED;

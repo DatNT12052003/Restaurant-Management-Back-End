@@ -53,6 +53,25 @@ export const setPrimary = async (image: IImage): Promise<IImage[] | number> => {
     }
 };
 
+/** Sắp xếp lại ảnh (kéo thả): `ids` phải gồm đúng toàn bộ ảnh hiện có của đối tượng */
+export const reorderImages = async (
+    entityType: ImageEntityEnum,
+    entityId: number,
+    ids: number[],
+): Promise<IImage[] | number> => {
+    try {
+        return await withTransaction(async () => {
+            const current = await imageRepository.getImages(entityType, entityId);
+            const known = new Set(current.map((i) => i.id));
+            if (ids.length !== known.size || ids.some((id) => !known.has(id))) return rollback(IMAGE_ERROR.INVALID_ORDER);
+            await imageRepository.setSortOrder(ids);
+            return imageRepository.getImages(entityType, entityId);
+        });
+    } catch (error) {
+        return IMAGE_ERROR.FAILED;
+    }
+};
+
 /** Xóa ảnh; nếu là ảnh đại diện thì ảnh kế tiếp trở thành ảnh đại diện. */
 export const deleteImage = async (image: IImage): Promise<IImage[] | number> => {
     try {

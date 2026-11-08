@@ -19,7 +19,7 @@
     "restaurant_required": "Hãy chọn nhà hàng",
     "invalid_tables": "Có bàn không tồn tại, thuộc nhà hàng khác hoặc nằm trong phòng đang tạm khóa",
     "table_busy": "Có bàn đang thuộc một order khác chưa đóng",
-    "order_closed": "Order đã hoàn tất hoặc đã hủy",
+    "order_closed": "Order đã hoàn tất, đã hủy hoặc đã gộp vào order khác",
     "table_not_in_order": "Bàn không thuộc order này",
     "last_table": "Order phải còn ít nhất một bàn",
     "item_unavailable": "Có món hoặc combo đã ngừng bán hoặc đang tắt ở chi nhánh",
@@ -33,5 +33,14 @@
     "staff_not_found": "Không tìm thấy nhân viên phụ trách thuộc nhà hàng này",
     "not_fully_paid": "Chưa thu đủ tiền của order",
     "pending_payments": "Còn giao dịch đang chờ xác nhận",
-    "has_payments": "Order đã thu tiền; hãy hoàn tiền trước khi hủy"
+    "has_payments": "Order đã thu tiền; hãy hoàn tiền trước khi hủy",
+    "merge_successfully": "Đã gộp order",
+    "merge_failed": "Gộp order thất bại",
+    "split_successfully": "Đã tách món sang order khác",
+    "split_failed": "Tách order thất bại",
+    "same_order": "Order nguồn và order đích phải khác nhau",
+    "source_has_payments": "Order đã thu tiền hoặc có giao dịch chờ; hãy hoàn tiền hoặc hủy giao dịch trước khi gộp / tách",
+    "target_not_found": "Không tìm thấy order đích đang mở trong cùng nhà hàng",
+    "invalid_split_lines": "Có món không thuộc order, đã hủy hoặc số lượng tách vượt quá số đã gọi",
+    "no_lines_to_update": "Không có món nào chuyển được sang trạng thái này"
 }

@@ -10,5 +10,7 @@
     "upload_successfully": "Images uploaded successfully",
     "primary_successfully": "Cover image updated",
     "delete_successfully": "Image deleted successfully",
-    "invalid_type": "Only image files are allowed"
+    "invalid_type": "Only image files are allowed",
+    "reorder_successfully": "Image order saved",
+    "invalid_order": "The new order does not match the current images; please reload"
 }

@@ -3,8 +3,10 @@ import { ORDER_ERROR } from "~/common/error-code/order";
 import { OrderItemPermissionEnum, OrderPermissionEnum } from "~/common/permission-enum";
 import { rollback, withTransaction } from "~/config/db";
 import {
+    IBatchLineStatusBody,
     ICreateOrderBody,
     ICreateRoundBody,
+    ISplitOrderBody,
     IGetOrders,
     IAuditContext,
     IKitchenLine,
@@ -142,6 +144,8 @@ const openOrder = async (input: {
     note?: string | null;
     reservationId?: number | null;
     actorId?: number | null;
+    /** Tỷ lệ phí / thuế (mặc định lấy cấu hình hiện tại của nhà hàng; order tách ra thì giữ tỷ lệ của order gốc) */
+    rates?: { service_fee_rate: string | number; tax_rate: string | number };
 }): Promise<IOpenedOrder> => {
     const tableIds = [...new Set(input.tableIds)];
     await lockFreeTables(input.restaurantId, tableIds);
@@ -160,8 +164,8 @@ const openOrder = async (input: {
         assigned_staff_id: input.assignedStaffId ?? input.actorId ?? null,
         status: OrderStatusEnum.CONFIRMED,
         note: input.note ?? null,
-        service_fee_rate: restaurant?.service_fee_percent ?? 0,
-        tax_rate: restaurant?.tax_percent ?? 0,
+        service_fee_rate: input.rates?.service_fee_rate ?? restaurant?.service_fee_percent ?? 0,
+        tax_rate: input.rates?.tax_rate ?? restaurant?.tax_percent ?? 0,
     });
     await orderRepository.addOrderTables(created.id, tableIds);
     await orderRepository.setTablesStatus(tableIds, UsageStatusEnum.OCCUPIED);
@@ -525,6 +529,72 @@ export const addRound = async (
     }
 };
 
+type LockedLine = NonNullable<Awaited<ReturnType<typeof orderRepository.getLineForUpdate>>>;
+
+/** Một dòng món vừa đổi trạng thái, dùng để phát sự kiện sau commit */
+interface IChangedLine {
+    kind: OrderLineKind;
+    line: LockedLine;
+}
+
+/**
+ * Chuyển một dòng món (đã khóa) sang `body.status` theo `LINE_TRANSITIONS`, kiểm tra quyền theo từng bước.
+ * Hủy món thì tính lại tiền và ghi audit log. Gọi trong transaction.
+ */
+const transitionLine = async (kind: OrderLineKind, line: LockedLine, body: IUpdateLineStatusBody, actor: IOrderActor) => {
+    if (!OPEN_ORDER_STATUSES.includes(line.order_status)) return rollback(ORDER_ERROR.ORDER_CLOSED);
+    const allowed = LINE_TRANSITIONS[line.status][body.status];
+    if (!allowed) return rollback(ORDER_ERROR.INVALID_TRANSITION);
+    if (!allowed.some((p) => actor.permissions.includes(p))) return rollback(ORDER_ERROR.TRANSITION_FORBIDDEN);
+
+    const now = new Date();
+    const row: Record<string, unknown> = { status: body.status };
+    const stampCol = LINE_TIMESTAMP[body.status];
+    if (stampCol) row[stampCol] = now;
+    // Bỏ qua bước "đã nhận": vẫn ghi mốc nhận món
+    if (body.status === I.COOKING && line.status === I.PENDING) row.confirmed_at = now;
+    if (body.status === I.CANCELLED) {
+        row.cancelled_by = actor.id;
+        row.cancel_reason = body.cancel_reason ?? null;
+    }
+    await orderRepository.updateLine(kind, line.id, row);
+    if (body.status === I.CANCELLED) {
+        await orderRepository.recomputeTotals(line.order_id);
+        await writeAudit(actor.audit ?? { userId: actor.id }, {
+            action: AUDIT_ACTION.ORDER_ITEM_CANCEL,
+            entity_type: kind === "dish" ? "order_item" : "order_combo",
+            entity_id: line.id,
+            restaurant_id: line.restaurant_id,
+            before: { status: line.status, quantity: line.quantity, current_price: line.current_price },
+            after: {
+                status: I.CANCELLED,
+                cancel_reason: body.cancel_reason ?? null,
+                order_id: line.order_id,
+                order_code: line.order_code,
+            },
+        });
+    }
+};
+
+/** Phát sự kiện cho các dòng vừa đổi trạng thái (sau commit); hủy món thì order đổi tiền */
+const emitLinesChanged = async (changed: IChangedLine[], status: OrderItemStatusEnum) => {
+    for (const { kind, line } of changed) {
+        emitToRestaurant(line.restaurant_id, "order_item:status_changed", {
+            restaurant_id: line.restaurant_id,
+            order_id: line.order_id,
+            line_id: line.id,
+            kind,
+            status,
+            station: line.station,
+        });
+    }
+    if (status !== I.CANCELLED) return;
+    for (const orderId of new Set(changed.map((c) => c.line.order_id))) {
+        const order = await orderRepository.getOrderRow(orderId);
+        if (order) emitOrderUpdated(order);
+    }
+};
+
 /** Đổi trạng thái một dòng món / combo theo `LINE_TRANSITIONS` (kiểm tra quyền theo từng bước). */
 export const updateLineStatus = async (
     kind: OrderLineKind,
@@ -537,55 +607,279 @@ export const updateLineStatus = async (
         const result = await withTransaction(async () => {
             const line = await orderRepository.getLineForUpdate(kind, lineId);
             if (!line || !inScope(line.restaurant_id, scope)) return rollback(ORDER_ERROR.ITEM_NOT_FOUND);
-            if (!OPEN_ORDER_STATUSES.includes(line.order_status)) return rollback(ORDER_ERROR.ORDER_CLOSED);
+            await transitionLine(kind, line, body, actor);
+            return line;
+        });
+        if (typeof result === "number") return result;
+        await emitLinesChanged([{ kind, line: result }], body.status);
+        return { id: lineId, kind, order_id: result.order_id, status: body.status };
+    } catch (error) {
+        return ORDER_ERROR.FAILED;
+    }
+};
 
-            const allowed = LINE_TRANSITIONS[line.status][body.status];
-            if (!allowed) return rollback(ORDER_ERROR.INVALID_TRANSITION);
-            if (!allowed.some((p) => actor.permissions.includes(p))) return rollback(ORDER_ERROR.TRANSITION_FORBIDDEN);
+/**
+ * Đổi trạng thái nhiều dòng một lần (tất cả cùng thành công hoặc cùng bị hủy):
+ * - `lines`: đúng các dòng này; dòng nào không chuyển được sang `status` thì báo lỗi cả lô.
+ * - `round_id`: mọi dòng của đợt gọi món chuyển được sang `status` (lọc thêm `station` nếu có); dòng đã ở bước khác thì bỏ qua.
+ */
+export const updateLinesStatus = async (
+    body: IBatchLineStatusBody,
+    scope: Scope,
+    actor: IOrderActor,
+): Promise<{ status: OrderItemStatusEnum; lines: { kind: OrderLineKind; id: number; order_id: number }[] } | number> => {
+    try {
+        const result = await withTransaction(async () => {
+            let refs: { kind: OrderLineKind; id: number }[] = body.lines ?? [];
+            const fromRound = !!body.round_id;
+            if (body.round_id) {
+                const round = await orderRepository.getRoundById(body.round_id);
+                if (!round) return rollback(ORDER_ERROR.ITEM_NOT_FOUND);
+                refs = await orderRepository.getRoundLineRefs(round.id);
+            }
+            // Khóa order trước (theo id), rồi tới từng dòng (theo loại và id) để tránh deadlock
+            for (const orderId of await orderRepository.getLineOrderIds(refs)) {
+                const order = await orderRepository.getOrderRow(orderId, true);
+                if (!order || !inScope(order.restaurant_id, scope)) return rollback(ORDER_ERROR.ITEM_NOT_FOUND);
+            }
+            const sorted = [...refs].sort((a, b) => a.kind.localeCompare(b.kind) || a.id - b.id);
+            const changed: IChangedLine[] = [];
+            for (const ref of sorted) {
+                const line = await orderRepository.getLineForUpdate(ref.kind, ref.id);
+                if (!line || !inScope(line.restaurant_id, scope)) return rollback(ORDER_ERROR.ITEM_NOT_FOUND);
+                if (fromRound) {
+                    if (body.station && line.station !== body.station) continue;
+                    if (!LINE_TRANSITIONS[line.status][body.status]) continue;
+                }
+                await transitionLine(ref.kind, line, body, actor);
+                changed.push({ kind: ref.kind, line });
+            }
+            if (changed.length === 0) return rollback(ORDER_ERROR.NO_LINES_TO_UPDATE);
+            return changed;
+        });
+        if (typeof result === "number") return result;
+        await emitLinesChanged(result, body.status);
+        return {
+            status: body.status,
+            lines: result.map(({ kind, line }) => ({ kind, id: line.id, order_id: line.order_id })),
+        };
+    } catch (error) {
+        return ORDER_ERROR.FAILED;
+    }
+};
 
+// ---------------------------------------------------------------------------
+// Gộp / tách order (câu hỏi 3)
+// ---------------------------------------------------------------------------
+
+/** Order đã thu tiền hoặc có giao dịch chờ thì không được gộp / tách món ra (tiền đã thu sẽ lệch với món) */
+const checkNoPayments = async (orderId: number) => {
+    const summary = await paymentRepository.getSummary(orderId);
+    if (summary.paid !== 0 || summary.pending > 0) return rollback(ORDER_ERROR.SOURCE_HAS_PAYMENTS);
+};
+
+/** Khóa hai order theo thứ tự id (tránh deadlock khi hai thao tác ngược chiều chạy cùng lúc) */
+const loadPair = async (sourceId: number, targetId: number, scope: Scope) => {
+    if (sourceId === targetId) return rollback(ORDER_ERROR.SAME_ORDER);
+    const [firstId, secondId] = sourceId < targetId ? [sourceId, targetId] : [targetId, sourceId];
+    const first = await orderRepository.getOrderRow(firstId, true);
+    const second = await orderRepository.getOrderRow(secondId, true);
+    const source = firstId === sourceId ? first : second;
+    const target = firstId === sourceId ? second : first;
+    if (!source || !inScope(source.restaurant_id, scope)) return rollback(ORDER_ERROR.NOT_FOUND);
+    if (!target || target.restaurant_id !== source.restaurant_id) return rollback(ORDER_ERROR.TARGET_NOT_FOUND);
+    if (!isOpen(source) || !isOpen(target)) return rollback(ORDER_ERROR.ORDER_CLOSED);
+    return { source, target };
+};
+
+/** Order đích có món thì chuyển sang `serving` */
+const markServing = async (order: IOrder) => {
+    const counts = await orderRepository.countLinesByStatus(order.id);
+    const hasLines = Object.values(counts).some((n) => (n ?? 0) > 0);
+    if (hasLines && order.status !== OrderStatusEnum.SERVING) {
+        await orderRepository.updateOrder(order.id, { status: OrderStatusEnum.SERVING });
+        return OrderStatusEnum.SERVING;
+    }
+    return order.status;
+};
+
+/**
+ * Gộp order `sourceId` vào `targetId` (khách hai bàn ngồi chung, thanh toán chung):
+ * mọi đợt gọi món, dòng món và bàn chuyển sang order đích; số khách cộng dồn; order nguồn chuyển `merged`.
+ * Order nguồn chưa được thu tiền. Mã giảm giá của order nguồn bị gỡ (trả lại lượt dùng).
+ * Đặt bàn của order nguồn chuyển sang order đích nếu order đích chưa có, ngược lại được đánh dấu hoàn tất.
+ */
+export const mergeOrder = async (
+    sourceId: number,
+    targetId: number,
+    scope: Scope,
+    audit: IAuditContext,
+): Promise<IOrderDetail | number> => {
+    try {
+        const result = await withTransaction(async () => {
+            const { source, target } = await loadPair(sourceId, targetId, scope);
+            await checkNoPayments(source.id);
+
+            const removed = await discountRepository.removeOrderDiscount(source.id);
+            if (removed) await discountRepository.changeUsage(removed.discount_id, -1);
+
+            await orderRepository.moveAllRoundsAndLines(source.id, target.id);
             const now = new Date();
-            const row: Record<string, unknown> = { status: body.status };
-            const stampCol = LINE_TIMESTAMP[body.status];
-            if (stampCol) row[stampCol] = now;
-            // Bỏ qua bước "đã nhận": vẫn ghi mốc nhận món
-            if (body.status === I.COOKING && line.status === I.PENDING) row.confirmed_at = now;
-            if (body.status === I.CANCELLED) {
-                row.cancelled_by = actor.id;
-                row.cancel_reason = body.cancel_reason ?? null;
+            const tables = await orderRepository.releaseOrderTables(source.id, undefined, now);
+            await orderRepository.addOrderTables(target.id, tables);
+
+            // Đặt bàn đi theo order đích (để hoàn tất cùng order đích); order đích đã có đặt bàn thì đóng đặt bàn nguồn
+            let reservationId: number | null = null;
+            if (source.reservation_id) {
+                reservationId = source.reservation_id;
+                await orderRepository.updateOrder(source.id, { reservation_id: null });
+                if (!target.reservation_id) {
+                    await orderRepository.updateOrder(target.id, { reservation_id: source.reservation_id });
+                } else {
+                    const reservation = await reservationRepository.getReservationById(source.reservation_id, true);
+                    if (reservation?.status === ReservationStatusEnum.ARRIVED) {
+                        await reservationRepository.updateReservation(reservation.id, {
+                            status: ReservationStatusEnum.COMPLETED,
+                            completed_at: now,
+                        });
+                    }
+                }
             }
-            await orderRepository.updateLine(kind, lineId, row);
-            if (body.status === I.CANCELLED) {
-                await orderRepository.recomputeTotals(line.order_id);
-                await writeAudit(actor.audit ?? { userId: actor.id }, {
-                    action: AUDIT_ACTION.ORDER_ITEM_CANCEL,
-                    entity_type: kind === "dish" ? "order_item" : "order_combo",
-                    entity_id: lineId,
-                    restaurant_id: line.restaurant_id,
-                    before: { status: line.status, quantity: line.quantity, current_price: line.current_price },
-                    after: {
-                        status: I.CANCELLED,
-                        cancel_reason: body.cancel_reason ?? null,
-                        order_id: line.order_id,
-                        order_code: line.order_code,
-                    },
+
+            await orderRepository.updateOrder(target.id, { guest_count: target.guest_count + source.guest_count });
+            await orderRepository.updateOrder(source.id, {
+                status: OrderStatusEnum.MERGED,
+                merged_into_order_id: target.id,
+            });
+            await orderRepository.recomputeTotals(source.id);
+            await orderRepository.recomputeTotals(target.id);
+            const targetStatus = await markServing(target);
+
+            await writeAudit(audit, {
+                action: AUDIT_ACTION.ORDER_MERGE,
+                entity_type: "order",
+                entity_id: source.id,
+                restaurant_id: source.restaurant_id,
+                before: { code: source.code, status: source.status, total: source.total, discount_removed: removed?.discount_id ?? null },
+                after: {
+                    status: OrderStatusEnum.MERGED,
+                    merged_into_order_id: target.id,
+                    merged_into_code: target.code,
+                    tables,
+                },
+            });
+            return { source, target: { ...target, status: targetStatus }, reservationId };
+        });
+        if (typeof result === "number") return result;
+        emitOrderUpdated({ ...result.source, status: OrderStatusEnum.MERGED });
+        emitOrderUpdated(result.target);
+        if (result.reservationId) {
+            emitToRestaurant(result.source.restaurant_id, "reservation:changed", {
+                restaurant_id: result.source.restaurant_id,
+                reservation_id: result.reservationId,
+            });
+        }
+        return (await loadDetail(targetId))!;
+    } catch (error) {
+        return ORDER_ERROR.FAILED;
+    }
+};
+
+/**
+ * Tách món sang order khác (tách hóa đơn, nhóm khách chia bàn):
+ * - `target_order_id`: chuyển sang order đang mở có sẵn; hoặc
+ * - `table_ids`: mở order mới trên các bàn này (bàn trống, hoặc bàn của order nguồn — order nguồn phải còn ít nhất một bàn).
+ * Mỗi dòng chuyển được một phần số lượng. Dòng đã hủy giữ lại. Order nguồn chưa được thu tiền.
+ * Ở order đích, mỗi đợt gốc thành một đợt mới giữ nguyên giờ gửi bếp.
+ */
+export const splitOrder = async (
+    sourceId: number,
+    body: ISplitOrderBody,
+    scope: Scope,
+    audit: IAuditContext,
+): Promise<{ source: IOrderDetail; target: IOrderDetail } | number> => {
+    const actorId = audit.userId ?? null;
+    try {
+        let opened: IOpenedOrder | null = null;
+        let movedTables: number[] = [];
+        const result = await withTransaction(async () => {
+            let source: IOrder;
+            let target: IOrder;
+            if (body.target_order_id) {
+                ({ source, target } = await loadPair(sourceId, body.target_order_id, scope));
+                await checkNoPayments(source.id);
+            } else {
+                source = await loadOrder(sourceId, scope);
+                await checkNoPayments(source.id);
+                // Bàn lấy từ order nguồn: trả khỏi order nguồn trước, rồi mở order mới trên toàn bộ bàn đã chọn
+                const current = await orderRepository.getActiveTableIds(source.id);
+                const tableIds = [...new Set(body.table_ids ?? [])];
+                movedTables = tableIds.filter((t) => current.includes(t));
+                if (movedTables.length > 0 && movedTables.length >= current.length) return rollback(ORDER_ERROR.LAST_TABLE);
+                await orderRepository.releaseOrderTables(source.id, movedTables);
+                opened = await openOrder({
+                    restaurantId: source.restaurant_id,
+                    tableIds,
+                    guestCount: body.guest_count ?? 1,
+                    note: body.note ?? null,
+                    actorId,
+                    rates: { service_fee_rate: source.service_fee_rate ?? 0, tax_rate: source.tax_rate ?? 0 },
                 });
+                target = (await orderRepository.getOrderRow(opened.id, true))!;
             }
-            const order = await orderRepository.getOrderRow(line.order_id);
-            return { line, order: order! };
+
+            const targetTableId = (await orderRepository.getActiveTableIds(target.id))[0] ?? null;
+            const rounds = new Map<number, number>();
+            const moved: { kind: OrderLineKind; id: number; quantity: number; status: string }[] = [];
+            const sorted = [...body.lines].sort((a, b) => a.kind.localeCompare(b.kind) || a.id - b.id);
+            for (const ref of sorted) {
+                const line = await orderRepository.getLineForUpdate(ref.kind, ref.id);
+                if (!line || line.order_id !== source.id) return rollback(ORDER_ERROR.INVALID_SPLIT_LINES);
+                if (line.status === I.CANCELLED || ref.quantity > line.quantity) {
+                    return rollback(ORDER_ERROR.INVALID_SPLIT_LINES);
+                }
+                const roundId = line.round_id;
+                if (!rounds.has(roundId)) {
+                    const original = (await orderRepository.getRoundById(roundId))!;
+                    const created = await orderRepository.createRound({
+                        order_id: target.id,
+                        table_id: targetTableId,
+                        note: original.note,
+                        created_by: original.created_by,
+                        sent_at: original.sent_at,
+                    });
+                    rounds.set(roundId, created.id);
+                }
+                await orderRepository.moveLine(ref.kind, line.id, line.quantity, ref.quantity, target.id, rounds.get(roundId)!);
+                moved.push({ kind: ref.kind, id: line.id, quantity: ref.quantity, status: line.status });
+            }
+
+            await orderRepository.recomputeTotals(source.id);
+            await orderRepository.recomputeTotals(target.id);
+            const targetStatus = await markServing(target);
+
+            await writeAudit(audit, {
+                action: AUDIT_ACTION.ORDER_SPLIT,
+                entity_type: "order",
+                entity_id: source.id,
+                restaurant_id: source.restaurant_id,
+                before: { code: source.code, total: source.total },
+                after: {
+                    target_order_id: target.id,
+                    target_order_code: target.code,
+                    new_order: !body.target_order_id,
+                    tables: movedTables,
+                    lines: moved,
+                },
+            });
+            return { source, target: { ...target, status: targetStatus } };
         });
         if (typeof result === "number") return result;
 
-        const { line, order } = result;
-        emitToRestaurant(line.restaurant_id, "order_item:status_changed", {
-            restaurant_id: line.restaurant_id,
-            order_id: line.order_id,
-            line_id: lineId,
-            kind,
-            status: body.status,
-            station: line.station,
-        });
-        if (body.status === I.CANCELLED) emitOrderUpdated(order);
-        return { id: lineId, kind, order_id: line.order_id, status: body.status };
+        if (opened) emitOrderOpened(opened);
+        emitOrderUpdated(result.source);
+        emitOrderUpdated(result.target);
+        return { source: (await loadDetail(result.source.id))!, target: (await loadDetail(result.target.id))! };
     } catch (error) {
         return ORDER_ERROR.FAILED;
     }

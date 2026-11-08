@@ -29,6 +29,8 @@ export interface ICreateRoomBody {
     description?: string | null;
     status?: UsageStatusEnum;
     is_active?: boolean;
+    /** Chỉ dùng khi sửa: bỏ qua cảnh báo lịch đặt bàn sắp tới khi tạm khóa phòng */
+    force?: boolean;
     restaurant_id: number;
 }
 

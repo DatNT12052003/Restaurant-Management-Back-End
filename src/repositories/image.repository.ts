@@ -6,7 +6,7 @@ export const getImages = async (entityType: ImageEntityEnum, entityId: number): 
     const result = await db().query(
         `SELECT * FROM images
         WHERE entity_type = $1 AND entity_id = $2 AND deleted_at IS NULL
-        ORDER BY is_primary DESC, sort_order, id`,
+        ORDER BY sort_order, id`,
         [entityType, entityId],
     );
     return result.rows;
@@ -45,6 +45,16 @@ export const setPrimaryImage = async (image: IImage): Promise<void> => {
         [image.entity_type, image.entity_id],
     );
     await db().query("UPDATE images SET is_primary = true, updated_at = NOW() WHERE id = $1", [image.id]);
+};
+
+/** Đặt lại thứ tự theo vị trí trong `ids` (0, 1, 2...). Gọi trong transaction. */
+export const setSortOrder = async (ids: number[]): Promise<void> => {
+    await db().query(
+        `UPDATE images i SET sort_order = x.idx - 1, updated_at = NOW()
+        FROM unnest($1::int[]) WITH ORDINALITY AS x(id, idx)
+        WHERE i.id = x.id`,
+        [ids],
+    );
 };
 
 export const deleteImage = async (id: number): Promise<void> => {
