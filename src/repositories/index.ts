@@ -19,3 +19,5 @@ export * as reportRepository from "./report.repository";
 export * as auditLogRepository from "./audit-log.repository";
 export * as recipeRepository from "./recipe.repository";
 export * as closedDayRepository from "./closed-day.repository";
+export * as lotRepository from "./lot.repository";
+export * as purchasingRepository from "./purchasing.repository";

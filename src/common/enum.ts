@@ -191,6 +191,8 @@ export enum InventoryReceiptTypeEnum {
     EXPORT = "export",
     /** Kiểm kê: nhập số thực tế, hệ thống ghi chênh lệch */
     ADJUST = "adjust",
+    /** Hủy hàng hết hạn / hỏng (giai đoạn 11) */
+    DISPOSE = "dispose",
 }
 
 /** Loại biến động kho (consume: tự trừ theo định lượng món — chưa dùng) */
@@ -199,4 +201,37 @@ export enum InventoryTransactionTypeEnum {
     EXPORT = "export",
     ADJUST = "adjust",
     CONSUME = "consume",
+    DISPOSE = "dispose",
+    TRANSFER_OUT = "transfer_out",
+    TRANSFER_IN = "transfer_in",
+}
+
+/** Giai đoạn 11: mua hàng, chuyển kho, công nợ */
+export enum SupplierStatusEnum {
+    ACTIVE = "active",
+    INACTIVE = "inactive",
+}
+
+export enum PurchaseOrderStatusEnum {
+    DRAFT = "draft",
+    SENT = "sent",
+    /** Đã nhận một phần */
+    PARTIAL = "partial",
+    /** Đã nhận đủ mọi dòng */
+    RECEIVED = "received",
+    /** Đóng đơn khi còn thiếu (không chờ nhận thêm) */
+    CLOSED = "closed",
+    CANCELLED = "cancelled",
+}
+
+export enum StockTransferStatusEnum {
+    IN_TRANSIT = "in_transit",
+    RECEIVED = "received",
+    CANCELLED = "cancelled",
+}
+
+export enum SupplierBillStatusEnum {
+    UNPAID = "unpaid",
+    PARTIAL = "partial",
+    PAID = "paid",
 }

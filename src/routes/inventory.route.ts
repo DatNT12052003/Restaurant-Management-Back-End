@@ -9,6 +9,7 @@ import {
     createReceiptSchema,
     ingredientIdSchema,
     listInventoryTransactionsSchema,
+    listLotsSchema,
     listReceiptsSchema,
     receiptIdSchema,
     stockSchema,
@@ -23,6 +24,7 @@ const RECEIPT_PERMISSION: Record<InventoryReceiptTypeEnum, string> = {
     [InventoryReceiptTypeEnum.IMPORT]: InventoryPermissionEnum.IMPORT,
     [InventoryReceiptTypeEnum.EXPORT]: InventoryPermissionEnum.EXPORT,
     [InventoryReceiptTypeEnum.ADJUST]: InventoryPermissionEnum.ADJUST,
+    [InventoryReceiptTypeEnum.DISPOSE]: InventoryPermissionEnum.DISPOSE,
 };
 const checkReceiptPermission = (req: Request, res: Response, next: NextFunction) =>
     checkPermission(RECEIPT_PERMISSION[req.body.type as InventoryReceiptTypeEnum])(req, res, next);
@@ -49,6 +51,8 @@ inventoryRouter.post(
     restrictToRestaurant,
     inventoryController.createReceipt,
 );
+// Lô hàng còn lại và cảnh báo hạn dùng (giai đoạn 11)
+inventoryRouter.get("/lots", VIEW, validate(listLotsSchema), restrictToRestaurant, inventoryController.getLots);
 inventoryRouter.get(
     "/transactions",
     VIEW,

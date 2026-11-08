@@ -9,6 +9,12 @@ export const INVENTORY_ERROR = {
     /** Kiểm kê không có chênh lệch nào */
     NO_CHANGES: 5,
     RECEIPT_NOT_FOUND: 6,
+    /** Giai đoạn 11: nguyên liệu theo dõi hạn dùng phải có hạn dùng khi nhập */
+    EXPIRY_REQUIRED: 7,
+    /** Lô không tồn tại / không thuộc nguyên liệu, chi nhánh này */
+    LOT_NOT_FOUND: 8,
+    /** Nhà cung cấp không tồn tại hoặc đã ngừng giao dịch */
+    SUPPLIER_INVALID: 9,
 };
 
 export const INGREDIENT_ERROR = {

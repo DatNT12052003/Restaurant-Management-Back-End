@@ -1,7 +1,7 @@
 import { RECIPE_ERROR } from "~/common/error-code/recipe";
 import { rollback, withTransaction } from "~/config/db";
 import { IAuditContext, IConsumeResult, IDishRecipe, IMenuCosts, IRecipeBody, IServedLine } from "~/interfaces";
-import { inventoryRepository, recipeRepository, restaurantRepository } from "~/repositories";
+import { inventoryRepository, lotRepository, recipeRepository, restaurantRepository } from "~/repositories";
 import { writeAudit } from "~/utils/audit";
 
 /** `scope`: null = mọi nhà hàng (admin); số = chỉ nhà hàng này. */
@@ -146,6 +146,13 @@ export const consumeServedLines = async (lines: IServedLine[], actorId: number |
         }
         for (const [ingredientId, after] of qty) {
             await inventoryRepository.updateInventoryRow(restaurantId, ingredientId, after, Number(rows.get(ingredientId)!.avg_unit_cost));
+        }
+        // Giai đoạn 11: nguyên liệu theo dõi hạn dùng -> trừ lô hết hạn sớm nhất trước (FEFO)
+        const tracked = new Set(
+            (await inventoryRepository.getIngredientsByIds([...qty.keys()])).filter((g) => g.track_expiry).map((g) => g.id),
+        );
+        for (const n of own) {
+            if (tracked.has(n.ingredient_id)) await lotRepository.takeFromLots(restaurantId, n.ingredient_id, Number(n.quantity));
         }
         await inventoryRepository.insertTransactions(txns);
         for (const c of costs.values()) await recipeRepository.setLineCost(c.kind, c.id, round2(c.cost));

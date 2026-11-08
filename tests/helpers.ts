@@ -24,6 +24,10 @@ export const resetDatabase = async () => {
         await client.query("BEGIN");
         await client.query(`CREATE TABLE IF NOT EXISTS _test_role_permissions AS
             SELECT role_id, permission_id FROM role_permissions WHERE deleted_at IS NULL`);
+        // Quyền đã bị xóa (ví dụ chạy migration down rồi up lại khi phát triển): bỏ khỏi bản chụp
+        await client.query(`DELETE FROM _test_role_permissions s
+            WHERE NOT EXISTS (SELECT 1 FROM permissions p WHERE p.id = s.permission_id AND p.deleted_at IS NULL)
+                OR NOT EXISTS (SELECT 1 FROM roles r WHERE r.id = s.role_id AND r.deleted_at IS NULL)`);
         // Quyền mới do migration seed thêm sau lần chụp đầu (chưa vai trò nào có trong bản chụp): bổ sung vào bản chụp
         await client.query(`INSERT INTO _test_role_permissions (role_id, permission_id)
             SELECT rp.role_id, rp.permission_id FROM role_permissions rp

@@ -18,3 +18,4 @@ export { default as paymentRouter } from "./payment.route";
 export { inventoryRouter, ingredientRouter } from "./inventory.route";
 export { reportRouter, auditLogRouter } from "./report.route";
 export { default as recipeRouter } from "./recipe.route";
+export { payableRouter, purchaseOrderRouter, stockTransferRouter, supplierRouter } from "./purchasing.route";

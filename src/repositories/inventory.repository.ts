@@ -11,7 +11,7 @@ import {
 } from "~/interfaces";
 import { buildInsertQuery, buildSelectAllQuery, buildUpdateQuery } from "~/utils/query-builder";
 
-const INGREDIENT_FIELDS = ["name", "unit", "description", "status", "updated_at"];
+const INGREDIENT_FIELDS = ["name", "unit", "description", "status", "track_expiry", "shelf_life_days", "updated_at"];
 
 const withTotal = <T>(rows: (T & { total_count?: string })[]) => ({
     rows: rows.map(({ total_count, ...data }) => data as T),
@@ -114,7 +114,7 @@ export const getStock = async (
     const isLow = "(COALESCE(inv.quantity, 0) < 0 OR (COALESCE(inv.min_quantity, 0) > 0 AND COALESCE(inv.quantity, 0) <= inv.min_quantity))";
     if (options.lowOnly) where.push(isLow);
     const result = await db().query(
-        `SELECT i.id AS ingredient_id, i.name, i.unit, i.status,
+        `SELECT i.id AS ingredient_id, i.name, i.unit, i.status, i.track_expiry, i.shelf_life_days,
             COALESCE(inv.quantity, 0)::numeric(14,3) AS quantity,
             COALESCE(inv.min_quantity, 0)::numeric(14,3) AS min_quantity,
             COALESCE(inv.avg_unit_cost, 0)::numeric(14,2) AS avg_unit_cost,
@@ -176,7 +176,7 @@ export const setMinQuantity = async (restaurantId: number, ingredientId: number,
 // Phiếu kho và sổ biến động
 // ---------------------------------------------------------------------------
 
-const RECEIPT_PREFIX: Record<string, string> = { import: "NK", export: "XK", adjust: "KK" };
+const RECEIPT_PREFIX: Record<string, string> = { import: "NK", export: "XK", adjust: "KK", dispose: "HH" };
 
 /** Mã phiếu kế tiếp trong ngày: NK|XK|KK-R{id}-YYYYMMDD-NNN (giờ Việt Nam), khóa advisory theo nhà hàng */
 export const nextReceiptCode = async (type: string, restaurantId: number): Promise<string> => {
@@ -201,11 +201,13 @@ export const createReceipt = async (row: {
     note: string | null;
     total_value: number;
     created_by: number | null;
+    supplier_id?: number | null;
+    purchase_order_id?: number | null;
 }): Promise<{ id: number }> => {
     const { query, values } = buildInsertQuery(
         "inventory_receipts",
         row,
-        ["code", "restaurant_id", "type", "supplier", "reason", "note", "total_value", "created_by"],
+        ["code", "restaurant_id", "type", "supplier", "reason", "note", "total_value", "created_by", "supplier_id", "purchase_order_id"],
         ["id"],
     );
     const result = await db().query(query, values);
@@ -244,6 +246,7 @@ export const insertTransactions = async (
 
 const RECEIPT_RETURNING = [
     "r.*",
+    "(SELECT po.code FROM purchase_orders po WHERE po.id = r.purchase_order_id) AS purchase_order_code",
     "(SELECT u.full_name FROM users u WHERE u.id = r.created_by) AS created_by_name",
     "(SELECT COUNT(*)::int FROM inventory_transactions t WHERE t.receipt_id = r.id) AS line_count",
 ];
