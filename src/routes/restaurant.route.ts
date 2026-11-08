@@ -1,7 +1,15 @@
 import { Router } from "express";
 import { RestaurantPermissionEnum } from "~/common/permission-enum";
 import { restaurantController } from "~/controllers";
-import { authMiddleware, checkPermission, loadUserContext, restrictToRestaurant, validate } from "~/middlewares";
+import {
+    auditRoute,
+    authMiddleware,
+    checkPermission,
+    loadUserContext,
+    restrictToRestaurant,
+    validate,
+} from "~/middlewares";
+import { AUDIT_BEFORE } from "~/utils/audit-loaders";
 import { createRestaurantSchema, restaurantIdSchema, updateRestaurantSchema } from "~/schemas";
 
 const router = Router();
@@ -22,18 +30,21 @@ router.post(
     "/",
     checkPermission(RestaurantPermissionEnum.CREATE),
     validate(createRestaurantSchema),
+    auditRoute("restaurant.create", "restaurant", { restaurantId: (_r, d) => d?.id }),
     restaurantController.createRestaurant,
 );
 router.patch(
     "/:id",
     checkPermission(RestaurantPermissionEnum.UPDATE),
     validate(updateRestaurantSchema),
+    auditRoute("restaurant.update", "restaurant", { before: AUDIT_BEFORE.restaurant, restaurantId: (r) => r.params.id }),
     restaurantController.updateRestaurant,
 );
 router.delete(
     "/:id",
     checkPermission(RestaurantPermissionEnum.DELETE),
     validate(restaurantIdSchema),
+    auditRoute("restaurant.delete", "restaurant", { before: AUDIT_BEFORE.restaurant, restaurantId: (r) => r.params.id, isDelete: true }),
     restaurantController.deleteRestaurant,
 );
 

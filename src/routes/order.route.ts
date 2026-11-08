@@ -1,7 +1,14 @@
 import { Router } from "express";
 import { DiscountPermissionEnum, OrderPermissionEnum, PaymentPermissionEnum } from "~/common/permission-enum";
 import { discountController, orderController, paymentController } from "~/controllers";
-import { authMiddleware, checkAnyPermission, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import {
+    auditRoute,
+    authMiddleware,
+    checkAnyPermission,
+    checkPermission,
+    restrictToRestaurant,
+    validate,
+} from "~/middlewares";
 import {
     activeOrdersSchema,
     addOrderTablesSchema,
@@ -80,6 +87,7 @@ router.post(
     checkPermission(DiscountPermissionEnum.APPLY),
     validate(applyDiscountSchema),
     restrictToRestaurant,
+    auditRoute("order.discount_apply", "order"),
     discountController.applyDiscount,
 );
 router.delete(
@@ -87,6 +95,7 @@ router.delete(
     checkPermission(DiscountPermissionEnum.APPLY),
     validate(orderIdSchema),
     restrictToRestaurant,
+    auditRoute("order.discount_remove", "order"),
     discountController.removeDiscount,
 );
 router.post(

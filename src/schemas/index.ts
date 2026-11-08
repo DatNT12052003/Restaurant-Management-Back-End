@@ -10,3 +10,4 @@ export * from "./reservation.schema";
 export * from "./order.schema";
 export * from "./payment.schema";
 export * from "./inventory.schema";
+export * from "./report.schema";

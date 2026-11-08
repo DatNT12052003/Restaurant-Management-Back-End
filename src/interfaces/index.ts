@@ -17,3 +17,5 @@ export * from "./reservation.interface";
 export * from "./order.interface";
 export * from "./payment.interface";
 export * from "./inventory.interface";
+export * from "./audit.interface";
+export * from "./report.interface";

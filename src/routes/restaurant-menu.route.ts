@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { DishPermissionEnum } from "~/common/permission-enum";
 import { menuController } from "~/controllers";
-import { authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { auditRoute, authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
 import { restaurantMenuSchema, updateRestaurantMenuItemSchema } from "~/schemas";
 
 /**
@@ -24,6 +24,7 @@ router.patch(
     checkPermission(DishPermissionEnum.AVAILABILITY),
     validate(updateRestaurantMenuItemSchema),
     restrictToRestaurant,
+    auditRoute("restaurant_menu.dish_update", "dish", { entityId: (r) => r.params.itemId }),
     menuController.updateRestaurantDish,
 );
 router.patch(
@@ -31,6 +32,7 @@ router.patch(
     checkPermission(DishPermissionEnum.AVAILABILITY),
     validate(updateRestaurantMenuItemSchema),
     restrictToRestaurant,
+    auditRoute("restaurant_menu.combo_update", "combo", { entityId: (r) => r.params.itemId }),
     menuController.updateRestaurantCombo,
 );
 

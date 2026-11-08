@@ -462,12 +462,23 @@ export const getLineForUpdate = async (
     kind: OrderLineKind,
     id: number,
 ): Promise<
-    | { id: number; order_id: number; status: OrderItemStatusEnum; station: KitchenStationEnum; restaurant_id: number; order_status: OrderStatusEnum }
+    | {
+          id: number;
+          order_id: number;
+          status: OrderItemStatusEnum;
+          station: KitchenStationEnum;
+          quantity: number;
+          current_price: string;
+          restaurant_id: number;
+          order_status: OrderStatusEnum;
+          order_code: string;
+      }
     | undefined
 > => {
     const { table } = LINE_TABLE[kind];
     const result = await db().query(
-        `SELECT l.id, l.order_id, l.status, l.station, o.restaurant_id, o.status AS order_status
+        `SELECT l.id, l.order_id, l.status, l.station, l.quantity, l.current_price,
+            o.restaurant_id, o.status AS order_status, o.code AS order_code
         FROM ${table} l JOIN orders o ON o.id = l.order_id AND o.deleted_at IS NULL
         WHERE l.id = $1
         FOR UPDATE OF l, o`,

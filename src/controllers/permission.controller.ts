@@ -9,8 +9,13 @@ import {
 } from "~/common/responses/error";
 import { getSuccessResponse, successResponse } from "~/common/responses/success";
 import { permissionService } from "~/services";
+import { auditContext } from "~/utils/audit";
 
-const actorOf = (req: Request) => ({ roles: req.roles || [], permissions: req.permissions || [] });
+const actorOf = (req: Request) => ({
+    roles: req.roles || [],
+    permissions: req.permissions || [],
+    audit: auditContext(req),
+});
 
 const respondPermissionError = (req: Request, res: Response, code: number) => {
     switch (code) {

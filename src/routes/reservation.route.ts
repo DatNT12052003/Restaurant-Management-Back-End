@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { ReservationPermissionEnum } from "~/common/permission-enum";
 import { reservationController } from "~/controllers";
-import { authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { auditRoute, authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { AUDIT_BEFORE } from "~/utils/audit-loaders";
 import {
     availableTablesSchema,
     createReservationSchema,
@@ -55,6 +56,7 @@ router.post(
     checkPermission(ReservationPermissionEnum.CREATE),
     validate(createReservationSchema),
     restrictToRestaurant,
+    auditRoute("reservation.create", "reservation"),
     reservationController.createReservation,
 );
 router.patch(
@@ -62,6 +64,7 @@ router.patch(
     checkPermission(ReservationPermissionEnum.UPDATE),
     validate(updateReservationStatusSchema),
     restrictToRestaurant,
+    auditRoute("reservation.status_update", "reservation", { before: AUDIT_BEFORE.reservation }),
     reservationController.updateReservationStatus,
 );
 router.patch(
@@ -69,6 +72,7 @@ router.patch(
     checkPermission(ReservationPermissionEnum.UPDATE),
     validate(updateReservationSchema),
     restrictToRestaurant,
+    auditRoute("reservation.update", "reservation", { before: AUDIT_BEFORE.reservation }),
     reservationController.updateReservation,
 );
 router.delete(
@@ -76,6 +80,7 @@ router.delete(
     checkPermission(ReservationPermissionEnum.DELETE),
     validate(reservationIdSchema),
     restrictToRestaurant,
+    auditRoute("reservation.delete", "reservation", { before: AUDIT_BEFORE.reservation, isDelete: true }),
     reservationController.deleteReservation,
 );
 

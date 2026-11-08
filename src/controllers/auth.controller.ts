@@ -37,6 +37,7 @@ import { generateOTP } from "~/utils/common";
 import { createGuest } from "./user.controller";
 import { uploadToCloudinary } from "~/utils/cloudinary";
 import { CREATE_GUEST } from "~/common/error-code/user";
+import { auditContext } from "~/utils/audit";
 
 export const register = async (req: Request, res: Response) => {
     try {
@@ -76,7 +77,7 @@ export const login = async (req: Request, res: Response) => {
             return badRequestResponse(res, req.t("auth:username_password_required"));
         }
 
-        const authData = await authService.login(body);
+        const authData = await authService.login(body, auditContext(req));
 
         if (typeof authData === "number") {
             switch (authData) {
@@ -191,7 +192,7 @@ export const logout = async (req: Request, res: Response) => {
         if (!refresh_token) {
             return badRequestResponse(res, req.t("auth:refresh_token_required"));
         }
-        const result = await authService.logout(refresh_token);
+        const result = await authService.logout(refresh_token, auditContext(req));
         if (result === LOGOUT.LOGOUT_FAILED) {
             return badRequestResponse(res, req.t("auth:logout_failed"));
         }
@@ -217,7 +218,7 @@ export const logoutAll = async (req: Request, res: Response) => {
         if (!account_id) {
             return badRequestResponse(res, req.t("auth:invalid_token"));
         }
-        const result = await authService.logoutAll(account_id);
+        const result = await authService.logoutAll(account_id, auditContext(req));
         if (result === LOGOUT_ALL.LOGOUT_ALL_FAILED) {
             return badRequestResponse(res, req.t("auth:logout_all_failed"));
         }
@@ -317,7 +318,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         if (!body.reset_password_token || !body.new_password || !body.confirm_password) {
             return badRequestResponse(res, req.t("auth:reset_password_token_new_password_confirm_password_required"));
         }
-        const result = await authService.resetPassword(body);
+        const result = await authService.resetPassword(body, auditContext(req));
         if (typeof result === "number") {
             switch (result) {
                 case RESET_PASSWORD.INVALID_RESET_PASSWORD_TOKEN:
@@ -341,7 +342,7 @@ export const changePassword = async (req: Request, res: Response) => {
         if (!accountId) {
             return badRequestResponse(res, req.t("auth:invalid_token"));
         }
-        const authData = await authService.changePassword(accountId, req.body);
+        const authData = await authService.changePassword(accountId, req.body, auditContext(req));
         if (typeof authData === "number") {
             switch (authData) {
                 case CHANGE_PASSWORD.ACCOUNT_NOT_FOUND:

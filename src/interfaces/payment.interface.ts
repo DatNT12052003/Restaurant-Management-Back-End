@@ -171,11 +171,3 @@ export interface IInvoice {
     /** Còn phải thu (âm = thu thừa, cần hoàn) */
     remaining: number;
 }
-
-/** Ngữ cảnh ghi audit log */
-export interface IAuditContext {
-    accountId?: number | null;
-    userId?: number | null;
-    ip?: string | null;
-    userAgent?: string | null;
-}

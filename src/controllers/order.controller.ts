@@ -13,6 +13,7 @@ import { IGetQuery, OrderLineKind } from "~/interfaces";
 import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
 import { activeOrdersSchema, kitchenQueueSchema, listOrdersSchema } from "~/schemas";
 import { orderService } from "~/services";
+import { auditContext } from "~/utils/audit";
 import { buildListParams } from "~/utils/pagination";
 
 /** Mã lỗi service -> hàm response và key i18n */
@@ -110,7 +111,7 @@ export const completeOrder = (req: Request, res: Response) =>
 
 export const cancelOrder = (req: Request, res: Response) =>
     handle(req, res, "cancel", () =>
-        orderService.cancelOrder(id(req), req.body.cancel_reason, req.restaurantScope, req.user?.id),
+        orderService.cancelOrder(id(req), req.body.cancel_reason, req.restaurantScope, auditContext(req)),
     );
 
 const updateLine = (kind: OrderLineKind) => (req: Request, res: Response) =>
@@ -118,6 +119,7 @@ const updateLine = (kind: OrderLineKind) => (req: Request, res: Response) =>
         orderService.updateLineStatus(kind, id(req), req.body, req.restaurantScope, {
             id: req.user!.id,
             permissions: req.permissions || [],
+            audit: auditContext(req),
         }),
     );
 

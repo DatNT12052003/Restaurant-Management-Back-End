@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { DiscountPermissionEnum } from "~/common/permission-enum";
 import { discountController } from "~/controllers";
-import { authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { auditRoute, authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { AUDIT_BEFORE } from "~/utils/audit-loaders";
 import { createDiscountSchema, discountIdSchema, listDiscountsSchema, updateDiscountSchema } from "~/schemas";
 
 /**
@@ -31,6 +32,7 @@ router.post(
     checkPermission(DiscountPermissionEnum.CREATE),
     validate(createDiscountSchema),
     restrictToRestaurant,
+    auditRoute("discount.create", "discount"),
     discountController.createDiscount,
 );
 router.patch(
@@ -38,6 +40,7 @@ router.patch(
     checkPermission(DiscountPermissionEnum.UPDATE),
     validate(updateDiscountSchema),
     restrictToRestaurant,
+    auditRoute("discount.update", "discount", { before: AUDIT_BEFORE.discount }),
     discountController.updateDiscount,
 );
 router.delete(
@@ -45,6 +48,7 @@ router.delete(
     checkPermission(DiscountPermissionEnum.DELETE),
     validate(discountIdSchema),
     restrictToRestaurant,
+    auditRoute("discount.delete", "discount", { before: AUDIT_BEFORE.discount, isDelete: true }),
     discountController.deleteDiscount,
 );
 

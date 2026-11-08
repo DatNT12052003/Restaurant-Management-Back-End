@@ -1,0 +1,5 @@
+{
+    "get_successfully": "Lấy nhật ký hoạt động thành công",
+    "get_failed": "Lấy nhật ký hoạt động thất bại",
+    "not_found": "Không tìm thấy dòng nhật ký"
+}

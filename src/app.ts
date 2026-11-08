@@ -30,6 +30,8 @@ import {
     paymentRouter,
     inventoryRouter,
     ingredientRouter,
+    reportRouter,
+    auditLogRouter,
 } from "~/routes";
 
 const app = express();
@@ -69,6 +71,8 @@ app.use("/api/discounts", discountRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/inventory", inventoryRouter);
 app.use("/api/ingredients", ingredientRouter);
+app.use("/api/reports", reportRouter);
+app.use("/api/audit-logs", auditLogRouter);
 
 app.use(errorHandler);
 
