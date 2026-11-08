@@ -131,6 +131,16 @@ export enum IngredientPermissionEnum {
     DELETE = "ingredient.delete",
 }
 
+/** Báo cáo và dashboard (manager chỉ xem chi nhánh của mình) */
+export enum ReportPermissionEnum {
+    VIEW = "report.view",
+}
+
+/** Nhật ký hoạt động: chỉ xem, không có quyền sửa / xóa */
+export enum AuditLogPermissionEnum {
+    VIEW = "audit_log.view",
+}
+
 /** Toàn bộ permission của hệ thống, dùng cho seed và kiểm tra. */
 export const ALL_PERMISSIONS: string[] = [
     UserPermissionEnum,
@@ -151,4 +161,6 @@ export const ALL_PERMISSIONS: string[] = [
     DiscountPermissionEnum,
     InventoryPermissionEnum,
     IngredientPermissionEnum,
+    ReportPermissionEnum,
+    AuditLogPermissionEnum,
 ].flatMap((group) => Object.values(group) as string[]);

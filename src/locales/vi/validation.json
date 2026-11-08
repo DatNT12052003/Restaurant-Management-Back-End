@@ -62,6 +62,9 @@
         },
         "percent": {
             "invalid": "Tỷ lệ phải từ 0 đến 100"
+        },
+        "time": {
+            "invalid": "Giờ không hợp lệ (HH:mm)"
         }
     },
     "room": {
@@ -199,6 +202,14 @@
         },
         "reason": {
             "required": "Phiếu xuất và phiếu kiểm kê phải có lý do"
+        }
+    },
+    "report": {
+        "range": {
+            "invalid": "Khoảng thời gian không hợp lệ (tối đa 366 ngày)"
+        },
+        "group_by": {
+            "invalid": "Cách nhóm không hợp lệ"
         }
     }
 }

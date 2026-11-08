@@ -1,5 +1,6 @@
 import { KitchenStationEnum, OrderItemStatusEnum, OrderStatusEnum, RoomTypeEnum, UsageStatusEnum } from "~/common/enum";
 import { IPagination } from "./common.interface";
+import { IAuditContext } from "./audit.interface";
 import { IPayment } from "./payment.interface";
 
 /** Món lẻ (`dish`) hoặc combo trong order */
@@ -145,6 +146,8 @@ export interface IUpdateLineStatusBody {
 export interface IOrderActor {
     id: number;
     permissions: string[];
+    /** Ngữ cảnh ghi audit log khi hủy món */
+    audit?: IAuditContext;
 }
 
 /** Một dòng trên màn hình bếp / pha chế */

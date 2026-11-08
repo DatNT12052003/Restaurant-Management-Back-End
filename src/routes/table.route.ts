@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { TablePermissionEnum } from "~/common/permission-enum";
 import { tableController } from "~/controllers";
-import { authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { auditRoute, authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { AUDIT_BEFORE } from "~/utils/audit-loaders";
 import { createTableSchema, tableIdSchema, updateTableSchema } from "~/schemas";
 
 const router = Router();
@@ -22,6 +23,7 @@ router.post(
     checkPermission(TablePermissionEnum.CREATE),
     validate(createTableSchema),
     restrictToRestaurant,
+    auditRoute("table.create", "table"),
     tableController.createTable,
 );
 // Cũng dùng để đổi trạng thái bàn: PATCH /tables/:id { status }
@@ -30,6 +32,7 @@ router.patch(
     checkPermission(TablePermissionEnum.UPDATE),
     validate(updateTableSchema),
     restrictToRestaurant,
+    auditRoute("table.update", "table", { before: AUDIT_BEFORE.table }),
     tableController.updateTable,
 );
 router.delete(
@@ -37,6 +40,7 @@ router.delete(
     checkPermission(TablePermissionEnum.DELETE),
     validate(tableIdSchema),
     restrictToRestaurant,
+    auditRoute("table.delete", "table", { before: AUDIT_BEFORE.table, isDelete: true }),
     tableController.deleteTable,
 );
 

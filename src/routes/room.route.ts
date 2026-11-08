@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { RoomPermissionEnum } from "~/common/permission-enum";
 import { roomController } from "~/controllers";
-import { authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { auditRoute, authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { AUDIT_BEFORE } from "~/utils/audit-loaders";
 import { createRoomSchema, roomIdSchema, updateRoomSchema } from "~/schemas";
 
 const router = Router();
@@ -22,6 +23,7 @@ router.post(
     checkPermission(RoomPermissionEnum.CREATE),
     validate(createRoomSchema),
     restrictToRestaurant,
+    auditRoute("room.create", "room"),
     roomController.createRoom,
 );
 router.patch(
@@ -29,6 +31,7 @@ router.patch(
     checkPermission(RoomPermissionEnum.UPDATE),
     validate(updateRoomSchema),
     restrictToRestaurant,
+    auditRoute("room.update", "room", { before: AUDIT_BEFORE.room }),
     roomController.updateRoom,
 );
 router.delete(
@@ -36,6 +39,7 @@ router.delete(
     checkPermission(RoomPermissionEnum.DELETE),
     validate(roomIdSchema),
     restrictToRestaurant,
+    auditRoute("room.delete", "room", { before: AUDIT_BEFORE.room, isDelete: true }),
     roomController.deleteRoom,
 );
 

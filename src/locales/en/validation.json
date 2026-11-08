@@ -62,6 +62,9 @@
         },
         "percent": {
             "invalid": "The rate must be between 0 and 100"
+        },
+        "time": {
+            "invalid": "Invalid time (HH:mm)"
         }
     },
     "room": {
@@ -199,6 +202,14 @@
         },
         "reason": {
             "required": "Stock issues and stocktakes need a reason"
+        }
+    },
+    "report": {
+        "range": {
+            "invalid": "Invalid date range (max 366 days)"
+        },
+        "group_by": {
+            "invalid": "Invalid grouping"
         }
     }
 }

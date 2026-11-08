@@ -2,13 +2,33 @@ import { RolesEnum } from "~/common/enum";
 import { PERMISSION_ERROR } from "~/common/error-code/permission";
 import { canAssignRole, isAdmin } from "~/common/role-level";
 import { withTransaction } from "~/config/db";
-import { IPermission, IRoleWithPermissions } from "~/interfaces";
-import { permissionRepository, roleRepository } from "~/repositories";
+import { IAuditContext, IPermission, IRoleWithPermissions } from "~/interfaces";
+import { permissionRepository, roleRepository, userRepository } from "~/repositories";
+import { AUDIT_ACTION, writeAudit } from "~/utils/audit";
 
 interface IActor {
     roles: string[];
     permissions: string[];
+    audit?: IAuditContext;
 }
+
+/** Ghi nhật ký thay đổi quyền (đặc tả 6.1), trong transaction của thao tác. Không có thay đổi thì không ghi. */
+const auditPermissionChange = async (
+    actor: IActor,
+    entry: { action: string; entity_type: string; entity_id: number; restaurant_id: number | null },
+    current: string[],
+    next: string[],
+) => {
+    const unique = [...new Set(next)].sort();
+    const added = unique.filter((p) => !current.includes(p));
+    const removed = current.filter((p) => !unique.includes(p));
+    if (!added.length && !removed.length) return;
+    await writeAudit(actor.audit ?? {}, {
+        ...entry,
+        before: { permissions: [...current].sort() },
+        after: { permissions: unique, added, removed },
+    });
+};
 
 /**
  * So sánh tập quyền hiện tại với tập quyền mới. Người thao tác chỉ được thêm/gỡ những quyền mà chính mình đang có
@@ -82,6 +102,13 @@ export const updateRolePermissions = async (
 
             await permissionRepository.addRolePermissions(roleId, diff.addIds);
             await permissionRepository.removeRolePermissions(roleId, diff.removeIds);
+            // Vai trò áp dụng cho cả chuỗi -> không gắn nhà hàng
+            await auditPermissionChange(
+                actor,
+                { action: AUDIT_ACTION.ROLE_PERMISSIONS, entity_type: "role", entity_id: roleId, restaurant_id: null },
+                current,
+                permissions,
+            );
             return { role_id: roleId, permissions: [...new Set(permissions)].sort() };
         });
     } catch (error) {
@@ -117,6 +144,18 @@ export const updateUserPermissions = async (
 
             await permissionRepository.addUserPermissions(userId, diff.addIds);
             await permissionRepository.removeUserPermissions(userId, diff.removeIds);
+            const target = await userRepository.getUserById(userId);
+            await auditPermissionChange(
+                actor,
+                {
+                    action: AUDIT_ACTION.USER_PERMISSIONS,
+                    entity_type: "user",
+                    entity_id: userId,
+                    restaurant_id: target?.restaurant_id ?? null,
+                },
+                current,
+                permissions,
+            );
             return { user_id: userId, direct_permissions: [...new Set(permissions)].sort() };
         });
     } catch (error) {

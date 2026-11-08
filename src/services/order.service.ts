@@ -6,6 +6,7 @@ import {
     ICreateOrderBody,
     ICreateRoundBody,
     IGetOrders,
+    IAuditContext,
     IKitchenLine,
     IOrder,
     IOrderActor,
@@ -26,6 +27,7 @@ import {
 import { OPEN_ORDER_STATUSES } from "~/repositories/order.repository";
 import { emitToRestaurant } from "~/sockets";
 import { buildPagination } from "~/utils/pagination";
+import { AUDIT_ACTION, writeAudit } from "~/utils/audit";
 import { inScope } from "./room.service";
 
 /** `scope`: null = mọi nhà hàng (admin); số = chỉ nhà hàng này. */
@@ -552,7 +554,22 @@ export const updateLineStatus = async (
                 row.cancel_reason = body.cancel_reason ?? null;
             }
             await orderRepository.updateLine(kind, lineId, row);
-            if (body.status === I.CANCELLED) await orderRepository.recomputeTotals(line.order_id);
+            if (body.status === I.CANCELLED) {
+                await orderRepository.recomputeTotals(line.order_id);
+                await writeAudit(actor.audit ?? { userId: actor.id }, {
+                    action: AUDIT_ACTION.ORDER_ITEM_CANCEL,
+                    entity_type: kind === "dish" ? "order_item" : "order_combo",
+                    entity_id: lineId,
+                    restaurant_id: line.restaurant_id,
+                    before: { status: line.status, quantity: line.quantity, current_price: line.current_price },
+                    after: {
+                        status: I.CANCELLED,
+                        cancel_reason: body.cancel_reason ?? null,
+                        order_id: line.order_id,
+                        order_code: line.order_code,
+                    },
+                });
+            }
             const order = await orderRepository.getOrderRow(line.order_id);
             return { line, order: order! };
         });
@@ -676,8 +693,9 @@ export const cancelOrder = async (
     id: number,
     reason: string | null | undefined,
     scope: Scope,
-    actorId: number | undefined,
+    audit: IAuditContext,
 ): Promise<IOrderDetail | number> => {
+    const actorId = audit.userId ?? undefined;
     try {
         const result = await withTransaction(async () => {
             const order = await loadOrder(id, scope);
@@ -689,6 +707,14 @@ export const cancelOrder = async (
             if (removed) await discountRepository.changeUsage(removed.discount_id, -1);
             await orderRepository.cancelOpenLines(id, actorId ?? null, reason ?? null);
             await orderRepository.recomputeTotals(id);
+            await writeAudit(audit, {
+                action: AUDIT_ACTION.ORDER_CANCEL,
+                entity_type: "order",
+                entity_id: id,
+                restaurant_id: order.restaurant_id,
+                before: { code: order.code, status: order.status, total: order.total, discount_removed: removed?.discount_id ?? null },
+                after: { status: OrderStatusEnum.CANCELLED, cancel_reason: reason ?? null },
+            });
             return {
                 order,
                 closed: await closeOrder(order, OrderStatusEnum.CANCELLED, { actorId, reason }),

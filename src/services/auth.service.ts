@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import {
     IAccount,
+    IAuditContext,
     IAuth,
     IChangePasswordBody,
     ICreateGuestBody,
@@ -64,6 +65,7 @@ import {
 } from "~/common/error-code/auth";
 import { UserStatusEnum } from "~/common/enum";
 import { userService } from ".";
+import { AUDIT_ACTION, writeAuditSafe } from "~/utils/audit";
 
 export const register = async (body: ICreateGuestBody): Promise<{ user: IUser; account: IAccount } | number> => {
     try {
@@ -73,23 +75,44 @@ export const register = async (body: ICreateGuestBody): Promise<{ user: IUser; a
         return REGISTER.REGISTER_FAILED;
     }
 };
-export const login = async (body: ILoginBody): Promise<IAuth | number> => {
+/** Đăng nhập; mọi lần thành công / thất bại đều ghi audit log (đặc tả 4.11). */
+export const login = async (body: ILoginBody, ctx: IAuditContext = {}): Promise<IAuth | number> => {
     try {
         const account = await accountRepository.getAccountByUsername(body.username);
         if (!account) {
+            await writeAuditSafe(ctx, {
+                action: AUDIT_ACTION.LOGIN_FAILED,
+                entity_type: "account",
+                restaurant_id: null,
+                actor_name: body.username,
+                after: { reason: "not_exist", username: body.username },
+            });
             return LOGIN.NOT_EXIST;
         }
 
+        const actor = { ...ctx, accountId: account.id };
+        const failed = (reason: string) =>
+            writeAuditSafe(actor, {
+                action: AUDIT_ACTION.LOGIN_FAILED,
+                entity_type: "account",
+                entity_id: account.id,
+                after: { reason },
+            });
+
         const isPasswordValid = bcrypt.compareSync(body.password, account.hash_password);
         if (!isPasswordValid) {
+            await failed("invalid_password");
             return LOGIN.INVALID_USERNAME_PASSWORD;
         }
 
         if (await isAccountDisabled(account.id)) {
+            await failed("account_disabled");
             return LOGIN.ACCOUNT_DISABLED;
         }
 
-        return await issueTokens(account);
+        const auth = await issueTokens(account);
+        await writeAuditSafe(actor, { action: AUDIT_ACTION.LOGIN, entity_type: "account", entity_id: account.id });
+        return auth;
     } catch (error) {
         return LOGIN.LOGIN_FAILED;
     }
@@ -160,13 +183,19 @@ export const refreshToken = async (refreshToken: string): Promise<IAuth | number
     }
 };
 
-export const logout = async (refresh_token: string): Promise<number> => {
+export const logout = async (refresh_token: string, ctx: IAuditContext = {}): Promise<number> => {
     try {
         const payload = verifyRefreshToken(refresh_token);
         if (payload && payload.jti) {
             const storedToken = await tokenRepository.getTokenByJti(payload.jti);
             if (storedToken) {
                 await tokenRepository.revokeToken(storedToken.id);
+                if (!storedToken.revoked) {
+                    await writeAuditSafe(
+                        { ...ctx, accountId: payload.account_id },
+                        { action: AUDIT_ACTION.LOGOUT, entity_type: "account", entity_id: payload.account_id },
+                    );
+                }
             }
         }
         return LOGOUT.LOGOUT_SUCCESS;
@@ -175,16 +204,20 @@ export const logout = async (refresh_token: string): Promise<number> => {
     }
 };
 
-export const logoutAll = async (account_id: number): Promise<number> => {
+export const logoutAll = async (account_id: number, ctx: IAuditContext = {}): Promise<number> => {
     try {
         await tokenRepository.revokeAllRefreshTokensByAccountId(account_id);
+        await writeAuditSafe(
+            { ...ctx, accountId: account_id },
+            { action: AUDIT_ACTION.LOGOUT_ALL, entity_type: "account", entity_id: account_id },
+        );
         return LOGOUT_ALL.LOGOUT_ALL_SUCCESS;
     } catch (error) {
         return LOGOUT_ALL.LOGOUT_ALL_FAILED;
     }
 };
 
-export const resetPassword = async (body: IUpdatePasswordBody): Promise<number> => {
+export const resetPassword = async (body: IUpdatePasswordBody, ctx: IAuditContext = {}): Promise<number> => {
     try {
         const account = verifyResetPasswordToken(body.reset_password_token);
 
@@ -212,6 +245,10 @@ export const resetPassword = async (body: IUpdatePasswordBody): Promise<number> 
         await accountRepository.updateAccountPassword({ payload, id: account.account_id });
 
         await tokenRepository.revokeAllTokensByAccountId(account.account_id);
+        await writeAuditSafe(
+            { ...ctx, accountId: account.account_id },
+            { action: AUDIT_ACTION.RESET_PASSWORD, entity_type: "account", entity_id: account.account_id },
+        );
         return RESET_PASSWORD.RESET_PASSWORD_SUCCESS;
     } catch (error) {
         return RESET_PASSWORD.RESET_PASSWORD_FAILED;
@@ -222,7 +259,11 @@ export const resetPassword = async (body: IUpdatePasswordBody): Promise<number> 
  * Đổi mật khẩu khi đang đăng nhập. Thu hồi mọi refresh token cũ (đăng xuất các thiết bị khác)
  * và cấp token mới cho phiên hiện tại.
  */
-export const changePassword = async (accountId: number, body: IChangePasswordBody): Promise<IAuth | number> => {
+export const changePassword = async (
+    accountId: number,
+    body: IChangePasswordBody,
+    ctx: IAuditContext = {},
+): Promise<IAuth | number> => {
     try {
         const account = await accountRepository.getAccountById(accountId);
         if (!account) return CHANGE_PASSWORD.ACCOUNT_NOT_FOUND;
@@ -238,7 +279,12 @@ export const changePassword = async (accountId: number, body: IChangePasswordBod
             id: accountId,
         });
         await tokenRepository.revokeAllRefreshTokensByAccountId(accountId);
-        return await issueTokens(account);
+        const auth = await issueTokens(account);
+        await writeAuditSafe(
+            { ...ctx, accountId },
+            { action: AUDIT_ACTION.CHANGE_PASSWORD, entity_type: "account", entity_id: accountId },
+        );
+        return auth;
     } catch (error) {
         return CHANGE_PASSWORD.FAILED;
     }

@@ -1,0 +1,5 @@
+{
+    "get_successfully": "Audit logs fetched successfully",
+    "get_failed": "Failed to fetch audit logs",
+    "not_found": "Audit log entry not found"
+}

@@ -7,6 +7,7 @@ import {
 } from "~/common/permission-enum";
 import { permissionController, userController } from "~/controllers";
 import {
+    auditRoute,
     authMiddleware,
     canManageTargetUser,
     checkPermission,
@@ -15,6 +16,7 @@ import {
     validate,
     validateCreate,
 } from "~/middlewares";
+import { AUDIT_BEFORE, NESTED_USER } from "~/utils/audit-loaders";
 import {
     createEmployeeSchema,
     createGuestSchema,
@@ -40,6 +42,7 @@ router.post(
     uploadAvatar,
     validateCreate,
     validate(createUserSchema),
+    auditRoute("user.create", "user"),
     userController.createUser,
 );
 router.post(
@@ -48,6 +51,7 @@ router.post(
     uploadAvatar,
     validateCreate,
     validate(createUserWithAccountSchema),
+    auditRoute("user.create", "user", NESTED_USER),
     userController.createUserWithAccount,
 );
 // Hồ sơ cá nhân: của chính mình hoặc của người cấp dưới
@@ -57,6 +61,7 @@ router.patch(
     uploadAvatar,
     validate(updateProfileSchema),
     canManageTargetUser({ allowSelf: true }),
+    auditRoute("user.update", "user", { before: AUDIT_BEFORE.user }),
     userController.updateUser,
 );
 router.patch(
@@ -64,6 +69,7 @@ router.patch(
     checkPermission(UserPermissionEnum.DELETE),
     idParams,
     canManageTargetUser(),
+    auditRoute("user.delete", "user", { before: AUDIT_BEFORE.user, isDelete: true }),
     userController.deleteUser,
 );
 
@@ -96,6 +102,7 @@ router.post(
     uploadAvatar, // multipart: req.body chỉ có sau multer
     validate(createEmployeeSchema),
     restrictToRestaurant,
+    auditRoute("employee.create", "user", NESTED_USER),
     userController.createEmployee,
 );
 router.patch(
@@ -105,6 +112,7 @@ router.patch(
     validate(updateEmployeeSchema),
     restrictToRestaurant,
     canManageTargetUser({ targetKind: "employee" }),
+    auditRoute("employee.update", "user", { ...NESTED_USER, before: AUDIT_BEFORE.employee }),
     userController.updateEmployee,
 );
 router.patch(
@@ -112,6 +120,7 @@ router.patch(
     checkPermission(EmployeePermissionEnum.DELETE),
     idParams,
     canManageTargetUser({ targetKind: "employee" }),
+    auditRoute("employee.delete", "user", { before: AUDIT_BEFORE.user, isDelete: true }),
     userController.deleteEmployee,
 );
 
@@ -122,6 +131,7 @@ router.post(
     checkPermission(GuestPermissionEnum.CREATE),
     uploadAvatar,
     validate(createGuestSchema),
+    auditRoute("guest.create", "user", { ...NESTED_USER, restaurantId: () => null }),
     userController.createGuest,
 );
 router.patch(
@@ -130,6 +140,7 @@ router.patch(
     uploadAvatar,
     validate(updateGuestSchema),
     canManageTargetUser({ targetKind: "guest" }),
+    auditRoute("guest.update", "user", { ...NESTED_USER, before: AUDIT_BEFORE.guest, restaurantId: () => null }),
     userController.updateGuest,
 );
 router.patch(
@@ -137,6 +148,7 @@ router.patch(
     checkPermission(GuestPermissionEnum.DELETE),
     idParams,
     canManageTargetUser({ targetKind: "guest" }),
+    auditRoute("guest.delete", "user", { before: AUDIT_BEFORE.user, restaurantId: () => null, isDelete: true }),
     userController.deleteGuest,
 );
 

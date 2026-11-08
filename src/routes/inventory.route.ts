@@ -2,7 +2,8 @@ import { NextFunction, Request, Response, Router } from "express";
 import { InventoryReceiptTypeEnum } from "~/common/enum";
 import { IngredientPermissionEnum, InventoryPermissionEnum } from "~/common/permission-enum";
 import { inventoryController } from "~/controllers";
-import { authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { auditRoute, authMiddleware, checkPermission, restrictToRestaurant, validate } from "~/middlewares";
+import { AUDIT_BEFORE } from "~/utils/audit-loaders";
 import {
     createIngredientSchema,
     createReceiptSchema,
@@ -36,6 +37,7 @@ inventoryRouter.patch(
     checkPermission(InventoryPermissionEnum.ADJUST),
     validate(updateStockSettingSchema),
     restrictToRestaurant,
+    auditRoute("inventory.set_min", "ingredient", { entityId: (r) => r.body.ingredient_id }),
     inventoryController.setMinQuantity,
 );
 inventoryRouter.get("/receipts", VIEW, validate(listReceiptsSchema), restrictToRestaurant, inventoryController.getReceipts);
@@ -64,17 +66,20 @@ ingredientRouter.post(
     "/",
     checkPermission(IngredientPermissionEnum.CREATE),
     validate(createIngredientSchema),
+    auditRoute("ingredient.create", "ingredient"),
     inventoryController.createIngredient,
 );
 ingredientRouter.patch(
     "/:id",
     checkPermission(IngredientPermissionEnum.UPDATE),
     validate(updateIngredientSchema),
+    auditRoute("ingredient.update", "ingredient", { before: AUDIT_BEFORE.ingredient }),
     inventoryController.updateIngredient,
 );
 ingredientRouter.delete(
     "/:id",
     checkPermission(IngredientPermissionEnum.DELETE),
     validate(ingredientIdSchema),
+    auditRoute("ingredient.delete", "ingredient", { before: AUDIT_BEFORE.ingredient, isDelete: true }),
     inventoryController.deleteIngredient,
 );

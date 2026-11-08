@@ -16,3 +16,5 @@ export * as orderService from "./order.service";
 export * as discountService from "./discount.service";
 export * as paymentService from "./payment.service";
 export * as inventoryService from "./inventory.service";
+export * as reportService from "./report.service";
+export * as auditLogService from "./audit-log.service";

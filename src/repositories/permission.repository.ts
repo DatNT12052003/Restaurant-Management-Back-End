@@ -81,10 +81,12 @@ export const getDirectPermissionsByUserId = async (userId: number): Promise<stri
 
 export const addRolePermissions = async (roleId: number, permissionIds: number[]): Promise<void> => {
     if (permissionIds.length === 0) return;
-    await db().query("INSERT INTO role_permissions (role_id, permission_id) SELECT $1, unnest($2::int[])", [
-        roleId,
-        permissionIds,
-    ]);
+    // Unique index (role_id, permission_id) gồm cả dòng đã xóa mềm -> cấp lại quyền đã gỡ thì khôi phục dòng cũ
+    await db().query(
+        `INSERT INTO role_permissions (role_id, permission_id) SELECT $1, unnest($2::int[])
+        ON CONFLICT (role_id, permission_id) DO UPDATE SET deleted_at = NULL, updated_at = NOW()`,
+        [roleId, permissionIds],
+    );
 };
 
 export const removeRolePermissions = async (roleId: number, permissionIds: number[]): Promise<void> => {
@@ -98,10 +100,12 @@ export const removeRolePermissions = async (roleId: number, permissionIds: numbe
 
 export const addUserPermissions = async (userId: number, permissionIds: number[]): Promise<void> => {
     if (permissionIds.length === 0) return;
-    await db().query("INSERT INTO user_permissions (user_id, permission_id) SELECT $1, unnest($2::int[])", [
-        userId,
-        permissionIds,
-    ]);
+    // Unique index (user_id, permission_id) gồm cả dòng đã xóa mềm -> cấp lại quyền đã gỡ thì khôi phục dòng cũ
+    await db().query(
+        `INSERT INTO user_permissions (user_id, permission_id) SELECT $1, unnest($2::int[])
+        ON CONFLICT (user_id, permission_id) DO UPDATE SET deleted_at = NULL, updated_at = NOW()`,
+        [userId, permissionIds],
+    );
 };
 
 export const removeUserPermissions = async (userId: number, permissionIds: number[]): Promise<void> => {
