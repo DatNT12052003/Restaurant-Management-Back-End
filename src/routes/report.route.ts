@@ -17,6 +17,9 @@ reportRouter.get("/top-items", VIEW, query, restrictToRestaurant, reportControll
 reportRouter.get("/table-occupancy", VIEW, query, restrictToRestaurant, reportController.getTableOccupancy);
 reportRouter.get("/inventory", VIEW, query, restrictToRestaurant, reportController.getInventoryReport);
 reportRouter.get("/tips", VIEW, query, restrictToRestaurant, reportController.getTipsReport);
+// Giai đoạn 10: giá vốn, lãi gộp; tiêu hao lý thuyết so với kiểm kê
+reportRouter.get("/profit", VIEW, query, restrictToRestaurant, reportController.getProfitReport);
+reportRouter.get("/ingredient-variance", VIEW, query, restrictToRestaurant, reportController.getVarianceReport);
 
 /** Nhật ký hoạt động (đặc tả 4.11): chỉ đọc, không có API sửa / xóa */
 export const auditLogRouter = Router();

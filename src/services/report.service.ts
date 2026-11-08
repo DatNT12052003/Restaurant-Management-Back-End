@@ -8,7 +8,11 @@ import {
     IReportTotals,
     IRevenuePoint,
     IRevenueReport,
+    IProfitReport,
+    IProfitTotals,
     ITipsReport,
+    IVarianceReport,
+    RevenueBasis,
     ITopItemsReport,
     ReportGroupBy,
 } from "~/interfaces";
@@ -78,13 +82,17 @@ export const getOverview = async (r: IReportRange): Promise<IReportOverview | nu
 };
 
 /** Doanh thu theo kỳ (ngày / tuần / tháng), theo nhà hàng và theo phương thức thanh toán */
-export const getRevenue = async (r: IReportRange, groupBy: ReportGroupBy): Promise<IRevenueReport | number> => {
+export const getRevenue = async (
+    r: IReportRange,
+    groupBy: ReportGroupBy,
+    basis: RevenueBasis = "paid",
+): Promise<IRevenueReport | number> => {
     try {
         const [periods, payments, orders, methods] = await Promise.all([
             reportRepository.getPeriods(r, groupBy),
-            reportRepository.getPaymentsByPeriod(r, groupBy),
+            reportRepository.getPaymentsByPeriod(r, groupBy, basis),
             reportRepository.getOrdersByPeriod(r, groupBy),
-            reportRepository.getPaymentsByMethod(r),
+            reportRepository.getPaymentsByMethod(r, basis),
         ]);
 
         const series = new Map<string, IRevenuePoint>(
@@ -134,6 +142,7 @@ export const getRevenue = async (r: IReportRange, groupBy: ReportGroupBy): Promi
 
         return {
             group_by: groupBy,
+            basis,
             series: list,
             series_by_restaurant: [...seriesByRestaurant.values()].map((e) => ({ ...e, net: round2(e.net) })),
             by_restaurant: [...byRestaurant.entries()]
@@ -187,28 +196,37 @@ export const getTopItems = async (r: IReportRange, limit: number, category: stri
     }
 };
 
-const occupancyGroup = (tableCount: number, occupied: number, available: number, sessions: number): IOccupancyGroup => ({
+const occupancyGroup = (
+    tableCount: number,
+    occupied: number,
+    available: number,
+    sessions: number,
+    outside = 0,
+): IOccupancyGroup => ({
     table_count: tableCount,
     occupied_hours: round2(occupied),
     available_hours: round2(available),
+    outside_hours: round2(outside),
     sessions,
     occupancy_rate: available > 0 ? Math.round((occupied / available) * 10000) / 10000 : null,
     turnover: tableCount > 0 ? round2(sessions / tableCount) : null,
 });
 
 /**
- * Tỷ lệ lấp đầy bàn = giờ-bàn có khách / (số bàn × số giờ mở cửa mỗi ngày × số ngày đã qua).
- * Giờ có khách tính theo lượt ngồi bàn của order (kể cả ngoài giờ mở cửa), nên tỷ lệ có thể vượt 100%.
+ * Tỷ lệ lấp đầy bàn = giờ-bàn có khách TRONG giờ mở cửa / (số bàn × tổng giờ mở cửa đã qua, trừ ngày nghỉ).
+ * Giờ có khách ngoài giờ mở cửa hoặc vào ngày nghỉ được báo riêng (`outside_hours`), nên tỷ lệ không vượt 100%.
  */
 export const getTableOccupancy = async (r: IReportRange): Promise<IOccupancyReport | number> => {
     try {
-        const [days, rooms, hours, byHour] = await Promise.all([
+        const [days, rooms, hours, byHour, openHours] = await Promise.all([
             reportRepository.getElapsedDays(r),
             reportRepository.getOccupancyByRoom(r),
             reportRepository.getRestaurantHours(r.restaurantId),
             reportRepository.getOccupancyByHour(r),
+            reportRepository.getOpenHours(r),
         ]);
-        const hoursPerDay = new Map(hours.map((h) => [h.id, num(h.hours_per_day)]));
+        const openOf = new Map(openHours.map((h) => [h.restaurant_id, num(h.open_hours)]));
+        const closedDays = openHours.reduce((acc, h) => acc + num(h.closed_days), 0);
 
         const byRoom = rooms.map((room) =>
             ({
@@ -218,8 +236,9 @@ export const getTableOccupancy = async (r: IReportRange): Promise<IOccupancyRepo
                 ...occupancyGroup(
                     room.table_count,
                     num(room.occupied_hours),
-                    room.table_count * (hoursPerDay.get(room.restaurant_id) ?? 0) * days,
+                    room.table_count * (openOf.get(room.restaurant_id) ?? 0),
                     room.sessions,
+                    num(room.outside_hours),
                 ),
             }),
         );
@@ -237,6 +256,7 @@ export const getTableOccupancy = async (r: IReportRange): Promise<IOccupancyRepo
                     own.reduce((acc, room) => acc + room.occupied_hours, 0),
                     own.reduce((acc, room) => acc + room.available_hours, 0),
                     own.reduce((acc, room) => acc + room.sessions, 0),
+                    own.reduce((acc, room) => acc + room.outside_hours, 0),
                 ),
             };
         });
@@ -247,11 +267,13 @@ export const getTableOccupancy = async (r: IReportRange): Promise<IOccupancyRepo
 
         return {
             days,
+            closed_days: closedDays,
             summary: occupancyGroup(
                 totalTables,
                 byRestaurant.reduce((acc, x) => acc + x.occupied_hours, 0),
                 byRestaurant.reduce((acc, x) => acc + x.available_hours, 0),
                 byRestaurant.reduce((acc, x) => acc + x.sessions, 0),
+                byRestaurant.reduce((acc, x) => acc + x.outside_hours, 0),
             ),
             by_restaurant: byRestaurant,
             by_room: byRoom,
@@ -263,6 +285,93 @@ export const getTableOccupancy = async (r: IReportRange): Promise<IOccupancyRepo
                     avg_occupancy: slots > 0 ? Math.round((occupied / slots) * 10000) / 10000 : null,
                 };
             }),
+        };
+    } catch (error) {
+        return REPORT_ERROR.FAILED;
+    }
+};
+
+const profitTotals = (row?: { sales: string; cost: string; costed_sales: string; quantity: number }): IProfitTotals => {
+    const sales = num(row?.sales);
+    const cost = num(row?.cost);
+    const costed = num(row?.costed_sales);
+    return {
+        sales: round2(sales),
+        cost: round2(cost),
+        gross_profit: round2(sales - cost),
+        food_cost_rate: costed > 0 ? Math.round((cost / costed) * 10000) / 10000 : null,
+        uncosted_sales: round2(sales - costed),
+        quantity: num(row?.quantity),
+    };
+};
+
+/** Giá vốn, lãi gộp và tỷ lệ food cost theo kỳ, theo món, theo nhóm món và theo chi nhánh (giai đoạn 10) */
+export const getProfitReport = async (r: IReportRange, groupBy: ReportGroupBy, limit: number): Promise<IProfitReport | number> => {
+    try {
+        const [periods, rows, items, categories, restaurants] = await Promise.all([
+            reportRepository.getPeriods(r, groupBy),
+            reportRepository.getProfitByPeriod(r, groupBy),
+            reportRepository.getProfitByItem(r, limit),
+            reportRepository.getProfitByCategory(r),
+            reportRepository.getProfitByRestaurant(r),
+        ]);
+        const byPeriod = new Map(rows.map((row) => [row.period, row]));
+        const sum = (key: "sales" | "cost" | "costed_sales" | "quantity") =>
+            String(categories.reduce((acc, x) => acc + num(x[key]), 0));
+        const names = await reportRepository.getRestaurantNames(restaurants.map((x) => x.restaurant_id));
+        return {
+            group_by: groupBy,
+            totals: profitTotals({ sales: sum("sales"), cost: sum("cost"), costed_sales: sum("costed_sales"), quantity: num(sum("quantity")) }),
+            series: periods.map((period) => ({ period, ...profitTotals(byPeriod.get(period)) })),
+            by_item: items.map((x) => ({
+                kind: x.kind,
+                item_id: num(x.item_id),
+                name: x.name,
+                category: x.category,
+                missing_cost: x.missing_cost,
+                ...profitTotals(x),
+            })),
+            by_category: categories.map((x) => ({ category: x.category, ...profitTotals(x) })),
+            by_restaurant: restaurants.map((x) => ({
+                restaurant_id: x.restaurant_id,
+                restaurant_name: names[x.restaurant_id] ?? `#${x.restaurant_id}`,
+                ...profitTotals(x),
+            })),
+        };
+    } catch (error) {
+        return REPORT_ERROR.FAILED;
+    }
+};
+
+/** Tiêu hao lý thuyết so với kiểm kê thực tế (hao hụt) theo nguyên liệu */
+export const getVarianceReport = async (r: IReportRange): Promise<IVarianceReport | number> => {
+    try {
+        const rows = await reportRepository.getIngredientVariance(r);
+        const items = rows.map((x) => {
+            const consumed = num(x.consumed);
+            const adjusted = num(x.adjusted);
+            return {
+                ingredient_id: num(x.ingredient_id),
+                name: x.name,
+                unit: x.unit,
+                consumed: Math.round(consumed * 1000) / 1000,
+                consumed_value: round2(num(x.consumed_value)),
+                exported: Math.round(num(x.exported) * 1000) / 1000,
+                exported_value: round2(num(x.exported_value)),
+                adjusted: Math.round(adjusted * 1000) / 1000,
+                adjusted_value: round2(num(x.adjusted_value)),
+                loss_rate: consumed > 0 && adjusted < 0 ? Math.round((-adjusted / consumed) * 10000) / 10000 : null,
+            };
+        });
+        const total = (key: "consumed_value" | "exported_value" | "adjusted_value") => round2(items.reduce((acc, x) => acc + x[key], 0));
+        return {
+            totals: {
+                consumed_value: total("consumed_value"),
+                exported_value: total("exported_value"),
+                adjusted_value: total("adjusted_value"),
+                loss_value: round2(items.reduce((acc, x) => acc + Math.min(0, x.adjusted_value), 0)),
+            },
+            items,
         };
     } catch (error) {
         return REPORT_ERROR.FAILED;

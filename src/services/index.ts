@@ -18,3 +18,5 @@ export * as paymentService from "./payment.service";
 export * as inventoryService from "./inventory.service";
 export * as reportService from "./report.service";
 export * as auditLogService from "./audit-log.service";
+export * as recipeService from "./recipe.service";
+export * as closedDayService from "./closed-day.service";

@@ -1,0 +1,15 @@
+{
+    "get_successfully": "Lấy định lượng thành công",
+    "get_failed": "Lấy định lượng thất bại",
+    "update_successfully": "Đã lưu định lượng món",
+    "update_failed": "Lưu định lượng thất bại",
+    "invalid_ingredients": "Có nguyên liệu không tồn tại hoặc đã bị xóa",
+    "closed_day_get_successfully": "Lấy danh sách ngày nghỉ thành công",
+    "closed_day_get_failed": "Lấy danh sách ngày nghỉ thất bại",
+    "closed_day_create_successfully": "Đã thêm ngày nghỉ",
+    "closed_day_create_failed": "Thêm ngày nghỉ thất bại",
+    "closed_day_delete_successfully": "Đã xóa ngày nghỉ",
+    "closed_day_delete_failed": "Xóa ngày nghỉ thất bại",
+    "closed_day_duplicate": "Ngày này đã được đánh dấu nghỉ",
+    "closed_day_not_found": "Không tìm thấy ngày nghỉ"
+}

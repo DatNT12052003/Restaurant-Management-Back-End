@@ -91,7 +91,8 @@ export const deleteIngredient = async (id: number): Promise<{ id: number } | und
 export const getIngredientUsage = async (id: number): Promise<{ stock: number; has_transactions: boolean }> => {
     const result = await db().query(
         `SELECT
-            COALESCE((SELECT SUM(quantity) FROM inventory WHERE ingredient_id = $1), 0) AS stock,
+            -- Tồn có thể âm (giai đoạn 10): còn tồn khác 0 ở bất kỳ chi nhánh nào
+            COALESCE((SELECT SUM(ABS(quantity)) FROM inventory WHERE ingredient_id = $1), 0) AS stock,
             EXISTS (SELECT 1 FROM inventory_transactions WHERE ingredient_id = $1) AS has_transactions`,
         [id],
     );
@@ -109,7 +110,8 @@ export const getStock = async (
 ): Promise<IStockItem[]> => {
     const where = ["i.deleted_at IS NULL"];
     if (!options.includeInactive) where.push("(i.status = 'active' OR COALESCE(inv.quantity, 0) > 0)");
-    const isLow = "(COALESCE(inv.min_quantity, 0) > 0 AND COALESCE(inv.quantity, 0) <= inv.min_quantity)";
+    // Tồn âm (tự trừ kho khi thiếu) luôn tính là tồn thấp
+    const isLow = "(COALESCE(inv.quantity, 0) < 0 OR (COALESCE(inv.min_quantity, 0) > 0 AND COALESCE(inv.quantity, 0) <= inv.min_quantity))";
     if (options.lowOnly) where.push(isLow);
     const result = await db().query(
         `SELECT i.id AS ingredient_id, i.name, i.unit, i.status,
@@ -221,17 +223,21 @@ export const insertTransactions = async (
         unit_price: number;
         reason: string | null;
         created_by: number | null;
+        /** Giao dịch `consume`: dòng món gây ra (order_item | order_combo) */
+        reference_type?: string | null;
+        reference_id?: number | null;
     }[],
 ): Promise<void> => {
     if (rows.length === 0) return;
     await db().query(
         `INSERT INTO inventory_transactions
-            (restaurant_id, ingredient_id, receipt_id, type, quantity_change, quantity_after, unit_price, reason, created_by)
+            (restaurant_id, ingredient_id, receipt_id, type, quantity_change, quantity_after, unit_price, reason, created_by,
+             reference_type, reference_id)
         SELECT x.restaurant_id, x.ingredient_id, x.receipt_id, x.type, x.quantity_change, x.quantity_after,
-            x.unit_price, x.reason, x.created_by
+            x.unit_price, x.reason, x.created_by, x.reference_type, x.reference_id
         FROM json_to_recordset($1::json) AS x(
             restaurant_id int, ingredient_id int, receipt_id int, type text, quantity_change numeric,
-            quantity_after numeric, unit_price numeric, reason text, created_by int)`,
+            quantity_after numeric, unit_price numeric, reason text, created_by int, reference_type text, reference_id int)`,
         [JSON.stringify(rows)],
     );
 };

@@ -1,5 +1,5 @@
 import { db } from "~/config/db";
-import { IReportRange, ReportGroupBy } from "~/interfaces";
+import { IReportRange, ReportGroupBy, RevenueBasis } from "~/interfaces";
 
 /**
  * Truy vấn báo cáo. Mọi mốc ngày tính theo giờ Việt Nam.
@@ -100,13 +100,28 @@ export const getLive = async (restaurantId: number | null) => {
 // Doanh thu
 // ---------------------------------------------------------------------------
 
-/** Tiền thu / hoàn theo kỳ và nhà hàng (theo thời điểm thanh toán) */
-export const getPaymentsByPeriod = async (r: IReportRange, groupBy: ReportGroupBy) => {
+/**
+ * Cơ sở tính doanh thu (giai đoạn 10):
+ * - `paid`: theo thời điểm thanh toán (mặc định, như GĐ7).
+ * - `completed`: mọi giao dịch của các order hoàn tất trong khoảng, xếp theo thời điểm hoàn tất order
+ *   (khớp với số order và doanh số theo order).
+ */
+const basisSql = (basis: RevenueBasis) =>
+    basis === "completed"
+        ? {
+              from: "payments p JOIN orders o ON o.id = p.order_id AND o.deleted_at IS NULL AND o.status = 'completed'",
+              time: "o.completed_at",
+          }
+        : { from: "payments p", time: "p.paid_at" };
+
+/** Tiền thu / hoàn theo kỳ và nhà hàng */
+export const getPaymentsByPeriod = async (r: IReportRange, groupBy: ReportGroupBy, basis: RevenueBasis = "paid") => {
+    const b = basisSql(basis);
     const result = await db().query(
-        `SELECT to_char(date_trunc($4::text, ${local("p.paid_at")}), 'YYYY-MM-DD') AS period, p.restaurant_id,
+        `SELECT to_char(date_trunc($4::text, ${local(b.time)}), 'YYYY-MM-DD') AS period, p.restaurant_id,
             ${COLLECTED} AS collected, ${REFUNDED} AS refunded
-        FROM payments p
-        WHERE ${SETTLED} AND ${inRange("p.paid_at")} AND ${ofRestaurant("p.restaurant_id")}
+        FROM ${b.from}
+        WHERE ${SETTLED} AND ${inRange(b.time)} AND ${ofRestaurant("p.restaurant_id")}
         GROUP BY 1, 2`,
         [...args(r), groupBy],
     );
@@ -126,12 +141,13 @@ export const getOrdersByPeriod = async (r: IReportRange, groupBy: ReportGroupBy)
     return result.rows as { period: string; restaurant_id: number; orders: string; guests: string; gross_sales: string }[];
 };
 
-export const getPaymentsByMethod = async (r: IReportRange) => {
+export const getPaymentsByMethod = async (r: IReportRange, basis: RevenueBasis = "paid") => {
+    const b = basisSql(basis);
     const result = await db().query(
         `SELECT p.method, ${COLLECTED} AS collected, ${REFUNDED} AS refunded,
             COUNT(*) FILTER (WHERE p.type = 'payment') AS count
-        FROM payments p
-        WHERE ${SETTLED} AND ${inRange("p.paid_at")} AND ${ofRestaurant("p.restaurant_id")}
+        FROM ${b.from}
+        WHERE ${SETTLED} AND ${inRange(b.time)} AND ${ofRestaurant("p.restaurant_id")}
         GROUP BY p.method ORDER BY p.method`,
         args(r),
     );
@@ -218,16 +234,48 @@ export const getElapsedDays = async (r: IReportRange): Promise<number> => {
     return Number(result.rows[0].days);
 };
 
+/**
+ * Khung giờ mở cửa của từng nhà hàng trong khoảng (giai đoạn 10): mỗi ngày không nghỉ một khung
+ * [ngày + giờ mở, + số giờ mở), cắt theo khoảng báo cáo và thời điểm hiện tại. Tính cả ngày liền trước đầu khoảng
+ * để bắt khung mở qua đêm.
+ */
+const OPEN_WINDOWS_CTE = `
+    days AS (
+        SELECT d::date AS day FROM bounds b,
+            generate_series((${local("b.s")})::date - 1, (${local("b.e")})::date, interval '1 day') AS d
+    ),
+    win AS (
+        SELECT rs.id AS restaurant_id,
+            GREATEST(((dd.day + rs.open_time)::timestamp AT TIME ZONE '${TZ}'), b.s) AS ws,
+            LEAST(((dd.day + rs.open_time)::timestamp AT TIME ZONE '${TZ}') + (rs.close_time - rs.open_time
+                + CASE WHEN rs.close_time <= rs.open_time THEN interval '24 hours' ELSE interval '0' END), b.e) AS we
+        FROM restaurants rs CROSS JOIN days dd CROSS JOIN bounds b
+        WHERE rs.deleted_at IS NULL AND ${ofRestaurant("rs.id")}
+            AND NOT EXISTS (SELECT 1 FROM restaurant_closed_days cd WHERE cd.restaurant_id = rs.id AND cd.day = dd.day)
+    ),
+    open_win AS (SELECT * FROM win WHERE we > ws)`;
+
 export const getOccupancyByRoom = async (r: IReportRange) => {
     const result = await db().query(
-        `WITH ${OCCUPANCY_CTE}
-        SELECT tbl.room_id, tbl.room_name, tbl.restaurant_id,
-            COUNT(DISTINCT tbl.id)::int AS table_count,
-            COALESCE(SUM(EXTRACT(EPOCH FROM (sess.e - sess.s))) / 3600, 0) AS occupied_hours,
-            COUNT(sess.table_id)::int AS sessions
-        FROM tbl LEFT JOIN sess ON sess.table_id = tbl.id
-        GROUP BY tbl.room_id, tbl.room_name, tbl.restaurant_id
-        ORDER BY tbl.restaurant_id, tbl.room_name`,
+        `WITH ${OCCUPANCY_CTE}, ${OPEN_WINDOWS_CTE},
+        sess_in AS (
+            SELECT sess.table_id,
+                SUM(EXTRACT(EPOCH FROM (LEAST(sess.e, w.we) - GREATEST(sess.s, w.ws)))) / 3600 AS hours
+            FROM sess JOIN open_win w ON w.restaurant_id = sess.restaurant_id AND sess.s < w.we AND sess.e > w.ws
+            GROUP BY sess.table_id
+        ),
+        per_table AS (
+            SELECT tbl.id, tbl.room_id, tbl.room_name, tbl.restaurant_id,
+                COALESCE((SELECT SUM(EXTRACT(EPOCH FROM (s.e - s.s))) / 3600 FROM sess s WHERE s.table_id = tbl.id), 0) AS total_hours,
+                COALESCE((SELECT si.hours FROM sess_in si WHERE si.table_id = tbl.id), 0) AS in_hours,
+                (SELECT COUNT(*) FROM sess s WHERE s.table_id = tbl.id)::int AS sessions
+            FROM tbl
+        )
+        SELECT room_id, room_name, restaurant_id, COUNT(*)::int AS table_count,
+            SUM(in_hours) AS occupied_hours, SUM(total_hours - in_hours) AS outside_hours, SUM(sessions)::int AS sessions
+        FROM per_table
+        GROUP BY room_id, room_name, restaurant_id
+        ORDER BY restaurant_id, room_name`,
         args(r),
     );
     return result.rows as {
@@ -236,8 +284,23 @@ export const getOccupancyByRoom = async (r: IReportRange) => {
         restaurant_id: number;
         table_count: number;
         occupied_hours: string;
+        outside_hours: string;
         sessions: number;
     }[];
+};
+
+/** Tổng số giờ mở cửa (đã trừ ngày nghỉ) và số ngày nghỉ của từng nhà hàng trong khoảng */
+export const getOpenHours = async (r: IReportRange) => {
+    const result = await db().query(
+        `WITH bounds AS (SELECT ${START} AS s, LEAST(${END}, now()) AS e), ${OPEN_WINDOWS_CTE}
+        SELECT rs.id AS restaurant_id,
+            COALESCE((SELECT SUM(EXTRACT(EPOCH FROM (w.we - w.ws))) / 3600 FROM open_win w WHERE w.restaurant_id = rs.id), 0) AS open_hours,
+            (SELECT COUNT(*)::int FROM restaurant_closed_days cd
+                WHERE cd.restaurant_id = rs.id AND cd.day BETWEEN $1::date AND LEAST($2::date, (${local("now()")})::date)) AS closed_days
+        FROM restaurants rs WHERE rs.deleted_at IS NULL AND ${ofRestaurant("rs.id")}`,
+        args(r),
+    );
+    return result.rows as { restaurant_id: number; open_hours: string; closed_days: number }[];
 };
 
 /** Giờ mở cửa của các nhà hàng trong phạm vi */
@@ -309,6 +372,103 @@ export const getTopImportedIngredients = async (r: IReportRange, limit: number) 
         [...args(r), limit],
     );
     return result.rows;
+};
+
+// ---------------------------------------------------------------------------
+// Giá vốn và lãi gộp (giai đoạn 10): theo các dòng món đã phục vụ trong khoảng (theo served_at).
+// Doanh số = giá lúc gọi × số lượng, chưa trừ giảm giá / chưa cộng phí, thuế. cost NULL = món chưa có định lượng.
+// ---------------------------------------------------------------------------
+
+const SERVED_LINES = `(
+    SELECT 'dish' AS kind, i.dish_id AS item_id, d.name, d.category::text AS category, i.quantity, i.current_price,
+        i.cost, i.served_at, o.restaurant_id
+    FROM order_items i JOIN orders o ON o.id = i.order_id AND o.deleted_at IS NULL JOIN dishes d ON d.id = i.dish_id
+    WHERE i.status = 'served' AND ${inRange("i.served_at")} AND ${ofRestaurant("o.restaurant_id")}
+    UNION ALL
+    SELECT 'combo', c.combo_id, cb.name, 'combo', c.quantity, c.current_price, c.cost, c.served_at, o.restaurant_id
+    FROM order_combos c JOIN orders o ON o.id = c.order_id AND o.deleted_at IS NULL JOIN combos cb ON cb.id = c.combo_id
+    WHERE c.status = 'served' AND ${inRange("c.served_at")} AND ${ofRestaurant("o.restaurant_id")}
+) l`;
+
+const PROFIT_COLUMNS = `SUM(l.quantity * l.current_price) AS sales,
+    COALESCE(SUM(l.cost), 0) AS cost,
+    COALESCE(SUM(l.quantity * l.current_price) FILTER (WHERE l.cost IS NOT NULL), 0) AS costed_sales,
+    SUM(l.quantity)::int AS quantity`;
+
+export const getProfitByPeriod = async (r: IReportRange, groupBy: ReportGroupBy) => {
+    const result = await db().query(
+        `SELECT to_char(date_trunc($4::text, ${local("l.served_at")}), 'YYYY-MM-DD') AS period, ${PROFIT_COLUMNS}
+        FROM ${SERVED_LINES} GROUP BY 1`,
+        [...args(r), groupBy],
+    );
+    return result.rows as (IProfitRow & { period: string })[];
+};
+
+export const getProfitByItem = async (r: IReportRange, limit: number) => {
+    const result = await db().query(
+        `SELECT l.kind, l.item_id, l.name, l.category, ${PROFIT_COLUMNS}, bool_or(l.cost IS NULL) AS missing_cost
+        FROM ${SERVED_LINES}
+        GROUP BY l.kind, l.item_id, l.name, l.category
+        ORDER BY SUM(l.quantity * l.current_price) - COALESCE(SUM(l.cost), 0) DESC, l.name
+        LIMIT $4`,
+        [...args(r), limit],
+    );
+    return result.rows as (IProfitRow & { kind: string; item_id: number; name: string; category: string; missing_cost: boolean })[];
+};
+
+export const getProfitByCategory = async (r: IReportRange) => {
+    const result = await db().query(`SELECT l.category, ${PROFIT_COLUMNS} FROM ${SERVED_LINES} GROUP BY l.category ORDER BY l.category`, args(r));
+    return result.rows as (IProfitRow & { category: string })[];
+};
+
+export const getProfitByRestaurant = async (r: IReportRange) => {
+    const result = await db().query(
+        `SELECT l.restaurant_id, ${PROFIT_COLUMNS} FROM ${SERVED_LINES} GROUP BY l.restaurant_id ORDER BY l.restaurant_id`,
+        args(r),
+    );
+    return result.rows as (IProfitRow & { restaurant_id: number })[];
+};
+
+export interface IProfitRow {
+    sales: string;
+    cost: string;
+    costed_sales: string;
+    quantity: number;
+}
+
+/**
+ * Tiêu hao lý thuyết (giao dịch consume khi phục vụ) so với chênh lệch kiểm kê và xuất tay, theo nguyên liệu.
+ * Kiểm kê âm = thực tế dùng nhiều hơn định lượng (hao hụt).
+ */
+export const getIngredientVariance = async (r: IReportRange) => {
+    const result = await db().query(
+        `SELECT g.id AS ingredient_id, g.name, g.unit,
+            COALESCE(-SUM(t.quantity_change) FILTER (WHERE t.type = 'consume'), 0) AS consumed,
+            COALESCE(-SUM(t.quantity_change * t.unit_price) FILTER (WHERE t.type = 'consume'), 0) AS consumed_value,
+            COALESCE(-SUM(t.quantity_change) FILTER (WHERE t.type = 'export'), 0) AS exported,
+            COALESCE(-SUM(t.quantity_change * t.unit_price) FILTER (WHERE t.type = 'export'), 0) AS exported_value,
+            COALESCE(SUM(t.quantity_change) FILTER (WHERE t.type = 'adjust'), 0) AS adjusted,
+            COALESCE(SUM(t.quantity_change * t.unit_price) FILTER (WHERE t.type = 'adjust'), 0) AS adjusted_value,
+            COALESCE(SUM(t.quantity_change) FILTER (WHERE t.type = 'import'), 0) AS imported
+        FROM inventory_transactions t JOIN ingredients g ON g.id = t.ingredient_id
+        WHERE ${inRange("t.created_at")} AND ${ofRestaurant("t.restaurant_id")}
+        GROUP BY g.id, g.name, g.unit
+        HAVING COUNT(*) FILTER (WHERE t.type IN ('consume', 'export', 'adjust')) > 0
+        ORDER BY adjusted_value, lower(g.name)`,
+        args(r),
+    );
+    return result.rows as {
+        ingredient_id: number;
+        name: string;
+        unit: string;
+        consumed: string;
+        consumed_value: string;
+        exported: string;
+        exported_value: string;
+        adjusted: string;
+        adjusted_value: string;
+        imported: string;
+    }[];
 };
 
 // ---------------------------------------------------------------------------

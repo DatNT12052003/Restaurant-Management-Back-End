@@ -24,6 +24,7 @@ const INGREDIENT_MESSAGES: Record<number, [typeof badRequestResponse, string]> =
     [INGREDIENT_ERROR.DUPLICATE_NAME]: [badRequestResponse, "inventory:ingredient_duplicate"],
     [INGREDIENT_ERROR.IN_STOCK]: [badRequestResponse, "inventory:ingredient_in_stock"],
     [INGREDIENT_ERROR.UNIT_LOCKED]: [badRequestResponse, "inventory:unit_locked"],
+    [INGREDIENT_ERROR.IN_RECIPE]: [badRequestResponse, "inventory:ingredient_in_recipe"],
 };
 
 const handle = async (

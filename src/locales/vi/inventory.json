@@ -23,5 +23,6 @@
     "ingredient_not_found": "Không tìm thấy nguyên liệu",
     "ingredient_duplicate": "Đã có nguyên liệu trùng tên",
     "ingredient_in_stock": "Nguyên liệu còn tồn kho ở nhà hàng; hãy xuất hoặc kiểm kê về 0, hoặc chuyển sang ngừng dùng",
-    "unit_locked": "Nguyên liệu đã có biến động kho nên không đổi được đơn vị tính"
+    "unit_locked": "Nguyên liệu đã có biến động kho nên không đổi được đơn vị tính",
+    "ingredient_in_recipe": "Nguyên liệu đang có trong định lượng của món; hãy gỡ khỏi định lượng hoặc chuyển sang ngừng dùng"
 }

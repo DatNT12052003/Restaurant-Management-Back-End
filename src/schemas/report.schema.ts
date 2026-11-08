@@ -29,6 +29,8 @@ const rangeQuery = z
         ),
         limit: z.preprocess(blankToUndefined, z.coerce.number().int().min(1).max(50).optional()),
         category: z.preprocess(blankToUndefined, z.enum(DishCategoryEnum).optional()),
+        // Doanh thu: theo thời điểm thanh toán (mặc định) hoặc thời điểm hoàn tất order
+        basis: z.preprocess(blankToUndefined, z.enum(["paid", "completed"], { message: "validation:report.basis.invalid" }).optional()),
     })
     .refine((q) => !q.from || !q.to || (dayNumber(q.to) >= dayNumber(q.from) && dayNumber(q.to) - dayNumber(q.from) < MAX_REPORT_DAYS), {
         message: "validation:report.range.invalid",

@@ -608,12 +608,16 @@ export const moveLine = async (
     const extra = kind === "combo" ? ", items_snapshot" : "";
     const copied = `${col}, current_price, note, station, status, confirmed_at, cooking_at, ready_at, served_at,
         cancelled_at, cancel_reason, cancelled_by, created_at${extra}`;
+    // Giá vốn (món đã phục vụ) chia theo số lượng: phần chuyển đi = cost × q / số lượng cũ, phần còn lại = phần dư
     await db().query(
-        `INSERT INTO ${table} (order_id, round_id, quantity, ${copied})
-        SELECT $2, $3, $4, ${copied} FROM ${table} WHERE id = $1`,
+        `INSERT INTO ${table} (order_id, round_id, quantity, cost, ${copied})
+        SELECT $2, $3, $4::int, ROUND(cost * $4::int / quantity, 2), ${copied} FROM ${table} WHERE id = $1`,
         [lineId, targetOrderId, roundId, quantity],
     );
-    await db().query(`UPDATE ${table} SET quantity = quantity - $2, updated_at = NOW() WHERE id = $1`, [lineId, quantity]);
+    await db().query(
+        `UPDATE ${table} SET cost = cost - ROUND(cost * $2::int / quantity, 2), quantity = quantity - $2::int, updated_at = NOW() WHERE id = $1`,
+        [lineId, quantity],
+    );
 };
 
 /** Order đang mở có áp mã giảm giá này */

@@ -1,6 +1,9 @@
 /** Cách nhóm chuỗi thời gian của báo cáo */
 export type ReportGroupBy = "day" | "week" | "month";
 
+/** Doanh thu theo thời điểm thanh toán (mặc định) hoặc theo thời điểm hoàn tất order */
+export type RevenueBasis = "paid" | "completed";
+
 /** Tham số chung: khoảng ngày (theo giờ Việt Nam, gồm cả hai đầu) và nhà hàng (null = cả chuỗi) */
 export interface IReportRange {
     from: string;
@@ -54,6 +57,7 @@ export interface IRevenuePoint {
 
 export interface IRevenueReport {
     group_by: ReportGroupBy;
+    basis: RevenueBasis;
     series: IRevenuePoint[];
     /** Doanh thu ròng theo kỳ và nhà hàng (dùng cho biểu đồ chồng khi xem cả chuỗi) */
     series_by_restaurant: { period: string; restaurant_id: number; net: number }[];
@@ -80,6 +84,8 @@ export interface IOccupancyGroup {
     table_count: number;
     occupied_hours: number;
     available_hours: number;
+    /** Giờ-bàn có khách ngoài giờ mở cửa hoặc vào ngày nghỉ (không tính vào tỷ lệ lấp đầy) */
+    outside_hours: number;
     sessions: number;
     /** Tỷ lệ lấp đầy (0–1), null khi không có giờ mở cửa trong khoảng */
     occupancy_rate: number | null;
@@ -89,6 +95,8 @@ export interface IOccupancyGroup {
 
 export interface IOccupancyReport {
     days: number;
+    /** Số ngày nghỉ (đã qua) trong khoảng, cộng mọi chi nhánh */
+    closed_days: number;
     summary: IOccupancyGroup;
     by_restaurant: (IOccupancyGroup & {
         restaurant_id: number;
@@ -99,6 +107,48 @@ export interface IOccupancyReport {
     by_room: (IOccupancyGroup & { room_id: number; room_name: string; restaurant_id: number })[];
     /** Số bàn có khách trung bình theo từng giờ trong ngày (0–23), tính trên tổng số bàn */
     by_hour: { hour: number; occupied_hours: number; avg_occupancy: number | null }[];
+}
+
+export interface IProfitTotals {
+    /** Doanh số món đã phục vụ (giá lúc gọi × số lượng, chưa trừ giảm giá) */
+    sales: number;
+    cost: number;
+    gross_profit: number;
+    /** Giá vốn / doanh số của các món có định lượng (0–1) */
+    food_cost_rate: number | null;
+    /** Doanh số của các món chưa có định lượng (không có giá vốn) */
+    uncosted_sales: number;
+    quantity: number;
+}
+
+export interface IProfitReport {
+    group_by: ReportGroupBy;
+    totals: IProfitTotals;
+    series: (IProfitTotals & { period: string })[];
+    by_item: (IProfitTotals & { kind: string; item_id: number; name: string; category: string; missing_cost: boolean })[];
+    by_category: (IProfitTotals & { category: string })[];
+    by_restaurant: (IProfitTotals & { restaurant_id: number; restaurant_name: string })[];
+}
+
+export interface IVarianceRow {
+    ingredient_id: number;
+    name: string;
+    unit: string;
+    /** Tiêu hao lý thuyết theo định lượng (khi phục vụ món) */
+    consumed: number;
+    consumed_value: number;
+    exported: number;
+    exported_value: number;
+    /** Chênh lệch kiểm kê (âm = hao hụt) */
+    adjusted: number;
+    adjusted_value: number;
+    /** Hao hụt so với tiêu hao lý thuyết: -kiểm kê / tiêu hao (chỉ khi có tiêu hao và kiểm kê âm) */
+    loss_rate: number | null;
+}
+
+export interface IVarianceReport {
+    totals: { consumed_value: number; exported_value: number; adjusted_value: number; loss_value: number };
+    items: IVarianceRow[];
 }
 
 export interface ITipsReport {

@@ -19,4 +19,6 @@ export const INGREDIENT_ERROR = {
     IN_STOCK: 3,
     /** Đã có biến động kho: không đổi được đơn vị tính */
     UNIT_LOCKED: 4,
+    /** Đang có trong định lượng của món */
+    IN_RECIPE: 5,
 };
