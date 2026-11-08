@@ -7,6 +7,11 @@ import { IAuditContext, IAuditEntry } from "~/interfaces";
 export const AUDIT_ACTION = {
     LOGIN: "auth.login",
     LOGIN_FAILED: "auth.login_failed",
+    ACCOUNT_LOCKED: "auth.account_locked",
+    ACCOUNT_UNLOCKED: "account.unlock",
+    ACCOUNT_LOGOUT_ALL: "account.logout_all",
+    ACCOUNT_RESET_PASSWORD: "account.reset_password",
+    AUDIT_ARCHIVE: "audit.archive",
     LOGOUT: "auth.logout",
     LOGOUT_ALL: "auth.logout_all",
     CHANGE_PASSWORD: "auth.change_password",

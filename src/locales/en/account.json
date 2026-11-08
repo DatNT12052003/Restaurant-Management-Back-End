@@ -3,5 +3,12 @@
     "error_creating_account": "Failed to create account",
     "account_created_successfully": "Account created successfully",
     "error_getting_accounts": "Failed to retrieve account list",
-    "get_accounts_successfully": "Account list retrieved successfully"
+    "get_accounts_successfully": "Account list retrieved successfully",
+    "no_account": "This user has no sign-in account",
+    "unlock_successfully": "Account unlocked",
+    "unlock_failed": "Failed to unlock the account",
+    "logout_all_successfully": "The user has been signed out of all devices",
+    "logout_all_failed": "Failed to sign the user out",
+    "reset_password_successfully": "Password reset; the user must sign in again with the new password",
+    "reset_password_failed": "Failed to reset the password"
 }

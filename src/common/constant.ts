@@ -30,3 +30,11 @@ export const MAX_RESERVATION_HOURS = 12;
 export const RESERVATION_PAST_GRACE_MINUTES = 15;
 /** Lịch đặt bàn: khoảng thời gian tối đa của một lần truy vấn (ngày) */
 export const MAX_SCHEDULE_RANGE_DAYS = 31;
+
+/** Khóa tài khoản: sai mật khẩu LOGIN_MAX_ATTEMPTS lần trong LOGIN_WINDOW_MINUTES phút thì khóa LOGIN_LOCK_MINUTES phút */
+export const LOGIN_MAX_ATTEMPTS = 5;
+export const LOGIN_WINDOW_MINUTES = 15;
+export const LOGIN_LOCK_MINUTES = 15;
+
+/** Nhật ký hoạt động: dòng cũ hơn bấy nhiêu tháng được chuyển sang `audit_logs_archive` (câu hỏi 13) */
+export const AUDIT_RETENTION_MONTHS = 12;

@@ -1,15 +1,24 @@
 import { Router } from "express";
 import { AccountPermissionEnum } from "~/common/permission-enum";
 import { accountController } from "~/controllers";
-import { auditRoute, authMiddleware, checkPermission, validate, validateCreate } from "~/middlewares";
-import { AUDIT_BEFORE } from "~/utils/audit-loaders";
-import { createAccountSchema } from "~/schemas";
+import { auditRoute, authMiddleware, checkPermission, restrictToRestaurant, validate, validateCreate } from "~/middlewares";
+import { createAccountSchema, listAccountsSchema } from "~/schemas";
 
+/**
+ * Tài khoản đăng nhập. Thao tác trên tài khoản của một người (mở khóa, đăng xuất từ xa, đặt lại mật khẩu) nằm ở
+ * `/api/users/:id/account/*` để dùng chung kiểm tra cấp bậc và chi nhánh (`canManageTargetUser`).
+ */
 const router = Router();
 
 router.use(authMiddleware);
 
-router.get("/", checkPermission(AccountPermissionEnum.VIEW), accountController.getAccounts);
+router.get(
+    "/",
+    checkPermission(AccountPermissionEnum.VIEW),
+    validate(listAccountsSchema),
+    restrictToRestaurant,
+    accountController.getAccounts,
+);
 router.post(
     "/",
     checkPermission(AccountPermissionEnum.CREATE),
@@ -17,18 +26,6 @@ router.post(
     validate(createAccountSchema),
     auditRoute("account.create", "account", { restaurantId: () => null }),
     accountController.createAccount,
-);
-router.put(
-    "/:id",
-    checkPermission(AccountPermissionEnum.UPDATE),
-    auditRoute("account.update", "account", { before: AUDIT_BEFORE.account, restaurantId: () => null }),
-    accountController.updateAccount,
-);
-router.delete(
-    "/:id",
-    checkPermission(AccountPermissionEnum.DELETE),
-    auditRoute("account.delete", "account", { before: AUDIT_BEFORE.account, restaurantId: () => null, isDelete: true }),
-    accountController.deleteAccount,
 );
 
 export default router;

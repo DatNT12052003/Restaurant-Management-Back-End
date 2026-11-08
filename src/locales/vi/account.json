@@ -3,5 +3,12 @@
     "error_creating_account": "Tạo tài khoản thất bại",
     "account_created_successfully": "Tài khoản đã được tạo thành công",
     "error_getting_accounts": "Lấy danh sách tài khoản thất bại",
-    "get_accounts_successfully": "Danh sách tài khoản đã được lấy thành công"
+    "get_accounts_successfully": "Danh sách tài khoản đã được lấy thành công",
+    "no_account": "Người dùng này không có tài khoản đăng nhập",
+    "unlock_successfully": "Đã mở khóa tài khoản",
+    "unlock_failed": "Mở khóa tài khoản thất bại",
+    "logout_all_successfully": "Đã đăng xuất người dùng khỏi mọi thiết bị",
+    "logout_all_failed": "Đăng xuất từ xa thất bại",
+    "reset_password_successfully": "Đã đặt lại mật khẩu; người dùng phải đăng nhập lại bằng mật khẩu mới",
+    "reset_password_failed": "Đặt lại mật khẩu thất bại"
 }

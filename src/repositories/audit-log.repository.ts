@@ -69,3 +69,24 @@ export const getFacets = async (restaurantId: number | null): Promise<IAuditFace
     );
     return result.rows[0];
 };
+
+/**
+ * Chuyển tối đa `batch` dòng cũ hơn `months` tháng sang `audit_logs_archive`. Phải gọi trong transaction:
+ * trigger chỉ cho DELETE trên `audit_logs` khi transaction bật `app.audit_archive`. Trả về số dòng đã chuyển.
+ */
+export const archiveOlderThan = async (months: number, batch: number): Promise<number> => {
+    await db().query("SET LOCAL app.audit_archive = 'on'");
+    const result = await db().query(
+        `WITH moved AS (
+            DELETE FROM audit_logs
+            WHERE id IN (
+                SELECT id FROM audit_logs WHERE created_at < NOW() - make_interval(months => $1) ORDER BY id LIMIT $2
+            )
+            RETURNING *
+        )
+        INSERT INTO audit_logs_archive SELECT moved.*, NOW() FROM moved
+        RETURNING id`,
+        [months, batch],
+    );
+    return result.rowCount ?? 0;
+};

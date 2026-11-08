@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
 import { TokenTypeEnum } from "~/common/enum";
 import { CREATE_RESET_PASSWORD_TOKEN } from "~/common/error-code/token";
-import { ICreateTokenBody, IToken } from "~/interfaces";
+import { ICreateTokenBody } from "~/interfaces";
 import { accountRepository, tokenRepository } from "~/repositories";
 import { signResetPasswordToken } from "~/utils/jwt";
 

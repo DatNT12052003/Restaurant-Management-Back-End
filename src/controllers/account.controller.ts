@@ -1,16 +1,18 @@
 import { Request, Response } from "express";
-import { PAGINATION } from "~/common/constant";
-import { badRequestResponse, createErrorResponse, serverErrorResponse } from "~/common/responses/error";
-import { createSuccessResponse, getSuccessResponse } from "~/common/responses/success";
+import { ACCOUNT_ADMIN } from "~/common/error-code/account";
 import {
-    IAccount,
-    ICreateAccountBody,
-    ICreateAccountPayload,
-    IGetAccounts,
-    IGetQuery,
-    ISelectQuery,
-} from "~/interfaces";
+    badRequestResponse,
+    createErrorResponse,
+    notFoundResponse,
+    serverErrorResponse,
+} from "~/common/responses/error";
+import { createSuccessResponse, getSuccessResponse, successResponse } from "~/common/responses/success";
+import { IAccount, ICreateAccountBody, IGetQuery } from "~/interfaces";
+import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
+import { listAccountsSchema } from "~/schemas";
 import { accountService } from "~/services";
+import { auditContext } from "~/utils/audit";
+import { buildListParams } from "~/utils/pagination";
 
 export const createAccount = async (req: Request, res: Response) => {
     try {
@@ -32,38 +34,47 @@ export const createAccount = async (req: Request, res: Response) => {
     }
 };
 
+// ---------------------------------------------------------------------------
+// Trang Tài khoản
+// ---------------------------------------------------------------------------
+
+/** Danh sách tài khoản kèm người dùng. Express 5 parse lại `req.query` mỗi lần đọc -> parse lại bằng schema. */
 export const getAccounts = async (req: Request, res: Response) => {
     try {
-        const query: IGetQuery = req.query;
-        const currentPage = query.currentPage || PAGINATION.DEFAULT_PAGE;
-        const limit = query.limit || PAGINATION.DEFAULT_LIMIT;
-        const offset = (currentPage - 1) * limit;
-
-        const params: ISelectQuery = {
-            search: query.search,
-            filters: query.filters,
-            orderBy: query.orderBy,
-            limit,
-            offset,
-            returning: ["id", "username", "created_at", "updated_at", "deleted_at"],
-        };
-
-        const accounts: IGetAccounts | number = await accountService.getAccounts(params);
-
-        if (typeof accounts === "number") {
+        const query = req.query as IGetQuery;
+        const extra = listAccountsSchema.shape.query.parse(req.query);
+        const filters = withRestaurantScope(query.filters, "restaurant_id", req.restaurantScope ?? extra.restaurant_id);
+        const params = buildListParams({ ...query, filters });
+        const result = await accountService.getAccountList(params, { kind: extra.kind, locked: extra.locked });
+        if (typeof result === "number") {
             return createErrorResponse(res, req.t("account:error_getting_accounts"));
         }
-
-        return getSuccessResponse(res, req.t("account:get_accounts_successfully"), accounts);
+        return getSuccessResponse(res, req.t("account:get_accounts_successfully"), result);
     } catch (error) {
         return serverErrorResponse(res);
     }
 };
 
-export const updateAccount = (req: Request, res: Response) => {
-    res.send("Update account");
-};
+/** Chạy một thao tác trên tài khoản của `req.targetUser` (đã qua `canManageTargetUser`) */
+const manageAccount =
+    (key: string, run: (req: Request) => Promise<unknown>) =>
+    async (req: Request, res: Response) => {
+        try {
+            const result = await run(req);
+            if (result === ACCOUNT_ADMIN.NO_ACCOUNT) return notFoundResponse(res, req.t("account:no_account"));
+            if (typeof result === "number") return createErrorResponse(res, req.t(`account:${key}_failed`));
+            return successResponse(res, req.t(`account:${key}_successfully`), result);
+        } catch (error) {
+            return serverErrorResponse(res);
+        }
+    };
 
-export const deleteAccount = (req: Request, res: Response) => {
-    res.send("Delete account");
-};
+export const unlockAccount = manageAccount("unlock", (req) => accountService.unlockAccount(req.targetUser!, auditContext(req)));
+
+export const logoutAllDevices = manageAccount("logout_all", (req) =>
+    accountService.logoutAllDevices(req.targetUser!, auditContext(req)),
+);
+
+export const resetAccountPassword = manageAccount("reset_password", (req) =>
+    accountService.resetAccountPassword(req.targetUser!, req.body, auditContext(req)),
+);

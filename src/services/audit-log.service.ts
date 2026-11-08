@@ -1,6 +1,9 @@
+import { AUDIT_RETENTION_MONTHS } from "~/common/constant";
 import { AUDIT_LOG_ERROR } from "~/common/error-code/report";
+import { withTransaction } from "~/config/db";
 import { IAuditFacets, IAuditLog, IGetAuditLogs, ISelectQuery } from "~/interfaces";
 import { auditLogRepository } from "~/repositories";
+import { AUDIT_ACTION, writeAuditSafe } from "~/utils/audit";
 import { buildPagination } from "~/utils/pagination";
 
 type Scope = number | null | undefined;
@@ -32,4 +35,26 @@ export const getFacets = async (restaurantId: number | null): Promise<IAuditFace
     } catch (error) {
         return AUDIT_LOG_ERROR.FAILED;
     }
+};
+
+const ARCHIVE_BATCH = 5000;
+
+/**
+ * Chuyển nhật ký cũ hơn `AUDIT_RETENTION_MONTHS` tháng sang bảng lưu trữ (không xóa). Mỗi lô một transaction để
+ * không giữ khóa lâu. Ghi một dòng `audit.archive` cho lần chạy có chuyển dữ liệu.
+ */
+export const archiveOldAuditLogs = async (months = AUDIT_RETENTION_MONTHS): Promise<number> => {
+    let total = 0;
+    for (;;) {
+        const moved = await withTransaction(() => auditLogRepository.archiveOlderThan(months, ARCHIVE_BATCH));
+        total += moved;
+        if (moved < ARCHIVE_BATCH) break;
+    }
+    if (total > 0) {
+        await writeAuditSafe(
+            {},
+            { action: AUDIT_ACTION.AUDIT_ARCHIVE, entity_type: "audit_log", restaurant_id: null, actor_name: "system", after: { moved: total, months } },
+        );
+    }
+    return total;
 };

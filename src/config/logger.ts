@@ -23,6 +23,8 @@ const devFormat = combine(
 const prodFormat = combine(timestamp(), json());
 
 const logger = winston.createLogger({
+    // Bộ test: không in log (lỗi vẫn được trả về qua response)
+    silent: process.env.NODE_ENV === "test",
     levels,
     level: process.env.NODE_ENV === "production" ? "info" : "debug",
     format: process.env.NODE_ENV === "production" ? prodFormat : devFormat,

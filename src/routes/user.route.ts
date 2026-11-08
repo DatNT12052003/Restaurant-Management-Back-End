@@ -1,11 +1,12 @@
 import { Router } from "express";
 import {
+    AccountPermissionEnum,
     EmployeePermissionEnum,
     GuestPermissionEnum,
     PermissionManagementEnum,
     UserPermissionEnum,
 } from "~/common/permission-enum";
-import { permissionController, userController } from "~/controllers";
+import { accountController, permissionController, userController } from "~/controllers";
 import {
     auditRoute,
     authMiddleware,
@@ -18,11 +19,13 @@ import {
 } from "~/middlewares";
 import { AUDIT_BEFORE, NESTED_USER } from "~/utils/audit-loaders";
 import {
+    accountUserIdSchema,
     createEmployeeSchema,
     createGuestSchema,
     createUserSchema,
     createUserWithAccountSchema,
     idParamSchema,
+    resetAccountPasswordSchema,
     updateEmployeeSchema,
     updateGuestSchema,
     updateProfileSchema,
@@ -87,6 +90,30 @@ router.put(
     validate(updateUserPermissionsSchema),
     canManageTargetUser(),
     permissionController.updateUserPermissions,
+);
+
+// ---- Tài khoản đăng nhập của user (cấp dưới, cùng chi nhánh) ----
+const ACCOUNT_UPDATE = checkPermission(AccountPermissionEnum.UPDATE);
+router.post(
+    "/:id/account/unlock",
+    ACCOUNT_UPDATE,
+    validate(accountUserIdSchema),
+    canManageTargetUser(),
+    accountController.unlockAccount,
+);
+router.post(
+    "/:id/account/logout-all",
+    ACCOUNT_UPDATE,
+    validate(accountUserIdSchema),
+    canManageTargetUser(),
+    accountController.logoutAllDevices,
+);
+router.post(
+    "/:id/account/reset-password",
+    ACCOUNT_UPDATE,
+    validate(resetAccountPasswordSchema),
+    canManageTargetUser(),
+    accountController.resetAccountPassword,
 );
 
 // ---- Nhân viên ----

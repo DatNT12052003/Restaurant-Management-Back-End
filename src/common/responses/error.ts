@@ -48,3 +48,11 @@ export const notFoundResponse = (res: Response, message?: string) => {
         message: message || HTTP_RESPONSE.NOT_FOUND.message,
     });
 };
+
+export const tooManyRequestsResponse = (res: Response, message?: string) => {
+    return res.status(429).json({
+        success: false,
+        statusCode: 429,
+        message: message || "Too many requests",
+    });
+};

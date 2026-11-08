@@ -21,7 +21,7 @@ import {
 } from "~/repositories";
 import { signAccessToken, signRefreshToken, verifyRefreshToken, verifyResetPasswordToken } from "~/utils/jwt";
 import { v4 as uuidv4 } from "uuid";
-import { SALT_ROUNDS } from "~/common/constant";
+import { LOGIN_LOCK_MINUTES, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_MINUTES, SALT_ROUNDS } from "~/common/constant";
 import { TokenTypeEnum } from "~/common/enum";
 
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -99,9 +99,30 @@ export const login = async (body: ILoginBody, ctx: IAuditContext = {}): Promise<
                 after: { reason },
             });
 
+        // Đang bị khóa: không kiểm tra mật khẩu (không để lộ mật khẩu đúng hay sai trong lúc khóa)
+        if (account.locked_until && new Date(account.locked_until) > new Date()) {
+            await failed("locked");
+            return LOGIN.ACCOUNT_LOCKED;
+        }
+
         const isPasswordValid = bcrypt.compareSync(body.password, account.hash_password);
         if (!isPasswordValid) {
             await failed("invalid_password");
+            const result = await accountRepository.registerFailedLogin(
+                account.id,
+                LOGIN_MAX_ATTEMPTS,
+                LOGIN_WINDOW_MINUTES,
+                LOGIN_LOCK_MINUTES,
+            );
+            if (result?.locked_until) {
+                await writeAuditSafe(actor, {
+                    action: AUDIT_ACTION.ACCOUNT_LOCKED,
+                    entity_type: "account",
+                    entity_id: account.id,
+                    after: { locked_until: result.locked_until, attempts: LOGIN_MAX_ATTEMPTS },
+                });
+                return LOGIN.ACCOUNT_LOCKED;
+            }
             return LOGIN.INVALID_USERNAME_PASSWORD;
         }
 
@@ -110,6 +131,7 @@ export const login = async (body: ILoginBody, ctx: IAuditContext = {}): Promise<
             return LOGIN.ACCOUNT_DISABLED;
         }
 
+        await accountRepository.registerSuccessfulLogin(account.id);
         const auth = await issueTokens(account);
         await writeAuditSafe(actor, { action: AUDIT_ACTION.LOGIN, entity_type: "account", entity_id: account.id });
         return auth;
@@ -287,5 +309,17 @@ export const changePassword = async (
         return auth;
     } catch (error) {
         return CHANGE_PASSWORD.FAILED;
+    }
+};
+
+/** Số phút còn bị khóa của tài khoản (làm tròn lên, tối thiểu 1); 0 nếu không bị khóa */
+export const getLockRemainingMinutes = async (username: string): Promise<number> => {
+    try {
+        const account = await accountRepository.getAccountByUsername(username);
+        if (!account?.locked_until) return 0;
+        const ms = new Date(account.locked_until).getTime() - Date.now();
+        return ms > 0 ? Math.max(1, Math.ceil(ms / 60_000)) : 0;
+    } catch (error) {
+        return 0;
     }
 };

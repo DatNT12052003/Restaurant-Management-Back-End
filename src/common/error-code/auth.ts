@@ -6,6 +6,8 @@ export const LOGIN = {
     NOT_EXIST: 1,
     INVALID_USERNAME_PASSWORD: 2,
     ACCOUNT_DISABLED: 3,
+    /** Đăng nhập sai quá nhiều lần, đang bị khóa tạm thời */
+    ACCOUNT_LOCKED: 4,
     LOGIN_FAILED: 0,
 };
 

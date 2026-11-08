@@ -1,0 +1,5 @@
+# Lưu và checkout mọi file văn bản với LF (hết cảnh báo LF/CRLF khi commit trên Windows)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
