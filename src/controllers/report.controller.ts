@@ -3,7 +3,7 @@ import { FilterOperatorEnum } from "~/common/enum";
 import { AUDIT_LOG_ERROR } from "~/common/error-code/report";
 import { badRequestResponse, createErrorResponse, notFoundResponse, serverErrorResponse } from "~/common/responses/error";
 import { getSuccessResponse } from "~/common/responses/success";
-import { IGetQuery, IReportRange, ReportGroupBy } from "~/interfaces";
+import { IGetQuery, IReportRange, ReportGroupBy, RevenueBasis } from "~/interfaces";
 import { withRestaurantScope } from "~/middlewares/restaurantScope.middleware";
 import { listAuditLogsSchema, MAX_REPORT_DAYS, reportQuerySchema } from "~/schemas";
 import { auditLogService, reportService } from "~/services";
@@ -32,6 +32,7 @@ const readRange = (req: Request) => {
         groupBy: (q.group_by ?? "day") as ReportGroupBy,
         limit: q.limit ?? 10,
         category: q.category ?? null,
+        basis: (q.basis ?? "paid") as RevenueBasis,
     };
 };
 
@@ -54,7 +55,9 @@ const withRange =
     };
 
 export const getOverview = withRange(({ range }) => reportService.getOverview(range));
-export const getRevenue = withRange(({ range, groupBy }) => reportService.getRevenue(range, groupBy));
+export const getRevenue = withRange(({ range, groupBy, basis }) => reportService.getRevenue(range, groupBy, basis));
+export const getProfitReport = withRange(({ range, groupBy, limit }) => reportService.getProfitReport(range, groupBy, limit));
+export const getVarianceReport = withRange(({ range }) => reportService.getVarianceReport(range));
 export const getTopItems = withRange(({ range, limit, category }) => reportService.getTopItems(range, limit, category));
 export const getTableOccupancy = withRange(({ range }) => reportService.getTableOccupancy(range));
 export const getTipsReport = withRange(({ range, groupBy }) => reportService.getTipsReport(range, groupBy));

@@ -28,7 +28,21 @@ const respondError = (req: Request, res: Response, code: number, fallback: strin
 export const getRestaurants = async (req: Request, res: Response) => {
     try {
         const params = buildListParams(req.query as IGetQuery, {
-            returning: ["id", "name", "status", "address", "created_at", "updated_at", "deleted_at"],
+            returning: [
+                "id",
+                "name",
+                "status",
+                "address",
+                "service_fee_percent",
+                "tax_percent",
+                "open_time",
+                "close_time",
+                "reservation_hold_minutes",
+                "no_show_after_minutes",
+                "created_at",
+                "updated_at",
+                "deleted_at",
+            ],
         });
         const restaurants = await restaurantService.getRestaurants(params);
         if (typeof restaurants === "number") {

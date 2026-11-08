@@ -13,3 +13,4 @@ export * as discountController from "./discount.controller";
 export * as paymentController from "./payment.controller";
 export * as inventoryController from "./inventory.controller";
 export * as reportController from "./report.controller";
+export * as recipeController from "./recipe.controller";

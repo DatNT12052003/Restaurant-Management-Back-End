@@ -31,6 +31,8 @@ import { emitToRestaurant } from "~/sockets";
 import { buildPagination } from "~/utils/pagination";
 import { AUDIT_ACTION, writeAudit } from "~/utils/audit";
 import { inScope } from "./room.service";
+import { consumeServedLines } from "./recipe.service";
+import { IConsumeResult } from "~/interfaces";
 
 /** `scope`: null = mọi nhà hàng (admin); số = chỉ nhà hàng này. */
 type Scope = number | null | undefined;
@@ -576,6 +578,21 @@ const transitionLine = async (kind: OrderLineKind, line: LockedLine, body: IUpda
     }
 };
 
+/**
+ * Món vừa chuyển sang `served` thì trừ kho theo định lượng (giai đoạn 10), cùng transaction với đổi trạng thái.
+ * Gọi một lần cho cả lô để khóa tồn kho đúng một lần.
+ */
+const consumeIfServed = (changed: IChangedLine[], status: OrderItemStatusEnum, actor: IOrderActor) =>
+    status === I.SERVED
+        ? consumeServedLines(
+              changed.map(({ kind, line }) => ({ kind, id: line.id, restaurant_id: line.restaurant_id })),
+              actor.id,
+          )
+        : Promise.resolve([] as IConsumeResult[]);
+
+const emitInventory = (results: IConsumeResult[]) =>
+    results.forEach((r) => emitToRestaurant(r.restaurant_id, "inventory:changed", r));
+
 /** Phát sự kiện cho các dòng vừa đổi trạng thái (sau commit); hủy món thì order đổi tiền */
 const emitLinesChanged = async (changed: IChangedLine[], status: OrderItemStatusEnum) => {
     for (const { kind, line } of changed) {
@@ -608,11 +625,13 @@ export const updateLineStatus = async (
             const line = await orderRepository.getLineForUpdate(kind, lineId);
             if (!line || !inScope(line.restaurant_id, scope)) return rollback(ORDER_ERROR.ITEM_NOT_FOUND);
             await transitionLine(kind, line, body, actor);
-            return line;
+            const consumed = await consumeIfServed([{ kind, line }], body.status, actor);
+            return { line, consumed };
         });
         if (typeof result === "number") return result;
-        await emitLinesChanged([{ kind, line: result }], body.status);
-        return { id: lineId, kind, order_id: result.order_id, status: body.status };
+        await emitLinesChanged([{ kind, line: result.line }], body.status);
+        emitInventory(result.consumed);
+        return { id: lineId, kind, order_id: result.line.order_id, status: body.status };
     } catch (error) {
         return ORDER_ERROR.FAILED;
     }
@@ -655,13 +674,15 @@ export const updateLinesStatus = async (
                 changed.push({ kind: ref.kind, line });
             }
             if (changed.length === 0) return rollback(ORDER_ERROR.NO_LINES_TO_UPDATE);
-            return changed;
+            const consumed = await consumeIfServed(changed, body.status, actor);
+            return { changed, consumed };
         });
         if (typeof result === "number") return result;
-        await emitLinesChanged(result, body.status);
+        await emitLinesChanged(result.changed, body.status);
+        emitInventory(result.consumed);
         return {
             status: body.status,
-            lines: result.map(({ kind, line }) => ({ kind, id: line.id, order_id: line.order_id })),
+            lines: result.changed.map(({ kind, line }) => ({ kind, id: line.id, order_id: line.order_id })),
         };
     } catch (error) {
         return ORDER_ERROR.FAILED;

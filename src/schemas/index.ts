@@ -11,3 +11,4 @@ export * from "./order.schema";
 export * from "./payment.schema";
 export * from "./inventory.schema";
 export * from "./report.schema";
+export * from "./recipe.schema";

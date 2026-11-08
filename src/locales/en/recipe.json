@@ -1,0 +1,15 @@
+{
+    "get_successfully": "Recipe loaded successfully",
+    "get_failed": "Failed to load the recipe",
+    "update_successfully": "Recipe saved",
+    "update_failed": "Failed to save the recipe",
+    "invalid_ingredients": "Some ingredients do not exist or have been deleted",
+    "closed_day_get_successfully": "Closed days loaded successfully",
+    "closed_day_get_failed": "Failed to load closed days",
+    "closed_day_create_successfully": "Closed day added",
+    "closed_day_create_failed": "Failed to add the closed day",
+    "closed_day_delete_successfully": "Closed day removed",
+    "closed_day_delete_failed": "Failed to remove the closed day",
+    "closed_day_duplicate": "This day is already marked as closed",
+    "closed_day_not_found": "Closed day not found"
+}

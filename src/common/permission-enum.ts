@@ -141,6 +141,12 @@ export enum AuditLogPermissionEnum {
     VIEW = "audit_log.view",
 }
 
+/** Định lượng món và giá vốn (giai đoạn 10) */
+export enum RecipePermissionEnum {
+    VIEW = "recipe.view",
+    UPDATE = "recipe.update",
+}
+
 /** Toàn bộ permission của hệ thống, dùng cho seed và kiểm tra. */
 export const ALL_PERMISSIONS: string[] = [
     UserPermissionEnum,
@@ -163,4 +169,5 @@ export const ALL_PERMISSIONS: string[] = [
     IngredientPermissionEnum,
     ReportPermissionEnum,
     AuditLogPermissionEnum,
+    RecipePermissionEnum,
 ].flatMap((group) => Object.values(group) as string[]);

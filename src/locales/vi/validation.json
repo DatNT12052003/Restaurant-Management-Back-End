@@ -68,6 +68,9 @@
         },
         "minutes": {
             "invalid": "Số phút phải là số nguyên từ 0 đến 240"
+        },
+        "closed_day": {
+            "invalid": "Ngày nghỉ không hợp lệ (YYYY-MM-DD)"
         }
     },
     "room": {
@@ -221,6 +224,15 @@
         },
         "group_by": {
             "invalid": "Cách nhóm không hợp lệ"
+        },
+        "basis": {
+            "invalid": "Cơ sở doanh thu không hợp lệ"
         }
+    },
+    "recipe": {
+        "quantity": {
+            "invalid": "Định lượng phải lớn hơn 0, tối đa 3 chữ số thập phân"
+        },
+        "duplicate_ingredient": "Mỗi nguyên liệu chỉ xuất hiện một lần trong định lượng"
     }
 }

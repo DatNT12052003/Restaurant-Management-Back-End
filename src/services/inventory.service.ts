@@ -13,7 +13,7 @@ import {
     ISelectQuery,
     IStock,
 } from "~/interfaces";
-import { inventoryRepository, restaurantRepository } from "~/repositories";
+import { inventoryRepository, recipeRepository, restaurantRepository } from "~/repositories";
 import { emitToRestaurant } from "~/sockets";
 import { writeAudit } from "~/utils/audit";
 import { getPgErrorCode } from "~/utils/common";
@@ -83,6 +83,7 @@ export const deleteIngredient = async (id: number): Promise<{ id: number } | num
         return await withTransaction(async () => {
             if (!(await inventoryRepository.getIngredientById(id, true))) return rollback(INGREDIENT_ERROR.NOT_FOUND);
             if ((await inventoryRepository.getIngredientUsage(id)).stock > 0) return rollback(INGREDIENT_ERROR.IN_STOCK);
+            if ((await recipeRepository.countDishesUsingIngredient(id)) > 0) return rollback(INGREDIENT_ERROR.IN_RECIPE);
             return (await inventoryRepository.deleteIngredient(id)) ?? rollback(INGREDIENT_ERROR.NOT_FOUND);
         });
     } catch (error) {
@@ -191,9 +192,12 @@ export const createReceipt = async (
                 if (body.type === R.IMPORT) {
                     const price = round2(line.unit_price ?? 0);
                     const after = round3(before + qty);
-                    const newAvg = after > 0 ? round2((before * avg + qty * price) / after) : price;
+                    // Tồn đang âm (đã trừ khi thiếu kho): phần âm không có giá trị, giá bình quân tính trên phần tồn dương
+                    const base = Math.max(before, 0);
+                    const newAvg = base + qty > 0 ? round2((base * avg + qty * price) / (base + qty)) : price;
                     changes.push({ ingredient_id: line.ingredient_id, change: qty, after, unit_price: price, avg: newAvg, note: line.note ?? null });
                 } else if (body.type === R.EXPORT) {
+                    // Phiếu xuất tay vẫn không được vượt tồn (chỉ tự trừ khi phục vụ món mới được âm)
                     if (qty > before) return rollback(INVENTORY_ERROR.INSUFFICIENT_STOCK);
                     changes.push({ ingredient_id: line.ingredient_id, change: -qty, after: round3(before - qty), unit_price: avg, avg, note: line.note ?? null });
                 } else {

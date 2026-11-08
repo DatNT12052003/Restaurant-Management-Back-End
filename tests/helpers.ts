@@ -24,6 +24,11 @@ export const resetDatabase = async () => {
         await client.query("BEGIN");
         await client.query(`CREATE TABLE IF NOT EXISTS _test_role_permissions AS
             SELECT role_id, permission_id FROM role_permissions WHERE deleted_at IS NULL`);
+        // Quyền mới do migration seed thêm sau lần chụp đầu (chưa vai trò nào có trong bản chụp): bổ sung vào bản chụp
+        await client.query(`INSERT INTO _test_role_permissions (role_id, permission_id)
+            SELECT rp.role_id, rp.permission_id FROM role_permissions rp
+            WHERE rp.deleted_at IS NULL
+                AND NOT EXISTS (SELECT 1 FROM _test_role_permissions s WHERE s.permission_id = rp.permission_id)`);
         const tables = (
             await client.query(
                 `SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND NOT (tablename = ANY($1))`,

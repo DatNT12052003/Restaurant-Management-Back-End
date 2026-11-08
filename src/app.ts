@@ -29,6 +29,7 @@ import {
     discountRouter,
     paymentRouter,
     inventoryRouter,
+    recipeRouter,
     ingredientRouter,
     reportRouter,
     auditLogRouter,
@@ -71,6 +72,7 @@ app.use("/api/discounts", discountRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/inventory", inventoryRouter);
 app.use("/api/ingredients", ingredientRouter);
+app.use("/api/recipes", recipeRouter);
 app.use("/api/reports", reportRouter);
 app.use("/api/audit-logs", auditLogRouter);
 
