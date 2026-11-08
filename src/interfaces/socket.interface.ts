@@ -47,6 +47,13 @@ export interface IPaymentEventPayload {
     status: PaymentStatusEnum;
 }
 
+export interface IInventoryEventPayload {
+    restaurant_id: number;
+    ingredient_ids: number[];
+    /** Nguyên liệu vừa xuống bằng / dưới ngưỡng tồn tối thiểu */
+    low_ingredient_ids: number[];
+}
+
 export interface IReservationEventPayload {
     restaurant_id: number;
     reservation_id: number;
@@ -63,6 +70,8 @@ export interface ServerToClientEvents {
     "reservation:changed": (data: IReservationEventPayload) => void;
     /** Thu tiền, xác nhận / hủy giao dịch chờ, hoàn tiền */
     "payment:changed": (data: IPaymentEventPayload) => void;
+    /** Phiếu kho, đổi ngưỡng tồn tối thiểu */
+    "inventory:changed": (data: IInventoryEventPayload) => void;
     "restaurant:subscribed": (restaurantId: number | null) => void;
 }
 

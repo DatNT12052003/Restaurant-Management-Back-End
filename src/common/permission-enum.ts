@@ -116,6 +116,21 @@ export enum DiscountPermissionEnum {
     APPLY = "discount.apply",
 }
 
+export enum InventoryPermissionEnum {
+    VIEW = "inventory.view",
+    IMPORT = "inventory.import",
+    EXPORT = "inventory.export",
+    /** Kiểm kê và đặt ngưỡng tồn tối thiểu */
+    ADJUST = "inventory.adjust",
+}
+
+/** Danh mục nguyên liệu (xem danh mục dùng quyền inventory.view) */
+export enum IngredientPermissionEnum {
+    CREATE = "ingredient.create",
+    UPDATE = "ingredient.update",
+    DELETE = "ingredient.delete",
+}
+
 /** Toàn bộ permission của hệ thống, dùng cho seed và kiểm tra. */
 export const ALL_PERMISSIONS: string[] = [
     UserPermissionEnum,
@@ -134,4 +149,6 @@ export const ALL_PERMISSIONS: string[] = [
     OrderItemPermissionEnum,
     PaymentPermissionEnum,
     DiscountPermissionEnum,
+    InventoryPermissionEnum,
+    IngredientPermissionEnum,
 ].flatMap((group) => Object.values(group) as string[]);

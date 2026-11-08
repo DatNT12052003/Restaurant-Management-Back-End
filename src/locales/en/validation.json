@@ -171,5 +171,34 @@
         "reason": {
             "required": "A reason is required"
         }
+    },
+    "inventory": {
+        "name": {
+            "required": "The ingredient name is required"
+        },
+        "unit": {
+            "required": "The unit is required"
+        },
+        "status": {
+            "invalid": "Invalid status"
+        },
+        "type": {
+            "invalid": "Invalid document type"
+        },
+        "quantity": {
+            "invalid": "Invalid quantity",
+            "decimals": "Quantities allow at most 3 decimal places"
+        },
+        "unit_price": {
+            "invalid": "Invalid unit price",
+            "required": "Each line of a stock receipt needs a unit price"
+        },
+        "lines": {
+            "required": "The document needs at least one line",
+            "duplicate": "An ingredient appears more than once"
+        },
+        "reason": {
+            "required": "Stock issues and stocktakes need a reason"
+        }
     }
 }

@@ -11,3 +11,4 @@ export * as reservationController from "./reservation.controller";
 export * as orderController from "./order.controller";
 export * as discountController from "./discount.controller";
 export * as paymentController from "./payment.controller";
+export * as inventoryController from "./inventory.controller";
