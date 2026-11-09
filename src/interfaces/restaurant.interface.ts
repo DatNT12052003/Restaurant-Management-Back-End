@@ -16,6 +16,14 @@ export interface IRestaurant {
     reservation_hold_minutes: number;
     /** Khách trễ quá bao nhiêu phút thì tự đánh dấu không đến (0 = tắt) */
     no_show_after_minutes: number;
+    /** Giai đoạn 13: kênh khách hàng */
+    phone?: string | null;
+    online_booking_enabled?: boolean;
+    online_booking_minutes?: number;
+    online_booking_lead_minutes?: number;
+    online_booking_max_days?: number;
+    online_booking_max_guests?: number;
+    qr_ordering_enabled?: boolean;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
@@ -36,6 +44,14 @@ export interface ICreateRestaurantBody {
     close_time?: string;
     reservation_hold_minutes?: number;
     no_show_after_minutes?: number;
+    /** Giai đoạn 13: kênh khách hàng */
+    phone?: string | null;
+    online_booking_enabled?: boolean;
+    online_booking_minutes?: number;
+    online_booking_lead_minutes?: number;
+    online_booking_max_days?: number;
+    online_booking_max_guests?: number;
+    qr_ordering_enabled?: boolean;
 }
 
 export interface IUpdateRestaurantBody extends Partial<ICreateRestaurantBody> {}

@@ -48,7 +48,7 @@ import { buildListParams } from "~/utils/pagination";
 // ---------------------------------------------------------------------------
 
 /** Mã lỗi dùng chung (trùng dữ liệu, vai trò) -> key i18n; undefined nếu không phải mã chung. */
-const commonErrorKey = (code: number): string | undefined => {
+export const commonErrorKey = (code: number): string | undefined => {
     switch (code) {
         case USER_DUPLICATE.USERNAME_EXISTS:
             return "user:username_exists";

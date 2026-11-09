@@ -25,3 +25,8 @@ export * as transferService from "./transfer.service";
 export * as hrService from "./hr.service";
 export * as attendanceService from "./attendance.service";
 export * as payrollService from "./payroll.service";
+export * as bookingService from "./booking.service";
+export * as orderRequestService from "./order-request.service";
+export * as loyaltyService from "./loyalty.service";
+export * as feedbackService from "./feedback.service";
+export * as customerService from "./customer.service";

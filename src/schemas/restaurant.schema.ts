@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { RestaurantStatusEnum } from "~/common/enum";
-import { idParamSchema } from "./common.schema";
+import { idParamSchema, optionalBoolean, optionalString } from "./common.schema";
 
 const name = z
     .string({ message: "validation:restaurant.name.required" })
@@ -35,6 +35,15 @@ const minutes = z.coerce
     .min(0, { message: "validation:restaurant.minutes.invalid" })
     .max(240, { message: "validation:restaurant.minutes.invalid" });
 
+/** Giai đoạn 13: số nguyên trong khoảng (đặt bàn online) */
+const intRange = (min: number, max: number) =>
+    z.coerce
+        .number({ message: "validation:restaurant.number.invalid" })
+        .int({ message: "validation:restaurant.number.invalid" })
+        .min(min, { message: "validation:restaurant.number.invalid" })
+        .max(max, { message: "validation:restaurant.number.invalid" })
+        .optional();
+
 export const createRestaurantSchema = z.object({
     body: z.object({
         name,
@@ -46,6 +55,13 @@ export const createRestaurantSchema = z.object({
         close_time: time.optional(),
         reservation_hold_minutes: minutes.optional(),
         no_show_after_minutes: minutes.optional(),
+        phone: optionalString(30),
+        online_booking_enabled: optionalBoolean(),
+        online_booking_minutes: intRange(30, 720),
+        online_booking_lead_minutes: intRange(0, 10080),
+        online_booking_max_days: intRange(1, 365),
+        online_booking_max_guests: intRange(1, 500),
+        qr_ordering_enabled: optionalBoolean(),
     }),
 });
 
@@ -62,6 +78,13 @@ export const updateRestaurantSchema = z.object({
             close_time: time.optional(),
             reservation_hold_minutes: minutes.optional(),
             no_show_after_minutes: minutes.optional(),
+            phone: optionalString(30),
+            online_booking_enabled: optionalBoolean(),
+            online_booking_minutes: intRange(30, 720),
+            online_booking_lead_minutes: intRange(0, 10080),
+            online_booking_max_days: intRange(1, 365),
+            online_booking_max_guests: intRange(1, 500),
+            qr_ordering_enabled: optionalBoolean(),
         })
         .refine((b) => Object.values(b).some((v) => v !== undefined), { message: "validation:common.empty_update" }),
 });

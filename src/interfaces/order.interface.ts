@@ -65,6 +65,10 @@ export interface IOrder {
     status: OrderStatusEnum;
     subtotal: string;
     discount_amount: string;
+    /** Giai đoạn 13: điểm đổi (giảm `points_discount`, nằm trong `discount_amount`) và điểm đã cộng khi hoàn tất */
+    points_redeemed?: number;
+    points_discount?: string;
+    points_awarded?: number;
     total: string;
     note: string | null;
     cancel_reason: string | null;

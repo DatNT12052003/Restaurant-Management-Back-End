@@ -34,7 +34,7 @@ import { createGuestResource, getMeResource } from "~/resources";
 import { authService, mailService, otpService, tokenService, userService } from "~/services";
 import { generateOTP } from "~/utils/common";
 import { uploadToCloudinary } from "~/utils/cloudinary";
-import { CREATE_GUEST } from "~/common/error-code/user";
+import { commonErrorKey } from "./user.controller";
 import { auditContext } from "~/utils/audit";
 
 export const register = async (req: Request, res: Response) => {
@@ -49,18 +49,11 @@ export const register = async (req: Request, res: Response) => {
         } else {
             body.user.avatar_url = null;
         }
+        // Khách tự đăng ký luôn là khách mới (không tự chọn trạng thái khách thân thiết)
+        body.user.guest_status = undefined;
         const newGuest: { user: IUser; account: IAccount } | number = await userService.createGuest(body);
         if (typeof newGuest === "number") {
-            switch (newGuest) {
-                case CREATE_GUEST.CREATE_USER_WITH_ACCOUNT_FAILED:
-                    return createErrorResponse(res, req.t("auth:register_failed"));
-                case CREATE_GUEST.ASSIGN_ROLES_FAILED:
-                    return createErrorResponse(res, req.t("auth:register_failed"));
-                case CREATE_GUEST.CREATE_GUEST_FAILED:
-                    return createErrorResponse(res, req.t("auth:register_failed"));
-                default:
-                    return createErrorResponse(res, req.t("auth:register_failed"));
-            }
+            return createErrorResponse(res, req.t(commonErrorKey(newGuest) ?? "auth:register_failed"));
         }
         return createSuccessResponse(res, req.t("auth:register_success"), createGuestResource(newGuest));
     } catch (error) {

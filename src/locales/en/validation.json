@@ -71,6 +71,9 @@
         },
         "closed_day": {
             "invalid": "Invalid closed day (YYYY-MM-DD)"
+        },
+        "number": {
+            "invalid": "Invalid number"
         }
     },
     "room": {
@@ -329,6 +332,50 @@
         },
         "reason": {
             "required": "Reason is required"
+        }
+    },
+    "customer": {
+        "date": {
+            "invalid": "Invalid date"
+        },
+        "time": {
+            "invalid": "Invalid time (HH:MM)"
+        },
+        "guest_count": {
+            "invalid": "Invalid number of guests"
+        },
+        "email": {
+            "invalid": "Invalid email"
+        },
+        "phone": {
+            "invalid": "Invalid phone number"
+        },
+        "rating": {
+            "invalid": "Rating must be 1 to 5"
+        },
+        "quantity": {
+            "invalid": "Quantity must be 1 to 50"
+        },
+        "otp": {
+            "invalid": "The code has 6 digits"
+        },
+        "items": {
+            "required": "No items selected"
+        },
+        "status": {
+            "invalid": "Invalid status"
+        },
+        "number": {
+            "invalid": "Invalid number"
+        },
+        "search": {
+            "required": "Type at least 2 characters"
+        },
+        "points": {
+            "invalid": "Invalid points"
+        },
+        "note": {
+            "required": "A note is required"
         }
     }
 }

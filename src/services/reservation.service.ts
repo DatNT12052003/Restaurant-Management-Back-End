@@ -26,6 +26,7 @@ import logger from "~/config/logger";
 import { AUDIT_ACTION, writeAudit } from "~/utils/audit";
 import { buildPagination } from "~/utils/pagination";
 import { inScope } from "./room.service";
+import { notifyOnlineBooking } from "./booking-mail";
 
 /** `scope`: null = mọi nhà hàng (admin); số = chỉ nhà hàng này. */
 type Scope = number | null | undefined;
@@ -490,6 +491,8 @@ export const updateReservationStatus = async (
             emitReservation(result);
             if (opened) orderService.emitOrderOpened(opened);
             await syncAfterWrite(result.restaurant_id);
+            // Giai đoạn 13: đơn online được xác nhận / hủy thì báo khách qua email
+            if (body.status === S.CONFIRMED || body.status === S.CANCELLED) void notifyOnlineBooking(result.id);
         }
         return result;
     } catch (error) {

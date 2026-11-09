@@ -48,3 +48,14 @@ export const calcTotals = (
     const tax = roundVnd(((net + service_fee) * Number(taxRate)) / 100);
     return { subtotal, discount_amount: discountAmount, service_fee, tax, total: net + service_fee + tax };
 };
+
+/**
+ * Giai đoạn 13: tiền giảm khi đổi `requested` điểm, mỗi điểm `pointValue` đồng, tối đa `maxPercent`% của `base`
+ * (tạm tính sau mã giảm giá). Trả về số điểm thực dùng (có thể ít hơn số yêu cầu) và số tiền giảm.
+ */
+export const calcPointsDiscount = (base: number, requested: number, pointValue: number, maxPercent: number): { points: number; amount: number } => {
+    if (requested <= 0 || pointValue <= 0 || base <= 0) return { points: 0, amount: 0 };
+    const cap = Math.floor((base * maxPercent) / 100);
+    const points = Math.min(requested, Math.floor(cap / pointValue));
+    return { points, amount: points * pointValue };
+};

@@ -16,6 +16,11 @@ import {
     comboRouter,
     dishRouter,
     hrRouter,
+    publicRouter,
+    customerRouter,
+    orderRequestRouter,
+    feedbackRouter,
+    loyaltyRouter,
     imageRouter,
     restaurantMenuRouter,
     tagRouter,
@@ -83,6 +88,11 @@ app.use("/api/purchase-orders", purchaseOrderRouter);
 app.use("/api/stock-transfers", stockTransferRouter);
 app.use("/api/payables", payableRouter);
 app.use("/api/hr", hrRouter);
+app.use("/api/public", publicRouter);
+app.use("/api/customer", customerRouter);
+app.use("/api/order-requests", orderRequestRouter);
+app.use("/api/feedbacks", feedbackRouter);
+app.use("/api/loyalty", loyaltyRouter);
 app.use("/api/reports", reportRouter);
 app.use("/api/audit-logs", auditLogRouter);
 

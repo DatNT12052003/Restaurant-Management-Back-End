@@ -204,6 +204,24 @@ export enum PayrollPermissionEnum {
     MANAGE = "payroll.manage",
 }
 
+/** Giai đoạn 13: kênh khách hàng */
+export enum OrderRequestPermissionEnum {
+    /** Duyệt / từ chối món khách gọi qua QR tại bàn */
+    HANDLE = "order_request.handle",
+}
+
+export enum FeedbackPermissionEnum {
+    VIEW = "feedback.view",
+    REPLY = "feedback.reply",
+}
+
+export enum LoyaltyPermissionEnum {
+    /** Tra cứu khách theo SĐT, xem điểm */
+    VIEW = "loyalty.view",
+    /** Cấu hình điểm thưởng, điều chỉnh điểm tay */
+    MANAGE = "loyalty.manage",
+}
+
 /** Toàn bộ permission của hệ thống, dùng cho seed và kiểm tra. */
 export const ALL_PERMISSIONS: string[] = [
     UserPermissionEnum,
@@ -236,4 +254,7 @@ export const ALL_PERMISSIONS: string[] = [
     LeavePermissionEnum,
     StaffReviewPermissionEnum,
     PayrollPermissionEnum,
+    OrderRequestPermissionEnum,
+    FeedbackPermissionEnum,
+    LoyaltyPermissionEnum,
 ].flatMap((group) => Object.values(group) as string[]);

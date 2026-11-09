@@ -10,7 +10,7 @@ import {
     OrderLineKind,
 } from "~/interfaces";
 import { buildInsertQuery, buildSelectAllQuery, buildUpdateQuery } from "~/utils/query-builder";
-import { calcDiscount, calcTotals, ITotals } from "~/utils/billing";
+import { calcDiscount, calcPointsDiscount, calcTotals, ITotals } from "~/utils/billing";
 
 /** Order chưa đóng */
 export const OPEN_ORDER_STATUSES: string[] = [OrderStatusEnum.PENDING, OrderStatusEnum.CONFIRMED, OrderStatusEnum.SERVING];
@@ -298,6 +298,7 @@ export const recomputeTotals = async (orderId: number): Promise<ITotals | undefi
     const result = await db().query(
         `SELECT o.service_fee_rate, o.tax_rate, od.id AS order_discount_id,
             d.type, d.value, d.min_order_value, d.max_discount,
+            o.points_redeemed, ls.point_value, ls.max_redeem_percent,
             (SELECT COALESCE(SUM(current_price * quantity), 0) FROM (
                 SELECT current_price, quantity FROM order_items WHERE order_id = o.id AND status <> 'cancelled'
                 UNION ALL
@@ -306,6 +307,7 @@ export const recomputeTotals = async (orderId: number): Promise<ITotals | undefi
         FROM orders o
         LEFT JOIN order_discounts od ON od.order_id = o.id
         LEFT JOIN discounts d ON d.id = od.discount_id
+        LEFT JOIN loyalty_settings ls ON ls.id = 1
         WHERE o.id = $1`,
         [orderId],
     );
@@ -313,7 +315,12 @@ export const recomputeTotals = async (orderId: number): Promise<ITotals | undefi
     if (!row) return undefined;
     const subtotal = Number(row.subtotal);
     const discount = row.order_discount_id ? calcDiscount(subtotal, row) : 0;
-    const totals = calcTotals(subtotal, discount, row.service_fee_rate, row.tax_rate);
+    // Giai đoạn 13: đổi điểm, tối đa `max_redeem_percent`% phần còn lại sau mã giảm giá. Món bị hủy làm trần giảm thì bớt điểm đổi.
+    const points = calcPointsDiscount(subtotal - discount, Number(row.points_redeemed), Number(row.point_value ?? 0), Number(row.max_redeem_percent ?? 0));
+    if (Number(row.points_redeemed) > 0) {
+        await db().query("UPDATE orders SET points_redeemed = $2, points_discount = $3 WHERE id = $1", [orderId, points.points, points.amount]);
+    }
+    const totals = calcTotals(subtotal, discount + points.amount, row.service_fee_rate, row.tax_rate);
     if (row.order_discount_id) {
         await db().query("UPDATE order_discounts SET amount_applied = $2, updated_at = NOW() WHERE id = $1", [
             row.order_discount_id,
@@ -657,4 +664,26 @@ export const getStaffById = async (id: number): Promise<{ id: number; restaurant
         [id, RolesEnum.GUEST],
     );
     return result.rows[0];
+};
+
+// ---------------------------------------------------------------------------
+// Giai đoạn 13: điểm thưởng, gọi món QR
+// ---------------------------------------------------------------------------
+
+export const setPointsRedeemed = async (orderId: number, points: number): Promise<void> => {
+    await db().query("UPDATE orders SET points_redeemed = $2, points_discount = 0, updated_at = NOW() WHERE id = $1", [orderId, points]);
+};
+
+export const setPointsAwarded = async (orderId: number, points: number): Promise<void> => {
+    await db().query("UPDATE orders SET points_awarded = $2 WHERE id = $1", [orderId, points]);
+};
+
+/** Order đang mở của một bàn (nếu có) */
+export const getOpenOrderIdByTable = async (tableId: number): Promise<number | undefined> => {
+    const result = await db().query(
+        `SELECT ot.order_id FROM order_tables ot JOIN orders o ON o.id = ot.order_id
+        WHERE ot.table_id = $1 AND ot.released_at IS NULL AND o.status = ANY($2::text[]) AND o.deleted_at IS NULL LIMIT 1`,
+        [tableId, OPEN_ORDER_STATUSES],
+    );
+    return result.rows[0]?.order_id;
 };
