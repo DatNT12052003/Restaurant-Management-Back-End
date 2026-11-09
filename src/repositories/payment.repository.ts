@@ -19,6 +19,10 @@ const WRITABLE_FIELDS = [
     "paid_at",
     "tip_amount",
     "tip_staff_id",
+    "provider",
+    "gateway_ref",
+    "gateway_data",
+    "expires_at",
     "updated_at",
 ];
 
@@ -157,6 +161,47 @@ export const getInvoiceLines = async (orderId: number): Promise<IInvoiceLine[]> 
         GROUP BY kind, item_id, name, unit_price
         ORDER BY MIN(created_at), name`,
         [orderId],
+    );
+    return result.rows;
+};
+
+// ---------------------------------------------------------------------------
+// Giai đoạn 14: payment QR chuyển khoản
+// ---------------------------------------------------------------------------
+
+/** Payment QR chưa thanh toán của order (kể cả đã quá hạn nhưng job chưa kịp hủy) */
+export const getOpenQrPayments = async (orderId: number): Promise<IPayment[]> => {
+    const result = await db().query(
+        `SELECT ${RETURNING.join(", ")} FROM payments p
+        WHERE p.order_id = $1 AND p.type = 'payment' AND p.status = 'processing' AND p.gateway_ref IS NOT NULL
+        ORDER BY p.id`,
+        [orderId],
+    );
+    return result.rows;
+};
+
+export const getPaymentByGatewayRef = async (ref: string): Promise<IPayment | undefined> => {
+    const result = await db().query(`SELECT ${RETURNING.join(", ")} FROM payments p WHERE p.gateway_ref = $1`, [ref]);
+    return result.rows[0];
+};
+
+/** Hủy các payment QR của order (đổi số tiền, tạo mã mới, ghi nhận tay). Trả về id đã hủy. */
+export const cancelQrPayments = async (ids: number[], note: string): Promise<number[]> => {
+    if (!ids.length) return [];
+    const result = await db().query(
+        `UPDATE payments SET status = 'cancelled', note = COALESCE(note, $2), updated_at = NOW()
+        WHERE id = ANY($1::int[]) AND status = 'processing' RETURNING id`,
+        [ids, note],
+    );
+    return result.rows.map((r) => r.id);
+};
+
+/** Hủy các payment QR đã quá hạn (job mỗi phút). Trả về payment đã hủy để phát sự kiện. */
+export const expireQrPayments = async (): Promise<{ id: number; order_id: number; restaurant_id: number }[]> => {
+    const result = await db().query(
+        `UPDATE payments SET status = 'cancelled', note = COALESCE(note, 'expired'), updated_at = NOW()
+        WHERE status = 'processing' AND gateway_ref IS NOT NULL AND expires_at < NOW()
+        RETURNING id, order_id, restaurant_id`,
     );
     return result.rows;
 };

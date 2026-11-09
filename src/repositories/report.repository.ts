@@ -1,5 +1,6 @@
 import { db } from "~/config/db";
 import { IReportRange, ReportGroupBy, RevenueBasis } from "~/interfaces";
+import { PAID_DAILY_SQL } from "./report-summary.repository";
 
 /**
  * Truy vấn báo cáo. Mọi mốc ngày tính theo giờ Việt Nam.
@@ -42,13 +43,12 @@ export const getPeriods = async (r: IReportRange, groupBy: ReportGroupBy): Promi
 
 export const getTotals = async (r: IReportRange) => {
     const result = await db().query(
-        `SELECT
-            (SELECT COALESCE(SUM(${NET_AMOUNT}), 0) FROM payments p
-                WHERE ${SETTLED} AND ${inRange("p.paid_at")} AND ${ofRestaurant("p.restaurant_id")}) AS net_revenue,
-            (SELECT ${COLLECTED} FROM payments p
-                WHERE ${inRange("p.paid_at")} AND ${ofRestaurant("p.restaurant_id")}) AS collected,
-            (SELECT ${REFUNDED} FROM payments p
-                WHERE ${inRange("p.paid_at")} AND ${ofRestaurant("p.restaurant_id")}) AS refunded,
+        // Tiền thu / hoàn: đọc qua bảng tổng hợp theo ngày (GĐ14), phần chưa tổng hợp tính từ payments
+        `WITH paid_daily AS (${PAID_DAILY_SQL})
+        SELECT
+            (SELECT COALESCE(SUM(collected - refunded), 0) FROM paid_daily) AS net_revenue,
+            (SELECT COALESCE(SUM(collected), 0) FROM paid_daily) AS collected,
+            (SELECT COALESCE(SUM(refunded), 0) FROM paid_daily) AS refunded,
             o.completed_orders, o.gross_sales, o.discount_total, o.guests,
             (SELECT COUNT(*) FROM orders c WHERE c.deleted_at IS NULL AND c.status = 'cancelled'
                 AND ${inRange("c.cancelled_at")} AND ${ofRestaurant("c.restaurant_id")}) AS cancelled_orders,
@@ -116,6 +116,16 @@ const basisSql = (basis: RevenueBasis) =>
 
 /** Tiền thu / hoàn theo kỳ và nhà hàng */
 export const getPaymentsByPeriod = async (r: IReportRange, groupBy: ReportGroupBy, basis: RevenueBasis = "paid") => {
+    if (basis === "paid") {
+        const result = await db().query(
+            `WITH paid_daily AS (${PAID_DAILY_SQL})
+            SELECT to_char(date_trunc($4::text, day::timestamp), 'YYYY-MM-DD') AS period, restaurant_id,
+                SUM(collected) AS collected, SUM(refunded) AS refunded
+            FROM paid_daily GROUP BY 1, 2`,
+            [...args(r), groupBy],
+        );
+        return result.rows as { period: string; restaurant_id: number; collected: string; refunded: string }[];
+    }
     const b = basisSql(basis);
     const result = await db().query(
         `SELECT to_char(date_trunc($4::text, ${local(b.time)}), 'YYYY-MM-DD') AS period, p.restaurant_id,
@@ -142,6 +152,15 @@ export const getOrdersByPeriod = async (r: IReportRange, groupBy: ReportGroupBy)
 };
 
 export const getPaymentsByMethod = async (r: IReportRange, basis: RevenueBasis = "paid") => {
+    if (basis === "paid") {
+        const result = await db().query(
+            `WITH paid_daily AS (${PAID_DAILY_SQL})
+            SELECT method, SUM(collected) AS collected, SUM(refunded) AS refunded, SUM(payment_count) AS count
+            FROM paid_daily GROUP BY method ORDER BY method`,
+            args(r),
+        );
+        return result.rows as { method: string; collected: string; refunded: string; count: string }[];
+    }
     const b = basisSql(basis);
     const result = await db().query(
         `SELECT p.method, ${COLLECTED} AS collected, ${REFUNDED} AS refunded,

@@ -74,6 +74,15 @@
         },
         "number": {
             "invalid": "Giá trị số không hợp lệ"
+        },
+        "bank_bin": {
+            "invalid": "Mã ngân hàng (BIN) gồm 6 chữ số"
+        },
+        "bank_account_no": {
+            "invalid": "Số tài khoản chỉ gồm chữ và số (4–30 ký tự)"
+        },
+        "tax_code": {
+            "invalid": "Mã số thuế gồm 10 số, chi nhánh thêm -xxx"
         }
     },
     "room": {
@@ -376,6 +385,23 @@
         },
         "note": {
             "required": "Ghi chú là bắt buộc"
+        }
+    },
+    "einvoice": {
+        "tax_code": {
+            "invalid": "Mã số thuế gồm 10 số, chi nhánh thêm -xxx"
+        },
+        "email": {
+            "invalid": "Email không hợp lệ"
+        },
+        "buyer_type": {
+            "invalid": "Loại người mua không hợp lệ"
+        },
+        "company": {
+            "required": "Người mua là doanh nghiệp cần có tên công ty và mã số thuế"
+        },
+        "reason": {
+            "required": "Vui lòng nhập lý do"
         }
     }
 }

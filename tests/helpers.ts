@@ -39,12 +39,16 @@ export const resetDatabase = async () => {
                 [KEEP],
             )
         ).rows.map((r) => `"${r.tablename}"`);
-        // Bảng nhật ký có trigger chặn TRUNCATE
-        await client.query("ALTER TABLE audit_logs DISABLE TRIGGER audit_logs_protect_truncate");
-        await client.query("ALTER TABLE audit_logs_archive DISABLE TRIGGER audit_logs_archive_protect_truncate");
+        // Bảng nhật ký (và từng phân vùng tháng của audit_logs, GĐ14) có trigger chặn TRUNCATE
+        const guards = (
+            await client.query(
+                `SELECT tgrelid::regclass::text AS tbl, tgname FROM pg_trigger
+                WHERE tgname IN ('audit_logs_protect_truncate', 'audit_logs_archive_protect_truncate')`,
+            )
+        ).rows as { tbl: string; tgname: string }[];
+        for (const g of guards) await client.query(`ALTER TABLE ${g.tbl} DISABLE TRIGGER ${g.tgname}`);
         await client.query(`TRUNCATE ${tables.join(", ")} RESTART IDENTITY CASCADE`);
-        await client.query("ALTER TABLE audit_logs ENABLE TRIGGER audit_logs_protect_truncate");
-        await client.query("ALTER TABLE audit_logs_archive ENABLE TRIGGER audit_logs_archive_protect_truncate");
+        for (const g of guards) await client.query(`ALTER TABLE ${g.tbl} ENABLE TRIGGER ${g.tgname}`);
         await client.query("DELETE FROM role_permissions");
         await client.query(`INSERT INTO role_permissions (role_id, permission_id)
             SELECT role_id, permission_id FROM _test_role_permissions`);

@@ -23,3 +23,6 @@ export * as lotRepository from "./lot.repository";
 export * as purchasingRepository from "./purchasing.repository";
 export * as hrRepository from "./hr.repository";
 export * as customerRepository from "./customer.repository";
+export * as gatewayRepository from "./gateway.repository";
+export * as eInvoiceRepository from "./e-invoice.repository";
+export * as reportSummaryRepository from "./report-summary.repository";

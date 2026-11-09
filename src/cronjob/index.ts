@@ -1,5 +1,5 @@
 import logger from "~/config/logger";
-import { auditLogService, reservationService } from "~/services";
+import { auditLogService, eInvoiceService, paymentGatewayService, reportSummaryService, reservationService } from "~/services";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -24,7 +24,17 @@ const schedule = (name: string, job: () => Promise<unknown>, delayMs: number, in
 /** Các job định kỳ, gọi một lần khi server khởi động */
 export const startScheduledJobs = () => {
     // Lưu trữ nhật ký cũ hơn 12 tháng: chạy 1 phút sau khi khởi động, sau đó mỗi ngày
-    schedule("archive-audit-logs", () => auditLogService.archiveOldAuditLogs(), 60 * 1000, DAY_MS);
+    schedule(
+        "archive-audit-logs",
+        async () => ({ archived: await auditLogService.archiveOldAuditLogs(), ...(await auditLogService.maintainAuditPartitions()) }),
+        60 * 1000,
+        DAY_MS,
+    );
     // Giữ bàn trước giờ hẹn, trả bàn và đánh dấu khách không đến (câu hỏi 8): mỗi phút
     schedule("reservation-holds", () => reservationService.syncReservationHolds(), 15 * 1000, 60 * 1000, true);
+    // Giai đoạn 14: hủy mã QR chuyển khoản quá hạn; gửi / thử lại hóa đơn điện tử: mỗi phút
+    schedule("expire-qr-payments", () => paymentGatewayService.expireQrPayments(), 20 * 1000, 60 * 1000, true);
+    schedule("einvoice-dispatch", () => eInvoiceService.dispatchDue(), 30 * 1000, 60 * 1000, true);
+    // Tổng hợp doanh thu theo ngày cho báo cáo: 2 phút sau khi khởi động, sau đó mỗi giờ (chỉ làm khi sang ngày mới)
+    schedule("report-daily-summary", () => reportSummaryService.refreshDailySummary(), 2 * 60 * 1000, 60 * 60 * 1000, true);
 };

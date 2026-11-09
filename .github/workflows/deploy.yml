@@ -1,0 +1,85 @@
+# Giai đoạn 14: CI/CD backend.
+# push develop -> test -> build image (GHCR) -> triển khai staging
+# push main    -> test -> build image (GHCR) -> triển khai production (nên bật "Required reviewers" cho environment production)
+#
+# Cấu hình trên GitHub (Settings):
+# - Variables (repo): DEPLOY_ENABLED=true khi máy chủ đã sẵn sàng (chưa đặt thì chỉ build image, không triển khai).
+# - Environments "staging" và "production", mỗi cái có secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY,
+#   (tùy chọn) DEPLOY_PORT; và variable DEPLOY_PATH (mặc định /opt/restaurant).
+name: Deploy
+
+on:
+    push:
+        branches: [develop, main]
+    workflow_dispatch:
+
+concurrency:
+    group: deploy-backend-${{ github.ref_name }}
+    cancel-in-progress: false
+
+jobs:
+    ci:
+        uses: ./.github/workflows/ci.yml
+
+    image:
+        needs: ci
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            packages: write
+        outputs:
+            tag: ${{ steps.meta.outputs.tag }}
+            environment: ${{ steps.meta.outputs.environment }}
+        steps:
+            - uses: actions/checkout@v4
+            - id: meta
+              run: |
+                  echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/restaurant-management-backend" >> "$GITHUB_OUTPUT"
+                  echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+                  if [ "$GITHUB_REF_NAME" = "main" ]; then echo "environment=production" >> "$GITHUB_OUTPUT"; else echo "environment=staging" >> "$GITHUB_OUTPUT"; fi
+            - uses: docker/setup-buildx-action@v3
+            - uses: docker/login-action@v3
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+            - uses: docker/build-push-action@v6
+              with:
+                  context: .
+                  push: true
+                  build-args: APP_VERSION=${{ steps.meta.outputs.tag }}
+                  tags: |
+                      ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
+                      ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.environment }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+
+    deploy:
+        needs: image
+        if: vars.DEPLOY_ENABLED == 'true'
+        runs-on: ubuntu-latest
+        environment: ${{ needs.image.outputs.environment }}
+        env:
+            DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/restaurant' }}
+        steps:
+            - uses: actions/checkout@v4
+            # Đồng bộ cấu hình triển khai (không gồm file .env, nằm sẵn trên máy chủ)
+            - uses: appleboy/scp-action@v0.1.7
+              with:
+                  host: ${{ secrets.DEPLOY_HOST }}
+                  username: ${{ secrets.DEPLOY_USER }}
+                  key: ${{ secrets.DEPLOY_SSH_KEY }}
+                  port: ${{ secrets.DEPLOY_PORT || 22 }}
+                  source: "deploy/docker-compose.yml,deploy/deploy.sh,deploy/backup,deploy/proxy/docker-compose.yml,deploy/proxy/Caddyfile,deploy/env,deploy/README.md"
+                  target: ${{ env.DEPLOY_PATH }}
+                  strip_components: 1
+            - uses: appleboy/ssh-action@v1.2.0
+              with:
+                  host: ${{ secrets.DEPLOY_HOST }}
+                  username: ${{ secrets.DEPLOY_USER }}
+                  key: ${{ secrets.DEPLOY_SSH_KEY }}
+                  port: ${{ secrets.DEPLOY_PORT || 22 }}
+                  envs: DEPLOY_PATH
+                  script: |
+                      chmod +x "$DEPLOY_PATH/deploy.sh"
+                      "$DEPLOY_PATH/deploy.sh" ${{ needs.image.outputs.environment }} backend ${{ needs.image.outputs.tag }}

@@ -17,3 +17,4 @@ export * as recipeController from "./recipe.controller";
 export * as purchasingController from "./purchasing.controller";
 export * as hrController from "./hr.controller";
 export * as customerController from "./customer.controller";
+export * as integrationController from "./integration.controller";

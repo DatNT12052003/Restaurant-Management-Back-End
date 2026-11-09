@@ -1,5 +1,4 @@
-# Lưu và checkout mọi file văn bản với LF (hết cảnh báo LF/CRLF khi commit trên Windows)
-* text=auto eol=lf
-*.png binary
-*.jpg binary
-*.ico binary
+# Giai đoạn 14: script và cấu hình chạy trong container Linux phải giữ LF
+*.sh text eol=lf
+deploy/** text eol=lf
+Dockerfile text eol=lf

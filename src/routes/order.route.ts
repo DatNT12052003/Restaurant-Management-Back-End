@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { DiscountPermissionEnum, OrderPermissionEnum, PaymentPermissionEnum } from "~/common/permission-enum";
-import { discountController, orderController, paymentController } from "~/controllers";
+import { DiscountPermissionEnum, OrderPermissionEnum, PaymentPermissionEnum, EInvoicePermissionEnum } from "~/common/permission-enum";
+import { discountController, orderController, paymentController, integrationController } from "~/controllers";
 import {
     auditRoute,
     authMiddleware,
@@ -17,6 +17,8 @@ import {
     splitOrderSchema,
     applyDiscountSchema,
     createPaymentSchema,
+    createQrPaymentSchema,
+    issueEInvoiceSchema,
     cancelOrderSchema,
     createOrderSchema,
     createRoundSchema,
@@ -112,6 +114,22 @@ router.post(
     validate(createPaymentSchema),
     restrictToRestaurant,
     paymentController.createPayment,
+);
+// Giai đoạn 14: mã VietQR chuyển khoản (xác nhận tự động qua webhook SePay)
+router.post(
+    "/:id/payments/qr",
+    checkPermission(PaymentPermissionEnum.CREATE),
+    validate(createQrPaymentSchema),
+    restrictToRestaurant,
+    integrationController.createQrPayment,
+);
+// Giai đoạn 14: phát hành hóa đơn điện tử cho order đã hoàn tất
+router.post(
+    "/:id/e-invoice",
+    checkPermission(EInvoicePermissionEnum.ISSUE),
+    validate(issueEInvoiceSchema),
+    restrictToRestaurant,
+    integrationController.issueEInvoice,
 );
 router.get(
     "/:id/invoice",

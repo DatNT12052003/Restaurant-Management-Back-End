@@ -1,0 +1,39 @@
+# Giai đoạn 14: reverse proxy chung cho mọi môi trường trên máy chủ: Caddy tự lấy và gia hạn chứng chỉ HTTPS
+# (Let's Encrypt), chuyển tên miền tới container web của từng môi trường qua mạng `edge`.
+#   docker network create edge        # một lần
+#   docker compose -f proxy/docker-compose.yml --env-file proxy/.env up -d
+name: rm-proxy
+
+services:
+    caddy:
+        image: caddy:2.8-alpine
+        restart: unless-stopped
+        ports:
+            - "80:80"
+            - "443:443"
+            - "443:443/udp"
+        environment:
+            PROD_DOMAIN: ${PROD_DOMAIN}
+            STAGING_DOMAIN: ${STAGING_DOMAIN}
+            ACME_EMAIL: ${ACME_EMAIL}
+            STAGING_USER: ${STAGING_USER:-staging}
+            STAGING_PASSWORD_HASH: ${STAGING_PASSWORD_HASH}
+        volumes:
+            - ./Caddyfile:/etc/caddy/Caddyfile:ro
+            - caddy-data:/data
+            - caddy-config:/config
+        networks:
+            - edge
+        logging:
+            driver: json-file
+            options:
+                max-size: "20m"
+                max-file: "5"
+
+volumes:
+    caddy-data:
+    caddy-config:
+
+networks:
+    edge:
+        external: true

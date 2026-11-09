@@ -44,6 +44,28 @@ const intRange = (min: number, max: number) =>
         .max(max, { message: "validation:restaurant.number.invalid" })
         .optional();
 
+/** Giai đoạn 14: tài khoản nhận chuyển khoản QR và thông tin người bán trên hóa đơn điện tử */
+const bankBin = z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+    z.string().trim().regex(/^\d{6}$/, { message: "validation:restaurant.bank_bin.invalid" }).nullable().optional(),
+);
+const integrationFields = {
+    bank_bin: bankBin,
+    bank_account_no: z.preprocess(
+        (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+        z.string().trim().regex(/^[0-9A-Za-z]{4,30}$/, { message: "validation:restaurant.bank_account_no.invalid" }).nullable().optional(),
+    ),
+    bank_account_name: optionalString(100),
+    transfer_qr_enabled: optionalBoolean(),
+    legal_name: optionalString(255),
+    tax_code: z.preprocess(
+        (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+        z.string().trim().regex(/^\d{10}(-\d{3})?$/, { message: "validation:restaurant.tax_code.invalid" }).nullable().optional(),
+    ),
+    einvoice_series: optionalString(20),
+    einvoice_auto_issue: optionalBoolean(),
+};
+
 export const createRestaurantSchema = z.object({
     body: z.object({
         name,
@@ -62,6 +84,7 @@ export const createRestaurantSchema = z.object({
         online_booking_max_days: intRange(1, 365),
         online_booking_max_guests: intRange(1, 500),
         qr_ordering_enabled: optionalBoolean(),
+        ...integrationFields,
     }),
 });
 
@@ -85,6 +108,7 @@ export const updateRestaurantSchema = z.object({
             online_booking_max_days: intRange(1, 365),
             online_booking_max_guests: intRange(1, 500),
             qr_ordering_enabled: optionalBoolean(),
+            ...integrationFields,
         })
         .refine((b) => Object.values(b).some((v) => v !== undefined), { message: "validation:common.empty_update" }),
 });

@@ -84,6 +84,10 @@ export interface ServerToClientEvents {
     "order_request:changed": (data: IOrderRequestEventPayload) => void;
     /** Khách gửi phản hồi */
     "feedback:created": (data: { restaurant_id: number; feedback_id: number; is_complaint: boolean }) => void;
+    /** Giai đoạn 14: giao dịch chuyển khoản chưa khớp / sai số tiền, cần đối soát */
+    "gateway:transaction": (data: { restaurant_id: number; transaction_id: number | null; status: string }) => void;
+    /** Hóa đơn điện tử đã cấp số / gửi lỗi / bị hủy */
+    "einvoice:changed": (data: { restaurant_id: number; e_invoice_id: number; order_id: number; status: string }) => void;
     "restaurant:subscribed": (restaurantId: number | null) => void;
 }
 

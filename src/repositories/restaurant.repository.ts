@@ -2,7 +2,7 @@ import { db } from "~/config/db";
 import { ICreateRestaurantBody, IRestaurant, ISelectQuery, IUpdateRestaurantBody } from "~/interfaces";
 import { buildInsertQuery, buildSelectAllQuery, buildSoftDeleteQuery, buildUpdateQuery } from "~/utils/query-builder";
 
-const WRITABLE_FIELDS = ["name", "address", "status", "service_fee_percent", "tax_percent", "open_time", "close_time", "reservation_hold_minutes", "no_show_after_minutes", "phone", "online_booking_enabled", "online_booking_minutes", "online_booking_lead_minutes", "online_booking_max_days", "online_booking_max_guests", "qr_ordering_enabled", "updated_at"];
+const WRITABLE_FIELDS = ["name", "address", "status", "service_fee_percent", "tax_percent", "open_time", "close_time", "reservation_hold_minutes", "no_show_after_minutes", "phone", "online_booking_enabled", "online_booking_minutes", "online_booking_lead_minutes", "online_booking_max_days", "online_booking_max_guests", "qr_ordering_enabled", "bank_bin", "bank_account_no", "bank_account_name", "transfer_qr_enabled", "legal_name", "tax_code", "einvoice_series", "einvoice_auto_issue", "updated_at"];
 
 export const getRestaurants = async (params: ISelectQuery): Promise<{ rows: IRestaurant[]; totalCount: number }> => {
     const allowedFields = ["name", "status", "address", "created_at", "updated_at", "deleted_at"];

@@ -43,6 +43,9 @@ import {
     ingredientRouter,
     reportRouter,
     auditLogRouter,
+    healthRouter,
+    paymentGatewayRouter,
+    eInvoiceRouter,
 } from "~/routes";
 
 const app = express();
@@ -55,6 +58,9 @@ app.set("query parser", (str: string) =>
 );
 
 app.use(middleware.handle(i18n));
+
+// Giai đoạn 14: kiểm tra sức khỏe, đặt trước request logger và CORS (healthcheck gọi liên tục, không có Origin)
+app.use("/api/health", healthRouter);
 
 app.use(requestLogger);
 
@@ -95,6 +101,8 @@ app.use("/api/feedbacks", feedbackRouter);
 app.use("/api/loyalty", loyaltyRouter);
 app.use("/api/reports", reportRouter);
 app.use("/api/audit-logs", auditLogRouter);
+app.use("/api/payment-gateway", paymentGatewayRouter);
+app.use("/api/e-invoices", eInvoiceRouter);
 
 app.use(errorHandler);
 

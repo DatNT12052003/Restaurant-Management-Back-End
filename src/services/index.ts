@@ -30,3 +30,6 @@ export * as orderRequestService from "./order-request.service";
 export * as loyaltyService from "./loyalty.service";
 export * as feedbackService from "./feedback.service";
 export * as customerService from "./customer.service";
+export * as paymentGatewayService from "./payment-gateway.service";
+export * as eInvoiceService from "./e-invoice.service";
+export * as reportSummaryService from "./report-summary.service";
