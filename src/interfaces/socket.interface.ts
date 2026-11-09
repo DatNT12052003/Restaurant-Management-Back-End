@@ -60,6 +60,13 @@ export interface IReservationEventPayload {
 }
 
 // Các event Server gửi về cho Client lắng nghe
+export interface IOrderRequestEventPayload {
+    restaurant_id: number;
+    request_id: number;
+    table_id: number;
+    status: string;
+}
+
 export interface ServerToClientEvents {
     "order:created": (data: IOrderEventPayload) => void;
     /** Đổi bàn, số khách, ghi chú, tiền, trạng thái order (gồm hoàn tất / hủy) */
@@ -72,6 +79,11 @@ export interface ServerToClientEvents {
     "payment:changed": (data: IPaymentEventPayload) => void;
     /** Phiếu kho, đổi ngưỡng tồn tối thiểu */
     "inventory:changed": (data: IInventoryEventPayload) => void;
+    /** Giai đoạn 13: khách gửi / nhân viên duyệt món gọi qua QR */
+    "order_request:created": (data: IOrderRequestEventPayload) => void;
+    "order_request:changed": (data: IOrderRequestEventPayload) => void;
+    /** Khách gửi phản hồi */
+    "feedback:created": (data: { restaurant_id: number; feedback_id: number; is_complaint: boolean }) => void;
     "restaurant:subscribed": (restaurantId: number | null) => void;
 }
 

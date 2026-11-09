@@ -9,11 +9,12 @@ import {
     validateCreate,
     validateLogin,
 } from "~/middlewares";
-import { changePasswordSchema, loginSchema } from "~/schemas";
+import { changePasswordSchema, createGuestSchema, loginSchema } from "~/schemas";
 
 const router = Router();
 
-router.post("/register", sensitiveAuthRateLimit, uploadAvatar, validateCreate, authController.register);
+// Khách tự đăng ký (multipart vì có ảnh đại diện): validate sau multer
+router.post("/register", sensitiveAuthRateLimit, uploadAvatar, validateCreate, validate(createGuestSchema), authController.register);
 router.post("/login", loginRateLimit, validateLogin, validate(loginSchema), authController.login);
 router.get("/me", authMiddleware, authController.getMe);
 router.post("/refresh", authController.refreshToken);

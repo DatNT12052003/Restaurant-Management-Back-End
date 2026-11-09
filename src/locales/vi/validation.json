@@ -71,6 +71,9 @@
         },
         "closed_day": {
             "invalid": "Ngày nghỉ không hợp lệ (YYYY-MM-DD)"
+        },
+        "number": {
+            "invalid": "Giá trị số không hợp lệ"
         }
     },
     "room": {
@@ -329,6 +332,50 @@
         },
         "reason": {
             "required": "Lý do là bắt buộc"
+        }
+    },
+    "customer": {
+        "date": {
+            "invalid": "Ngày không hợp lệ"
+        },
+        "time": {
+            "invalid": "Giờ không hợp lệ (HH:MM)"
+        },
+        "guest_count": {
+            "invalid": "Số khách không hợp lệ"
+        },
+        "email": {
+            "invalid": "Email không hợp lệ"
+        },
+        "phone": {
+            "invalid": "Số điện thoại không hợp lệ"
+        },
+        "rating": {
+            "invalid": "Điểm đánh giá từ 1 đến 5"
+        },
+        "quantity": {
+            "invalid": "Số lượng từ 1 đến 50"
+        },
+        "otp": {
+            "invalid": "Mã xác nhận gồm 6 chữ số"
+        },
+        "items": {
+            "required": "Chưa chọn món nào"
+        },
+        "status": {
+            "invalid": "Trạng thái không hợp lệ"
+        },
+        "number": {
+            "invalid": "Giá trị số không hợp lệ"
+        },
+        "search": {
+            "required": "Nhập ít nhất 2 ký tự để tìm"
+        },
+        "points": {
+            "invalid": "Số điểm không hợp lệ"
+        },
+        "note": {
+            "required": "Ghi chú là bắt buộc"
         }
     }
 }

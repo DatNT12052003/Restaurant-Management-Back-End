@@ -34,6 +34,10 @@ export interface IReservation {
     tables?: IReservationTable[];
     guest?: { id: number; full_name: string; phone_number: string | null; email: string | null } | null;
     created_by_name?: string | null;
+    /** Giai đoạn 13: nguồn đặt (staff | online), email và mã tra cứu của đơn online */
+    source?: string;
+    contact_email?: string | null;
+    lookup_code?: string | null;
     /** Order mở từ reservation (giai đoạn 4) */
     order?: { id: number; code: string; status: string } | null;
 }

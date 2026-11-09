@@ -14,3 +14,4 @@ export * from "./report.schema";
 export * from "./recipe.schema";
 export * from "./purchasing.schema";
 export * from "./hr.schema";
+export * from "./customer.schema";

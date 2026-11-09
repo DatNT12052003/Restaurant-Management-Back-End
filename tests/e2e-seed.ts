@@ -23,10 +23,14 @@ const main = async () => {
         const locked = await h.createUser("waitstaff", f.r1, { username: "e2e_locked", fullName: "Nhân viên Bị Khóa", login: false });
         await h.q("UPDATE accounts SET locked_until = NOW() + interval '15 minutes' WHERE id = $1", [locked.accountId]);
 
+        // Giai đoạn 13: tài khoản khách hàng
+        const guest = await h.createUser("guest", null, { username: "e2e_guest", fullName: "Khách E2E", login: false });
+        await h.q("UPDATE users SET phone_number = $2, email = $3 WHERE id = $1", [guest.userId, "0909000111", "khach.e2e@example.com"]);
+
         const users = Object.fromEntries(Object.entries(f.users).map(([role, u]) => [role, u.username]));
         console.log(
             "E2E_FIXTURE=" +
-                JSON.stringify({ password: h.PASSWORD, users: { ...users, locked: locked.username }, restaurants: [f.r1, f.r2] }),
+                JSON.stringify({ password: h.PASSWORD, users: { ...users, locked: locked.username, guest: guest.username }, restaurants: [f.r1, f.r2] }),
         );
     } finally {
         await pool.end();

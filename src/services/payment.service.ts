@@ -18,6 +18,7 @@ import { writeAudit } from "~/utils/audit";
 import { roundVnd } from "~/utils/billing";
 import { buildPagination } from "~/utils/pagination";
 import * as orderService from "./order.service";
+import * as loyaltyService from "./loyalty.service";
 import { inScope } from "./room.service";
 
 /** `scope`: null = mọi nhà hàng (admin); số = chỉ nhà hàng này. */
@@ -104,6 +105,8 @@ export const getInvoice = async (orderId: number, scope: Scope): Promise<IInvoic
                 tables: (order.tables || []).map((t) => t.name),
                 staff_name: order.assigned_staff_name ?? order.created_by_name ?? null,
                 guest_name: order.guest?.full_name ?? null,
+                guest_user_id: order.guest_user_id ?? null,
+                guest_phone: order.guest?.phone_number ?? null,
             },
             restaurant: { id: order.restaurant_id, name: restaurant?.name ?? "", address: restaurant?.address ?? "" },
             lines,
@@ -119,6 +122,10 @@ export const getInvoice = async (orderId: number, scope: Scope): Promise<IInvoic
             paid: summary.paid,
             remaining: roundVnd(Number(order.total) - summary.paid),
             tip_total: Number(order.tip_amount ?? 0),
+            // Giai đoạn 13: đổi điểm (tiền giảm nằm trong discount_amount) và điểm đã cộng
+            points_redeemed: Number(order.points_redeemed ?? 0),
+            points_discount: Number(order.points_discount ?? 0),
+            points_awarded: Number(order.points_awarded ?? 0),
         };
     } catch (error) {
         return PAYMENT_ERROR.FAILED;
@@ -273,6 +280,8 @@ export const refundPayment = async (
             });
             const fully = amount === refundable;
             if (fully) await paymentRepository.updatePayment(payment.id, { status: P.REFUNDED });
+            // Giai đoạn 13: order đã hoàn tất thì trừ lại điểm thưởng tương ứng số tiền hoàn
+            if (order.status === OrderStatusEnum.COMPLETED) await loyaltyService.onRefund(order.id, amount);
 
             await writeAudit(audit, {
                 action: "payment.refund",

@@ -165,6 +165,8 @@ export interface IInvoice {
         tables: string[];
         staff_name: string | null;
         guest_name: string | null;
+        guest_user_id: number | null;
+        guest_phone: string | null;
     };
     restaurant: { id: number; name: string; address: string };
     lines: IInvoiceLine[];
@@ -182,4 +184,7 @@ export interface IInvoice {
     remaining: number;
     /** Tổng tip đã nhận (ngoài hóa đơn) */
     tip_total: number;
+    points_redeemed: number;
+    points_discount: number;
+    points_awarded: number;
 }

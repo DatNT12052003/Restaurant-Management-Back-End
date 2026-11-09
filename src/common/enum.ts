@@ -285,3 +285,28 @@ export enum PayrollStatusEnum {
     DRAFT = "draft",
     FINALIZED = "finalized",
 }
+
+/** Giai đoạn 13: kênh khách hàng */
+export enum ReservationSourceEnum {
+    STAFF = "staff",
+    ONLINE = "online",
+}
+
+export enum OrderRequestStatusEnum {
+    PENDING = "pending",
+    ACCEPTED = "accepted",
+    REJECTED = "rejected",
+}
+
+export enum LoyaltyTransactionTypeEnum {
+    EARN = "earn",
+    REDEEM = "redeem",
+    REVOKE = "revoke",
+    ADJUST = "adjust",
+}
+
+export enum FeedbackStatusEnum {
+    NEW = "new",
+    IN_PROGRESS = "in_progress",
+    RESOLVED = "resolved",
+}

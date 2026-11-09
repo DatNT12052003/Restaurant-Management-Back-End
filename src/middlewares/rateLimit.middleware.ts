@@ -27,3 +27,6 @@ export const loginRateLimit = limiter(15, 30);
 
 /** Đăng ký, quên mật khẩu, xác nhận OTP, đặt lại mật khẩu: gửi mail / dò OTP nên chặt hơn */
 export const sensitiveAuthRateLimit = limiter(15, 10);
+
+/** Giai đoạn 13: API công khai có ghi dữ liệu (đặt bàn, gọi món QR, phản hồi) */
+export const publicWriteRateLimit = limiter(15, 30);
