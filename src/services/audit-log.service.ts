@@ -58,3 +58,13 @@ export const archiveOldAuditLogs = async (months = AUDIT_RETENTION_MONTHS): Prom
     }
     return total;
 };
+
+/**
+ * Giai đoạn 14: bảo trì phân vùng tháng của audit_logs (job hằng ngày, sau khi lưu trữ):
+ * tạo trước phân vùng 3 tháng tới, bỏ phân vùng cũ đã trống.
+ */
+export const maintainAuditPartitions = async (months = AUDIT_RETENTION_MONTHS) => {
+    const created = await auditLogRepository.ensurePartitions(3);
+    const dropped = await withTransaction(() => auditLogRepository.dropEmptyPartitionsBefore(months));
+    return { created, dropped: dropped.length };
+};

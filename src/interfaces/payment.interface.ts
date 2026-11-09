@@ -87,6 +87,18 @@ export interface IPayment {
     tip_amount: string;
     tip_staff_id: number | null;
     tip_staff_name?: string | null;
+    /** Giai đoạn 14: payment QR chuyển khoản (SePay) */
+    provider?: string | null;
+    gateway_ref?: string | null;
+    gateway_data?: IGatewayAccount | null;
+    expires_at?: Date | null;
+}
+
+/** Tài khoản nhận chụp lại lúc tạo QR */
+export interface IGatewayAccount {
+    bank_bin: string;
+    account_no: string;
+    account_name: string | null;
 }
 
 export interface IGetPayments {
@@ -133,6 +145,10 @@ export interface IPaymentRow {
     paid_at?: Date | null;
     tip_amount?: number;
     tip_staff_id?: number | null;
+    provider?: string | null;
+    gateway_ref?: string | null;
+    gateway_data?: IGatewayAccount | null;
+    expires_at?: Date | null;
 }
 
 /** Tiền đã thu (trừ hoàn) và đang chờ của một order */
@@ -187,4 +203,15 @@ export interface IInvoice {
     points_redeemed: number;
     points_discount: number;
     points_awarded: number;
+    /** Giai đoạn 14: hóa đơn điện tử còn hiệu lực của order (in mã tra cứu lên phiếu) */
+    e_invoice: {
+        id: number;
+        status: string;
+        series: string | null;
+        invoice_no: string | null;
+        lookup_code: string | null;
+        lookup_url: string | null;
+        error_message: string | null;
+    } | null;
+    transfer_qr_enabled: boolean;
 }

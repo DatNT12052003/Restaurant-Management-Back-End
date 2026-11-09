@@ -1,0 +1,30 @@
+# Giai đoạn 14: tên miền -> container web của từng môi trường (web tự chuyển /api và /socket.io tới backend).
+{
+	email {$ACME_EMAIL}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+{$PROD_DOMAIN} {
+	import common
+	reverse_proxy rm-production-web:80
+}
+
+{$STAGING_DOMAIN} {
+	import common
+	header X-Robots-Tag "noindex, nofollow"
+	# Staging không công khai: hỏi mật khẩu, trừ webhook SePay (SePay không gửi được basic auth)
+	@protected not path /api/payment-gateway/webhooks/*
+	basic_auth @protected {
+		{$STAGING_USER} {$STAGING_PASSWORD_HASH}
+	}
+	reverse_proxy rm-staging-web:80
+}

@@ -11,7 +11,7 @@ import {
     IRefundBody,
     ISelectQuery,
 } from "~/interfaces";
-import { orderRepository, paymentRepository, restaurantRepository } from "~/repositories";
+import { eInvoiceRepository, orderRepository, paymentRepository, restaurantRepository } from "~/repositories";
 import { OPEN_ORDER_STATUSES } from "~/repositories/order.repository";
 import { emitToRestaurant } from "~/sockets";
 import { writeAudit } from "~/utils/audit";
@@ -48,7 +48,7 @@ const loadPayment = async (id: number, scope: Scope): Promise<{ payment: IPaymen
 type Closed = Awaited<ReturnType<typeof orderService.completeIfSettled>>;
 
 /** Phát sự kiện sau commit: payment đổi, order đổi tiền / trạng thái (kèm đóng order nếu vừa tự hoàn tất) */
-const emitChanged = (order: IOrder, paymentId: number, status: PaymentStatusEnum, closed: Closed) => {
+export const emitPaymentChanged = (order: IOrder, paymentId: number, status: PaymentStatusEnum, closed: Closed) => {
     emitToRestaurant(order.restaurant_id, "payment:changed", {
         restaurant_id: order.restaurant_id,
         order_id: order.id,
@@ -88,11 +88,12 @@ export const getInvoice = async (orderId: number, scope: Scope): Promise<IInvoic
     try {
         const order = await orderRepository.getOrderById(orderId);
         if (!order || !inScope(order.restaurant_id, scope)) return PAYMENT_ERROR.ORDER_NOT_FOUND;
-        const [lines, payments, restaurant, summary] = await Promise.all([
+        const [lines, payments, restaurant, summary, eInvoice] = await Promise.all([
             paymentRepository.getInvoiceLines(orderId),
             paymentRepository.getOrderPayments(orderId),
             restaurantRepository.getRestaurantById(order.restaurant_id),
             paymentRepository.getSummary(orderId),
+            eInvoiceRepository.getActiveByOrder(orderId),
         ]);
         return {
             order: {
@@ -126,6 +127,19 @@ export const getInvoice = async (orderId: number, scope: Scope): Promise<IInvoic
             points_redeemed: Number(order.points_redeemed ?? 0),
             points_discount: Number(order.points_discount ?? 0),
             points_awarded: Number(order.points_awarded ?? 0),
+            e_invoice: eInvoice
+                ? {
+                      id: eInvoice.id,
+                      status: eInvoice.status,
+                      series: eInvoice.series,
+                      invoice_no: eInvoice.invoice_no,
+                      lookup_code: eInvoice.lookup_code,
+                      lookup_url: eInvoice.lookup_url,
+                      error_message: eInvoice.error_message,
+                  }
+                : null,
+            // Giai đoạn 14: mã QR chuyển khoản đang mở và tài khoản nhận của nhà hàng
+            transfer_qr_enabled: Boolean(restaurant?.transfer_qr_enabled && restaurant.bank_bin && restaurant.bank_account_no),
         };
     } catch (error) {
         return PAYMENT_ERROR.FAILED;
@@ -205,7 +219,7 @@ export const createPayment = async (
             return { order, id: created.id, status, closed };
         });
         if (typeof result === "number") return result;
-        emitChanged(result.order, result.id, result.status, result.closed);
+        emitPaymentChanged(result.order, result.id, result.status, result.closed);
         return (await paymentRepository.getPaymentById(result.id))!;
     } catch (error) {
         return PAYMENT_ERROR.FAILED;
@@ -234,7 +248,7 @@ const settlePending = async (
             return { order, closed };
         });
         if (typeof result === "number") return result;
-        emitChanged(result.order, id, status, result.closed);
+        emitPaymentChanged(result.order, id, status, result.closed);
         return (await paymentRepository.getPaymentById(id))!;
     } catch (error) {
         return PAYMENT_ERROR.FAILED;
@@ -301,7 +315,7 @@ export const refundPayment = async (
             return { order, refundId: refund.id };
         });
         if (typeof result === "number") return result;
-        emitChanged(result.order, result.refundId, P.PAID, null);
+        emitPaymentChanged(result.order, result.refundId, P.PAID, null);
         return (await paymentRepository.getPaymentById(result.refundId))!;
     } catch (error) {
         return PAYMENT_ERROR.FAILED;

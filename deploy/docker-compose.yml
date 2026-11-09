@@ -1,0 +1,111 @@
+# Giai đoạn 14: một môi trường (production hoặc staging) gồm DB, migration, backend, web và sao lưu.
+# Mỗi môi trường là một project compose riêng, DB riêng:
+#   docker compose -p rm-production --env-file production/.env -f docker-compose.yml up -d
+#   docker compose -p rm-staging    --env-file staging/.env    -f docker-compose.yml up -d
+# Reverse proxy chung (TLS, tên miền) nằm ở deploy/proxy và nối với web qua mạng `edge`.
+# Xem deploy/README.md.
+
+name: ${STACK_NAME:-rm-production}
+
+x-logging: &logging
+    driver: json-file
+    options:
+        max-size: "20m"
+        max-file: "5"
+
+services:
+    db:
+        image: postgres:18-alpine
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: ${DB_NAME}
+            TZ: Asia/Ho_Chi_Minh
+        volumes:
+            - db-data:/var/lib/postgresql
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+        logging: *logging
+
+    # Chạy migration rồi thoát; backend chỉ khởi động khi migration thành công
+    migrate:
+        image: ${BACKEND_IMAGE}:${BACKEND_TAG:-latest}
+        command: ["npm", "run", "migrate:prod"]
+        environment:
+            DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+            SEED_ADMIN_USERNAME: ${SEED_ADMIN_USERNAME:-admin}
+            SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+        depends_on:
+            db:
+                condition: service_healthy
+        restart: "no"
+        logging: *logging
+
+    backend:
+        image: ${BACKEND_IMAGE}:${BACKEND_TAG:-latest}
+        restart: unless-stopped
+        env_file: ./${APP_ENV:-production}/backend.env
+        environment:
+            DB_HOST: db
+            DB_PORT: 5432
+            DB_USER: ${DB_USER}
+            DB_PASSWORD: ${DB_PASSWORD}
+            DB_NAME: ${DB_NAME}
+            APP_ENV: ${APP_ENV:-production}
+            # Caddy -> nginx (web) -> backend: 2 lớp proxy
+            TRUST_PROXY: "2"
+            LOG_TO_FILE: "false"
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+        logging: *logging
+
+    web:
+        image: ${WEB_IMAGE}:${WEB_TAG:-latest}
+        restart: unless-stopped
+        environment:
+            BACKEND_UPSTREAM: backend:3000
+        depends_on:
+            - backend
+        networks:
+            default:
+            edge:
+                # Tên để Caddy trỏ tới, ví dụ rm-production-web / rm-staging-web
+                aliases:
+                    - ${STACK_NAME:-rm-production}-web
+        logging: *logging
+
+    # Sao lưu hằng ngày (pg_dump), xoay vòng, kiểm tra phục hồi hằng tuần. Xem deploy/backup/
+    backup:
+        image: postgres:18-alpine
+        restart: unless-stopped
+        environment:
+            PGHOST: db
+            PGUSER: ${DB_USER}
+            PGPASSWORD: ${DB_PASSWORD}
+            PGDATABASE: ${DB_NAME}
+            TZ: Asia/Ho_Chi_Minh
+            BACKUP_TIME: ${BACKUP_TIME:-02:30}
+            BACKUP_VERIFY_WEEKDAY: ${BACKUP_VERIFY_WEEKDAY:-7}
+            BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-7}
+            BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-8}
+            BACKUP_KEEP_MONTHLY: ${BACKUP_KEEP_MONTHLY:-12}
+        volumes:
+            - ./backup:/scripts:ro
+            - ${BACKUP_DIR:-./production/backups}:/backups
+        command: ["sh", "/scripts/backup-loop.sh"]
+        depends_on:
+            db:
+                condition: service_healthy
+        logging: *logging
+
+volumes:
+    db-data:
+
+networks:
+    edge:
+        external: true

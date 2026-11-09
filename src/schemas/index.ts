@@ -15,3 +15,4 @@ export * from "./recipe.schema";
 export * from "./purchasing.schema";
 export * from "./hr.schema";
 export * from "./customer.schema";
+export * from "./integration.schema";

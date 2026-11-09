@@ -105,6 +105,8 @@ export enum PaymentPermissionEnum {
     /** Thu tiền, xác nhận / hủy giao dịch chờ */
     CREATE = "payment.create",
     REFUND = "payment.refund",
+    /** Giai đoạn 14: đối soát giao dịch chuyển khoản ngân hàng (SePay) */
+    RECONCILE = "payment.reconcile",
 }
 
 export enum DiscountPermissionEnum {
@@ -223,6 +225,14 @@ export enum LoyaltyPermissionEnum {
 }
 
 /** Toàn bộ permission của hệ thống, dùng cho seed và kiểm tra. */
+/** Giai đoạn 14: hóa đơn điện tử */
+export enum EInvoicePermissionEnum {
+    VIEW = "einvoice.view",
+    /** Phát hành hóa đơn cho order đã hoàn tất, gửi lại hóa đơn lỗi */
+    ISSUE = "einvoice.issue",
+    CANCEL = "einvoice.cancel",
+}
+
 export const ALL_PERMISSIONS: string[] = [
     UserPermissionEnum,
     EmployeePermissionEnum,
@@ -257,4 +267,5 @@ export const ALL_PERMISSIONS: string[] = [
     OrderRequestPermissionEnum,
     FeedbackPermissionEnum,
     LoyaltyPermissionEnum,
+    EInvoicePermissionEnum,
 ].flatMap((group) => Object.values(group) as string[]);

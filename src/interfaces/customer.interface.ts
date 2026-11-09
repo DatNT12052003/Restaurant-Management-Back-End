@@ -1,3 +1,4 @@
+import { IQrInfo } from "./integration.interface";
 import { FeedbackStatusEnum, LoyaltyTransactionTypeEnum, OrderRequestStatusEnum, ReservationStatusEnum } from "~/common/enum";
 
 /** Giai đoạn 13: kênh khách hàng. pg trả numeric dưới dạng chuỗi. */
@@ -130,11 +131,20 @@ export interface ITableOrderLine {
     price: Numeric;
 }
 
+/** Giai đoạn 14: tiền của order đang mở và mã chuyển khoản đang hiệu lực */
+export interface IPublicTablePayment {
+    total: number;
+    paid: number;
+    remaining: number;
+    transfer_qr_enabled: boolean;
+    qr: (IQrInfo & { payment_id: number }) | null;
+}
+
 export interface IPublicTable {
     table: { id: number; name: string; room_name: string };
     restaurant: { id: number; name: string; qr_ordering_enabled: boolean };
     /** Order đang mở của bàn: các món đã gọi (để khách xem) */
-    order: { code: string; total: Numeric; lines: ITableOrderLine[] } | null;
+    order: { code: string; total: Numeric; lines: ITableOrderLine[]; payment?: IPublicTablePayment | null } | null;
     /** Order vừa hoàn tất ở bàn (trong 24 giờ, chưa có phản hồi, bàn chưa có order mới): khách được đánh giá */
     feedback_order: { id: number; code: string; completed_at: Date } | null;
 }

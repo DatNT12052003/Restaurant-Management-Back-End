@@ -90,3 +90,35 @@ export const archiveOlderThan = async (months: number, batch: number): Promise<n
     );
     return result.rowCount ?? 0;
 };
+
+/** Giai đoạn 14: tạo trước phân vùng tháng cho `months` tháng tới. Trả về số phân vùng mới. */
+export const ensurePartitions = async (months: number): Promise<number> => {
+    const result = await db().query("SELECT audit_logs_ensure_partitions($1) AS created", [months]);
+    return Number(result.rows[0].created);
+};
+
+/**
+ * Giai đoạn 14: bỏ các phân vùng tháng đã trống và nằm trọn trước mốc lưu trữ (dữ liệu đã chuyển sang bảng lưu trữ).
+ * Trả về tên các phân vùng đã bỏ.
+ */
+export const dropEmptyPartitionsBefore = async (months: number): Promise<string[]> => {
+    const parts = await db().query(
+        `SELECT c.relname AS name
+        FROM pg_inherits i
+        JOIN pg_class c ON c.oid = i.inhrelid
+        JOIN pg_class p ON p.oid = i.inhparent
+        WHERE p.relname = 'audit_logs' AND c.relname ~ '^audit_logs_p[0-9]{6}$'
+            AND to_date(substring(c.relname from 13), 'YYYYMM') + interval '1 month' <= NOW() - make_interval(months => $1)
+        ORDER BY 1`,
+        [months],
+    );
+    const dropped: string[] = [];
+    for (const { name } of parts.rows as { name: string }[]) {
+        const rows = await db().query(`SELECT 1 FROM "${name}" LIMIT 1`);
+        if (rows.rowCount) continue;
+        await db().query(`ALTER TABLE audit_logs DETACH PARTITION "${name}"`);
+        await db().query(`DROP TABLE "${name}"`);
+        dropped.push(name);
+    }
+    return dropped;
+};

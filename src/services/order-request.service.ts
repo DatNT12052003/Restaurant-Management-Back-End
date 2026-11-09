@@ -5,6 +5,7 @@ import { rollback, withTransaction } from "~/config/db";
 import { ICreateOrderRequestBody, IOrderRequest, IPublicTable } from "~/interfaces";
 import { customerRepository, orderRepository, reservationRepository } from "~/repositories";
 import { emitToRestaurant } from "~/sockets";
+import { getPublicPayment } from "./payment-gateway.service";
 import * as orderService from "./order.service";
 
 /**
@@ -76,7 +77,13 @@ export const getTable = async (token: string): Promise<IPublicTable | number> =>
         let order: IPublicTable["order"] = null;
         if (orderId) {
             const brief = (await customerRepository.getOrderBrief(orderId))!;
-            order = { code: brief.code, total: brief.total, lines: await customerRepository.getOrderLines(orderId) };
+            order = {
+                code: brief.code,
+                total: brief.total,
+                lines: await customerRepository.getOrderLines(orderId),
+                // Giai đoạn 14: số còn phải trả, khách tự quét mã chuyển khoản
+                payment: await getPublicPayment(orderId),
+            };
         }
         // Bàn đã có khách mới thì không mời đánh giá order trước
         const feedback = orderId ? undefined : await customerRepository.getRecentCompletedOrderAtTable(table.id, FEEDBACK_HOURS);

@@ -74,6 +74,15 @@
         },
         "number": {
             "invalid": "Invalid number"
+        },
+        "bank_bin": {
+            "invalid": "Bank BIN must be 6 digits"
+        },
+        "bank_account_no": {
+            "invalid": "Account number must be 4–30 letters or digits"
+        },
+        "tax_code": {
+            "invalid": "Tax code must be 10 digits, optionally followed by -xxx"
         }
     },
     "room": {
@@ -376,6 +385,23 @@
         },
         "note": {
             "required": "A note is required"
+        }
+    },
+    "einvoice": {
+        "tax_code": {
+            "invalid": "Tax code must be 10 digits, optionally followed by -xxx"
+        },
+        "email": {
+            "invalid": "Invalid email"
+        },
+        "buyer_type": {
+            "invalid": "Invalid buyer type"
+        },
+        "company": {
+            "required": "A company buyer needs a company name and tax code"
+        },
+        "reason": {
+            "required": "Please enter a reason"
         }
     }
 }

@@ -1,9 +1,9 @@
 name: CI
 
+# Giai đoạn 14: push lên develop / main chạy CI qua workflow Deploy (gọi lại file này), nên ở đây chỉ chạy cho PR
 on:
     pull_request:
-    push:
-        branches: [develop, main]
+    workflow_call:
 
 jobs:
     test:

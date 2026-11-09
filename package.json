@@ -7,11 +7,13 @@
         "test": "vitest run",
         "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/server.ts",
         "build": "tsc",
-        "start": "node dist/server.js",
+        "build:migrations": "tsc -p tsconfig.migrations.json",
+        "start": "node -r ./scripts/register-paths.js dist/server.js",
         "migrate": "node-pg-migrate",
         "migrate:up": "tsx node_modules/node-pg-migrate/bin/node-pg-migrate up",
         "migrate:down": "tsx node_modules/node-pg-migrate/bin/node-pg-migrate down",
         "migrate:create": "tsx node_modules/node-pg-migrate/bin/node-pg-migrate create --migration-file-language ts",
+        "migrate:prod": "node-pg-migrate up -m dist/migrate/migrations",
         "test:watch": "vitest",
         "typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.test.json",
         "lint": "eslint .",
@@ -23,6 +25,7 @@
     "license": "ISC",
     "type": "commonjs",
     "dependencies": {
+        "@sentry/node": "^11.11.0",
         "bcrypt": "^6.0.0",
         "cloudinary": "^1.41.3",
         "cookie-parser": "^1.4.7",
@@ -46,6 +49,7 @@
         "tsconfig-paths": "^4.2.0",
         "uuid": "^14.0.0",
         "winston": "^3.19.0",
+        "winston-transport": "^4.9.0",
         "zod": "^4.3.6"
     },
     "devDependencies": {

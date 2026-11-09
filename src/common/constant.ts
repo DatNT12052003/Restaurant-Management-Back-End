@@ -38,3 +38,9 @@ export const LOGIN_LOCK_MINUTES = 15;
 
 /** Nhật ký hoạt động: dòng cũ hơn bấy nhiêu tháng được chuyển sang `audit_logs_archive` (câu hỏi 13) */
 export const AUDIT_RETENTION_MONTHS = 12;
+
+/** Giai đoạn 14: mã QR chuyển khoản hết hạn sau bấy nhiêu phút (job hủy để order không bị treo) */
+export const QR_PAYMENT_MINUTES = 15;
+
+/** Giai đoạn 14: hóa đơn điện tử gửi lỗi được thử lại tự động tối đa bấy nhiêu lần (sau đó cần thử lại tay) */
+export const EINVOICE_MAX_ATTEMPTS = 6;

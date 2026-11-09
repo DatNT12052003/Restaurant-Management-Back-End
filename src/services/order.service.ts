@@ -33,6 +33,7 @@ import { AUDIT_ACTION, writeAudit } from "~/utils/audit";
 import { inScope } from "./room.service";
 import { consumeServedLines } from "./recipe.service";
 import * as loyaltyService from "./loyalty.service";
+import { queueAutoInvoice } from "./e-invoice.service";
 import { IConsumeResult } from "~/interfaces";
 
 /** `scope`: null = mọi nhà hàng (admin); số = chỉ nhà hàng này. */
@@ -932,8 +933,11 @@ const closeOrder = async (
             : { status, cancelled_at: now, cancelled_by: extra.actorId ?? null, cancel_reason: extra.reason ?? null },
     );
     // Giai đoạn 13: điểm thưởng (hoàn tất: trừ điểm đã đổi, cộng điểm mới; hủy: bỏ phần đổi điểm đang giữ)
-    if (status === OrderStatusEnum.COMPLETED) await loyaltyService.onOrderCompleted(order.id);
-    else if (Number(order.points_redeemed ?? 0) > 0) await orderRepository.setPointsRedeemed(order.id, 0);
+    if (status === OrderStatusEnum.COMPLETED) {
+        await loyaltyService.onOrderCompleted(order.id);
+        // Giai đoạn 14: nhà hàng bật tự phát hành thì xếp hóa đơn điện tử vào hàng chờ gửi
+        await queueAutoInvoice(order.id);
+    } else if (Number(order.points_redeemed ?? 0) > 0) await orderRepository.setPointsRedeemed(order.id, 0);
 
     let reservationId: number | null = null;
     if (order.reservation_id) {

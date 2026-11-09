@@ -24,6 +24,15 @@ export interface IRestaurant {
     online_booking_max_days?: number;
     online_booking_max_guests?: number;
     qr_ordering_enabled?: boolean;
+    /** Giai đoạn 14: chuyển khoản QR (SePay) và hóa đơn điện tử */
+    bank_bin?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
+    transfer_qr_enabled?: boolean;
+    legal_name?: string | null;
+    tax_code?: string | null;
+    einvoice_series?: string | null;
+    einvoice_auto_issue?: boolean;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
@@ -52,6 +61,15 @@ export interface ICreateRestaurantBody {
     online_booking_max_days?: number;
     online_booking_max_guests?: number;
     qr_ordering_enabled?: boolean;
+    /** Giai đoạn 14: chuyển khoản QR (SePay) và hóa đơn điện tử */
+    bank_bin?: string | null;
+    bank_account_no?: string | null;
+    bank_account_name?: string | null;
+    transfer_qr_enabled?: boolean;
+    legal_name?: string | null;
+    tax_code?: string | null;
+    einvoice_series?: string | null;
+    einvoice_auto_issue?: boolean;
 }
 
 export interface IUpdateRestaurantBody extends Partial<ICreateRestaurantBody> {}

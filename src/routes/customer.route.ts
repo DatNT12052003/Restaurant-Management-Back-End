@@ -6,7 +6,7 @@ import {
     PaymentPermissionEnum,
     TablePermissionEnum,
 } from "~/common/permission-enum";
-import { customerController as c } from "~/controllers";
+import { customerController as c, integrationController } from "~/controllers";
 import {
     authMiddleware,
     checkPermission,
@@ -61,6 +61,8 @@ publicRouter.post("/reservations/:code/cancel", sensitiveAuthRateLimit, validate
 publicRouter.get("/tables/:token", validate(tableTokenSchema), c.getTable);
 publicRouter.get("/tables/:token/requests", validate(myOrderRequestsSchema), c.getMyRequests);
 publicRouter.post("/tables/:token/requests", publicWriteRateLimit, validate(createOrderRequestSchema), c.createRequest);
+// Giai đoạn 14: khách tự tạo mã chuyển khoản cho số còn lại của bàn
+publicRouter.post("/tables/:token/payment-qr", publicWriteRateLimit, validate(tableTokenSchema), integrationController.createTableQr);
 publicRouter.post("/tables/:token/feedback", publicWriteRateLimit, validate(tableFeedbackSchema), c.submitTableFeedback);
 
 /** Tài khoản khách (`/api/customer`): chỉ role `guest` */
